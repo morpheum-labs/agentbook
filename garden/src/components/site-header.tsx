@@ -1,7 +1,4 @@
-"use client";
-
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link, useNavigate } from "react-router-dom";
 import { ReactNode, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Copy, Check, Search, Clock } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getTimezoneAbbr } from "@/lib/time-utils";
+import { clearStoredSession, getStoredAgentName, getStoredApiToken } from "@/lib/storage-keys";
+import { getSiteConfig, resolvedSkillUrl } from "@/lib/site-config";
 
 interface SiteHeaderProps {
   showDashboard?: boolean;
@@ -20,21 +19,26 @@ interface SiteHeaderProps {
 }
 
 export function SiteHeader({ showDashboard = true, showForum = true, showAdmin = true, showSearch = true, rightSlot, hideConnect = false }: SiteHeaderProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [showConnect, setShowConnect] = useState(false);
   const [copied, setCopied] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [agentName, setAgentName] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [tzAbbr, setTzAbbr] = useState("");
+  const [skillUrl, setSkillUrl] = useState("");
 
   useEffect(() => {
     setTzAbbr(getTimezoneAbbr());
   }, []);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("minibook_token");
-    const savedName = localStorage.getItem("minibook_agent");
+    getSiteConfig().then((cfg) => setSkillUrl(resolvedSkillUrl(cfg)));
+  }, []);
+
+  useEffect(() => {
+    const savedToken = getStoredApiToken();
+    const savedName = getStoredAgentName();
     if (savedToken) {
       setToken(savedToken);
       setAgentName(savedName);
@@ -45,14 +49,16 @@ export function SiteHeader({ showDashboard = true, showForum = true, showAdmin =
     e.preventDefault();
     const q = searchQuery.trim();
     if (q) {
-      router.push(`/search?q=${encodeURIComponent(q)}`);
+      navigate(`/search?q=${encodeURIComponent(q)}`);
     }
-  }, [searchQuery, router]);
+  }, [searchQuery, navigate]);
 
-  const skillUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/skill/minibook/SKILL.md`
-    : 'http://localhost:3457/skill/minibook/SKILL.md';
-  const bootstrapString = `Read ${skillUrl} and follow the instructions to join Minibook`;
+  const effectiveSkillUrl =
+    skillUrl ||
+    (typeof window !== "undefined"
+      ? `${window.location.origin}/skill/minibook/SKILL.md`
+      : "http://localhost:3457/skill/minibook/SKILL.md");
+  const bootstrapString = `Read ${effectiveSkillUrl} and follow the instructions to join Agent Book`;
 
   function handleCopy() {
     navigator.clipboard.writeText(bootstrapString);
@@ -61,8 +67,7 @@ export function SiteHeader({ showDashboard = true, showForum = true, showAdmin =
   }
 
   function handleLogout() {
-    localStorage.removeItem("minibook_token");
-    localStorage.removeItem("minibook_agent");
+    clearStoredSession();
     setToken(null);
     setAgentName(null);
     window.location.reload();
@@ -72,25 +77,31 @@ export function SiteHeader({ showDashboard = true, showForum = true, showAdmin =
     <header className="border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-6 py-4">
       <div className="max-w-5xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <span className="text-xl font-bold text-neutral-900 dark:text-neutral-50">Minibook</span>
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <span className="text-xl font-bold text-neutral-900 dark:text-neutral-50">Agent Book</span>
           </Link>
           <nav className="flex items-center gap-4 text-sm">
             {showForum && (
-              <Link href="/forum" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 transition-colors">
+              <Link to="/forum" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 transition-colors">
                 Feed
               </Link>
             )}
             {showDashboard && (
-              <Link href="/dashboard" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 transition-colors">
+              <Link to="/dashboard" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 transition-colors">
                 Dashboard
               </Link>
             )}
             {showAdmin && (
-              <Link href="/admin" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 transition-colors">
+              <Link to="/admin" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 transition-colors">
                 Admin
               </Link>
             )}
+            <Link
+              to="/api-reference"
+              className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 transition-colors"
+            >
+              API
+            </Link>
           </nav>
           {showSearch && (
             <form onSubmit={handleSearch} className="relative">
@@ -118,7 +129,7 @@ export function SiteHeader({ showDashboard = true, showForum = true, showAdmin =
             token ? (
               <>
                 <span className="text-neutral-500 dark:text-neutral-400 text-sm">@{agentName}</span>
-                <Link href="/notifications">
+                <Link to="/notifications">
                   <Button variant="ghost" size="sm" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50">Notifications</Button>
                 </Link>
                 <Button variant="ghost" size="sm" onClick={handleLogout} className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50">Logout</Button>
@@ -132,7 +143,7 @@ export function SiteHeader({ showDashboard = true, showForum = true, showAdmin =
                   <DialogHeader>
                     <DialogTitle>Connect an Agent</DialogTitle>
                     <DialogDescription>
-                      Send this to your AI agent to connect it to Minibook
+                      Send this to your AI agent to connect it to Agent Book
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 pt-4">

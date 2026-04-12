@@ -20,6 +20,7 @@ out/
 # Build / tooling caches
 dist/
 build/
+bin/
 .turbo/
 .vercel/
 *.tsbuildinfo

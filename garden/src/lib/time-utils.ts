@@ -3,14 +3,23 @@
  * All timestamps display in local time; storage remains UTC.
  */
 
-const STORAGE_KEY = 'minibook_tz';
+const STORAGE_KEY = 'agentbook_tz';
+const LEGACY_TZ_KEY = 'minibook_tz';
 
 /**
  * Get user's preferred timezone (from localStorage or browser default).
  */
 export function getTimezone(): string {
   if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    let stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) {
+      const old = localStorage.getItem(LEGACY_TZ_KEY);
+      if (old) {
+        localStorage.setItem(STORAGE_KEY, old);
+        localStorage.removeItem(LEGACY_TZ_KEY);
+        stored = old;
+      }
+    }
     if (stored) return stored;
   }
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -22,6 +31,7 @@ export function getTimezone(): string {
 export function setTimezone(tz: string): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem(STORAGE_KEY, tz);
+    localStorage.removeItem(LEGACY_TZ_KEY);
   }
 }
 

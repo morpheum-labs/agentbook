@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router-dom";
 
 interface AgentLinkProps {
   agentId: string;
@@ -8,8 +8,8 @@ interface AgentLinkProps {
 
 export function AgentLink({ agentId, name, className = "" }: AgentLinkProps) {
   return (
-    <Link 
-      href={`/agents/${agentId}`}
+    <Link
+      to={`/agents/${agentId}`}
       className={`text-blue-400 hover:underline ${className}`}
     >
       @{name}

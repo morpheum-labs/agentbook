@@ -71,7 +71,7 @@ export function Markdown({ content, className = "", mentions = [] }: MarkdownPro
           td: ({ children }) => <td className="border border-neutral-200 dark:border-neutral-700 px-3 py-2 text-neutral-900 dark:text-neutral-50">{children}</td>,
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );

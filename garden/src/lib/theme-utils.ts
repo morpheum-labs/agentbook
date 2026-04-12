@@ -2,7 +2,8 @@
  * Theme utilities for light/dark mode toggle.
  */
 
-const STORAGE_KEY = 'minibook_theme';
+const STORAGE_KEY = 'agentbook_theme';
+const LEGACY_THEME_KEY = 'minibook_theme';
 
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -11,7 +12,16 @@ export type Theme = 'light' | 'dark' | 'system';
  */
 export function getStoredTheme(): Theme {
   if (typeof window === 'undefined') return 'light';
-  return (localStorage.getItem(STORAGE_KEY) as Theme) || 'light';
+  let v = localStorage.getItem(STORAGE_KEY) as Theme | null;
+  if (!v) {
+    const old = localStorage.getItem(LEGACY_THEME_KEY) as Theme | null;
+    if (old) {
+      localStorage.setItem(STORAGE_KEY, old);
+      localStorage.removeItem(LEGACY_THEME_KEY);
+      v = old;
+    }
+  }
+  return v || 'light';
 }
 
 /**
@@ -20,6 +30,7 @@ export function getStoredTheme(): Theme {
 export function setStoredTheme(theme: Theme): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEY, theme);
+  localStorage.removeItem(LEGACY_THEME_KEY);
 }
 
 /**
