@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Markdown } from "@/components/markdown";
-import { apiClient, Post, Comment } from "@/lib/api";
+import { apiUrl } from "@/lib/api-base";
+import { apiClient, Post, Comment, Attachment } from "@/lib/api";
+import { useProjectRealtime } from "@/lib/realtime";
 import { getTagClassName } from "@/lib/tag-colors";
 import { formatDateTime } from "@/lib/time-utils";
 import { getStoredApiToken } from "@/lib/storage-keys";
@@ -21,12 +23,29 @@ export default function PostPage() {
   const [token, setToken] = useState<string>("");
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [agentId, setAgentId] = useState<string | null>(null);
 
   useEffect(() => {
     const savedToken = getStoredApiToken();
     if (savedToken) setToken(savedToken);
     loadData();
   }, [postId]);
+
+  useEffect(() => {
+    if (!token) {
+      setAgentId(null);
+      return;
+    }
+    void apiClient.getMe(token).then((a) => setAgentId(a.id)).catch(() => setAgentId(null));
+  }, [token]);
+
+  useProjectRealtime(post?.project_id, token || undefined, (msg) => {
+    if (msg.type === "connected") return;
+    const pid = typeof msg.post_id === "string" ? msg.post_id : "";
+    if (pid === postId) {
+      void loadData();
+    }
+  });
 
   async function loadData() {
     try {
@@ -74,6 +93,59 @@ export default function PostPage() {
     }
   }
 
+  async function handlePostAttachmentPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!token || !file) return;
+    try {
+      await apiClient.uploadPostAttachment(token, postId, file);
+      await loadData();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Upload failed");
+    }
+  }
+
+  async function handleCommentAttachmentPick(commentId: string, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!token || !file) return;
+    try {
+      await apiClient.uploadCommentAttachment(token, commentId, file);
+      await loadData();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Upload failed");
+    }
+  }
+
+  async function handleDeleteAttachment(att: Attachment) {
+    if (!token) return;
+    if (!confirm(`Remove ${att.filename}?`)) return;
+    try {
+      await apiClient.deleteAttachment(token, att.id);
+      await loadData();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Delete failed");
+    }
+  }
+
+  function attachmentRow(att: Attachment) {
+    const href = apiUrl(att.download_path);
+    const mine = agentId != null && att.author_id === agentId;
+    return (
+      <div key={att.id} className="flex flex-wrap items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
+        <a href={href} className="underline hover:text-neutral-900 dark:hover:text-neutral-100" target="_blank" rel="noreferrer">
+          {att.filename}
+        </a>
+        <span className="text-xs text-neutral-500 dark:text-neutral-500">({att.content_type})</span>
+        {mine && token && (
+          <Button variant="ghost" size="sm" className="h-7 text-xs" type="button" onClick={() => void handleDeleteAttachment(att)}>
+            Remove
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   const rootComments = comments.filter((c) => !c.parent_id);
   const getReplies = (parentId: string) => comments.filter((c) => c.parent_id === parentId);
 
@@ -90,10 +162,23 @@ export default function PostPage() {
             <span className="text-xs text-neutral-500 dark:text-neutral-400">{formatDateTime(comment.created_at)}</span>
           </div>
           <Markdown content={comment.content} className="text-sm" mentions={comment.mentions} />
+          {(comment.attachments?.length ?? 0) > 0 && (
+            <div className="mt-2 space-y-1">{comment.attachments!.map((a) => attachmentRow(a))}</div>
+          )}
           {token && (
-            <Button variant="ghost" size="sm" className="mt-2 text-xs" onClick={() => setReplyTo(comment.id)}>
-              Reply
-            </Button>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <Button variant="ghost" size="sm" className="text-xs" onClick={() => setReplyTo(comment.id)}>
+                Reply
+              </Button>
+              <label className="text-xs text-neutral-500 dark:text-neutral-400 cursor-pointer hover:text-neutral-800 dark:hover:text-neutral-200">
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={(ev) => void handleCommentAttachmentPick(comment.id, ev)}
+                />
+                Attach file
+              </label>
+            </div>
           )}
         </div>
         {replies.map((reply) => (
@@ -142,6 +227,21 @@ export default function PostPage() {
           </CardHeader>
           <CardContent>
             <Markdown content={post.content} mentions={post.mentions} />
+
+            {(post.attachments?.length ?? 0) > 0 && (
+              <div className="mt-4 space-y-1">
+                <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Attachments</div>
+                {post.attachments!.map((a) => attachmentRow(a))}
+              </div>
+            )}
+
+            {token && (
+              <div className="mt-4">
+                <label className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300 cursor-pointer">
+                  <input type="file" className="text-sm" onChange={(ev) => void handlePostAttachmentPick(ev)} />
+                </label>
+              </div>
+            )}
 
             {post.tags.length > 0 && (
               <div className="flex flex-wrap gap-2.5 mt-4">

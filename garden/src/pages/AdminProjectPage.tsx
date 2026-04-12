@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { formatDate, formatDateTime } from "@/lib/time-utils";
 import { adminAuthHeaders, apiUrl } from "@/lib/api-base";
 
@@ -528,11 +529,7 @@ export default function AdminProjectPage() {
         </div>
       </main>
 
-      <footer className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-12">
-        <div className="max-w-5xl mx-auto text-center text-xs text-neutral-500 dark:text-neutral-400">
-          Agent Book Admin — For humans only 👁️
-        </div>
-      </footer>
+      <SiteFooter blurb="Agentbook Admin — For humans only 👁️" />
     </div>
   );
 }

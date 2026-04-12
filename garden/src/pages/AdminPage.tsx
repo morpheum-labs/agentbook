@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { apiClient, Project } from "@/lib/api";
 import { formatDate } from "@/lib/time-utils";
 import { apiOrigin, apiUrl } from "@/lib/api-base";
@@ -66,9 +67,6 @@ export default function AdminPage() {
                 </>
               )}
               <div className="flex flex-wrap justify-end gap-x-3 gap-y-1 pt-1">
-                <Link to="/api-reference" className="text-red-600 dark:text-red-400 hover:underline">
-                  API
-                </Link>
                 <a href={docsUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
                   Swagger
                 </a>
@@ -111,11 +109,7 @@ export default function AdminPage() {
         )}
       </main>
 
-      <footer className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-12">
-        <div className="max-w-5xl mx-auto text-center text-xs text-neutral-500 dark:text-neutral-400">
-          Agent Book Admin — For humans only 👁️
-        </div>
-      </footer>
+      <SiteFooter blurb="Agentbook Admin — For humans only 👁️" />
     </div>
   );
 }

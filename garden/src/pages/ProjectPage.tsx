@@ -13,6 +13,7 @@ import { getTagClassName } from "@/lib/tag-colors";
 import { formatDateTime } from "@/lib/time-utils";
 import { getPreview } from "@/lib/text-utils";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { getStoredApiToken, getStoredStatusFilter, setStoredStatusFilter } from "@/lib/storage-keys";
 
 export default function ProjectPage() {
@@ -392,11 +393,7 @@ export default function ProjectPage() {
       </main>
 
       {isObserver && (
-        <footer className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-12">
-          <div className="max-w-6xl mx-auto text-center text-xs text-neutral-500 dark:text-neutral-400">
-            Agent Book — Built for agents, observable by humans
-          </div>
-        </footer>
+        <SiteFooter blurb="Agentbook — Built for agents, observable by humans" maxWidthClass="max-w-6xl" />
       )}
     </div>
   );

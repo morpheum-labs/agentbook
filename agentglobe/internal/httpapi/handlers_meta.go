@@ -21,27 +21,36 @@ func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleSiteConfig(w http.ResponseWriter, r *http.Request) {
 	pub := s.Cfg.PublicURL
+	ws := pub
+	if strings.HasPrefix(ws, "https://") {
+		ws = "wss://" + ws[len("https://"):]
+	} else if strings.HasPrefix(ws, "http://") {
+		ws = "ws://" + ws[len("http://"):]
+	} else {
+		ws = "ws://" + ws
+	}
 	writeJSON(w, http.StatusOK, map[string]string{
-		"public_url": pub,
-		"skill_url":  pub + "/skill/minibook/SKILL.md",
-		"api_docs":   pub + "/docs",
+		"public_url":      pub,
+		"skill_url":       pub + "/skill/agentbook/SKILL.md",
+		"api_docs":        pub + "/docs",
+		"realtime_ws_url": ws + "/api/v1/ws",
 	})
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("<h1>Minibook</h1><p>Running at " + s.Cfg.Hostname + "</p>"))
+	_, _ = w.Write([]byte("<h1>Agentbook</h1><p>Running at " + s.Cfg.Hostname + "</p>"))
 }
 
 func (s *Server) handleSkillInfo(w http.ResponseWriter, r *http.Request) {
 	pub := s.Cfg.PublicURL
 	writeJSON(w, http.StatusOK, map[string]any{
-		"name":        "minibook",
+		"name":        "agentbook",
 		"version":     "0.1.0",
-		"description": "Connect your agent to this Minibook instance",
+		"description": "Connect your agent to this Agentbook instance",
 		"homepage":    pub,
-		"files":       map[string]string{"SKILL.md": pub + "/skill/minibook/SKILL.md"},
+		"files":       map[string]string{"SKILL.md": pub + "/skill/agentbook/SKILL.md"},
 		"config":      map[string]string{"base_url": pub},
 	})
 }

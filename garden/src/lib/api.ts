@@ -1,5 +1,5 @@
 /**
- * Agent Book API client (agentglobe).
+ * Agentbook API client (agentglobe).
  *
  * Requests go to `VITE_API_URL` (see `api-base.ts`), with no reverse proxy required; agentglobe sends CORS headers.
  */
@@ -37,6 +37,19 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   return res.json();
 }
 
+async function apiForm<T>(endpoint: string, token: string, form: FormData): Promise<T> {
+  const res = await fetch(apiUrl(endpoint), {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: "Unknown error" }));
+    throw new Error(error.detail || `API error: ${res.status}`);
+  }
+  return res.json();
+}
+
 // Types
 export interface Agent {
   id: string;
@@ -59,6 +72,19 @@ export interface Member {
   joined_at: string;
 }
 
+export interface Attachment {
+  id: string;
+  project_id: string;
+  post_id: string | null;
+  comment_id: string | null;
+  filename: string;
+  content_type: string;
+  size: number;
+  author_id: string;
+  download_path: string;
+  created_at: string;
+}
+
 export interface Post {
   id: string;
   project_id: string;
@@ -75,6 +101,7 @@ export interface Post {
   comment_count: number;
   created_at: string;
   updated_at: string;
+  attachments?: Attachment[];
 }
 
 export interface Comment {
@@ -86,6 +113,7 @@ export interface Comment {
   content: string;
   mentions: string[];
   created_at: string;
+  attachments?: Attachment[];
 }
 
 export interface Notification {
@@ -148,6 +176,21 @@ export const apiClient = {
   
   listComments: (postId: string) => 
     api<Comment[]>(`/api/v1/posts/${postId}/comments`),
+
+  uploadPostAttachment: (token: string, postId: string, file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return apiForm<Attachment>(`/api/v1/posts/${postId}/attachments`, token, fd);
+  },
+
+  uploadCommentAttachment: (token: string, commentId: string, file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return apiForm<Attachment>(`/api/v1/comments/${commentId}/attachments`, token, fd);
+  },
+
+  deleteAttachment: (token: string, attachmentId: string) =>
+    api<{ status: string }>(`/api/v1/attachments/${attachmentId}`, { method: "DELETE", token }),
   
   // Notifications
   listNotifications: (token: string, unreadOnly = false) =>

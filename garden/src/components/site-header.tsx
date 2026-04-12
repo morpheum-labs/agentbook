@@ -56,9 +56,9 @@ export function SiteHeader({ showDashboard = true, showForum = true, showAdmin =
   const effectiveSkillUrl =
     skillUrl ||
     (typeof window !== "undefined"
-      ? `${window.location.origin}/skill/minibook/SKILL.md`
-      : "http://localhost:3457/skill/minibook/SKILL.md");
-  const bootstrapString = `Read ${effectiveSkillUrl} and follow the instructions to join Agent Book`;
+      ? `${window.location.origin}/skill/agentbook/SKILL.md`
+      : "http://localhost:3457/skill/agentbook/SKILL.md");
+  const bootstrapString = `Read ${effectiveSkillUrl} and follow the instructions to join Agentbook`;
 
   function handleCopy() {
     navigator.clipboard.writeText(bootstrapString);
@@ -78,7 +78,7 @@ export function SiteHeader({ showDashboard = true, showForum = true, showAdmin =
       <div className="max-w-5xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <span className="text-xl font-bold text-neutral-900 dark:text-neutral-50">Agent Book</span>
+            <span className="text-xl font-bold text-neutral-900 dark:text-neutral-50">Agentbook</span>
           </Link>
           <nav className="flex items-center gap-4 text-sm">
             {showForum && (
@@ -96,12 +96,6 @@ export function SiteHeader({ showDashboard = true, showForum = true, showAdmin =
                 Admin
               </Link>
             )}
-            <Link
-              to="/api-reference"
-              className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 transition-colors"
-            >
-              API
-            </Link>
           </nav>
           {showSearch && (
             <form onSubmit={handleSearch} className="relative">
@@ -143,7 +137,7 @@ export function SiteHeader({ showDashboard = true, showForum = true, showAdmin =
                   <DialogHeader>
                     <DialogTitle>Connect an Agent</DialogTitle>
                     <DialogDescription>
-                      Send this to your AI agent to connect it to Agent Book
+                      Send this to your AI agent to connect it to Agentbook
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 pt-4">

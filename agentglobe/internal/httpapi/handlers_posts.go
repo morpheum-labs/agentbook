@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (s *Server) postMap(p *dbpkg.Post, authorName string, commentCount int) map[string]any {
+func (s *Server) postMap(p *dbpkg.Post, authorName string, commentCount int, embedAttachments *[]map[string]any) map[string]any {
 	pinned := p.PinOrder != nil
 	m := map[string]any{
 		"id":            p.ID,
@@ -36,15 +36,22 @@ func (s *Server) postMap(p *dbpkg.Post, authorName string, commentCount int) map
 	if p.GithubRef == nil {
 		m["github_ref"] = nil
 	}
+	if embedAttachments != nil {
+		m["attachments"] = *embedAttachments
+	}
 	return m
 }
 
-func (s *Server) commentMap(c *dbpkg.Comment, authorName string) map[string]any {
-	return map[string]any{
+func (s *Server) commentMap(c *dbpkg.Comment, authorName string, embedAttachments *[]map[string]any) map[string]any {
+	m := map[string]any{
 		"id": c.ID, "post_id": c.PostID, "author_id": c.AuthorID, "author_name": authorName,
 		"parent_id": c.ParentID, "content": c.Content, "mentions": c.Mentions(),
 		"created_at": c.CreatedAt.UTC().Format(time.RFC3339Nano),
 	}
+	if embedAttachments != nil {
+		m["attachments"] = *embedAttachments
+	}
+	return m
 }
 
 func (s *Server) countComments(postID string) int {
@@ -135,7 +142,9 @@ func (s *Server) handleCreatePost(w http.ResponseWriter, r *http.Request) {
 		_ = domain.CreateAllNotifications(s.DB, pid, a.ID, a.Name, post.ID, nil)
 	}
 	s.fireWebhooks(pid, "new_post", map[string]any{"post_id": post.ID, "title": post.Title, "author": a.Name})
-	writeJSON(w, http.StatusOK, s.postMap(&post, a.Name, 0))
+	s.emitProject(pid, map[string]any{"type": "new_post", "project_id": pid, "post_id": post.ID})
+	emptyAtt := []map[string]any{}
+	writeJSON(w, http.StatusOK, s.postMap(&post, a.Name, 0, &emptyAtt))
 }
 
 func (s *Server) handleListPosts(w http.ResponseWriter, r *http.Request) {
@@ -178,7 +187,7 @@ func (s *Server) handleListPosts(w http.ResponseWriter, r *http.Request) {
 		if p.Author.ID != "" {
 			name = p.Author.Name
 		}
-		out = append(out, s.postMap(p, name, cn))
+		out = append(out, s.postMap(p, name, cn, nil))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -250,7 +259,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		if p.Author.ID != "" {
 			name = p.Author.Name
 		}
-		out = append(out, s.postMap(p, name, counts[p.ID]))
+		out = append(out, s.postMap(p, name, counts[p.ID], nil))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -286,7 +295,8 @@ func (s *Server) handleGetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := p.Author.Name
-	writeJSON(w, http.StatusOK, s.postMap(&p, name, s.countComments(id)))
+	att := s.listPostAttachments(id)
+	writeJSON(w, http.StatusOK, s.postMap(&p, name, s.countComments(id), &att))
 }
 
 func (s *Server) handleUpdatePost(w http.ResponseWriter, r *http.Request) {
@@ -356,7 +366,9 @@ func (s *Server) handleUpdatePost(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	_ = s.DB.Preload("Author").First(&p, "id = ?", p.ID).Error
-	writeJSON(w, http.StatusOK, s.postMap(&p, p.Author.Name, s.countComments(id)))
+	s.emitProject(p.ProjectID, map[string]any{"type": "post_updated", "project_id": p.ProjectID, "post_id": p.ID})
+	att := s.listPostAttachments(id)
+	writeJSON(w, http.StatusOK, s.postMap(&p, p.Author.Name, s.countComments(id), &att))
 }
 
 func (s *Server) handleCreateComment(w http.ResponseWriter, r *http.Request) {
@@ -453,7 +465,9 @@ func (s *Server) handleCreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = domain.CreateThreadUpdateNotifications(s.DB, &post, c.ID, a.ID, a.Name, mentions)
 	s.fireWebhooks(post.ProjectID, "new_comment", map[string]any{"post_id": postID, "comment_id": c.ID, "author": a.Name})
-	writeJSON(w, http.StatusOK, s.commentMap(&c, a.Name))
+	s.emitProject(post.ProjectID, map[string]any{"type": "new_comment", "project_id": post.ProjectID, "post_id": postID, "comment_id": c.ID})
+	emptyAtt := []map[string]any{}
+	writeJSON(w, http.StatusOK, s.commentMap(&c, a.Name, &emptyAtt))
 }
 
 func (s *Server) handleListComments(w http.ResponseWriter, r *http.Request) {
@@ -463,11 +477,20 @@ func (s *Server) handleListComments(w http.ResponseWriter, r *http.Request) {
 		writeDetail(w, http.StatusInternalServerError, "DB error")
 		return
 	}
+	ids := make([]string, 0, len(comments))
+	for i := range comments {
+		ids = append(ids, comments[i].ID)
+	}
+	byAtt := s.attachmentsByCommentIDs(ids)
 	out := make([]map[string]any, 0, len(comments))
 	for i := range comments {
 		c := &comments[i]
 		name := c.Author.Name
-		out = append(out, s.commentMap(c, name))
+		list := byAtt[c.ID]
+		if list == nil {
+			list = []map[string]any{}
+		}
+		out = append(out, s.commentMap(c, name, &list))
 	}
 	writeJSON(w, http.StatusOK, out)
 }

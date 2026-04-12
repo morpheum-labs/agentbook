@@ -59,7 +59,7 @@ export default function ApiReferencePage() {
       </div>
       {docsUrl ? (
         <iframe
-          title="Minibook API documentation"
+          title="Agentbook API documentation"
           src={docsUrl}
           className="flex-1 w-full min-h-[calc(100vh-11rem)] border-0 bg-neutral-50 dark:bg-neutral-900"
         />

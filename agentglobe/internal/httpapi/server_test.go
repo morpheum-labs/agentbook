@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -26,15 +27,16 @@ func testServer(t *testing.T) *Server {
 	}
 	if err := gdb.AutoMigrate(
 		&dbpkg.Agent{}, &dbpkg.Project{}, &dbpkg.ProjectMember{}, &dbpkg.Post{}, &dbpkg.Comment{},
-		&dbpkg.Webhook{}, &dbpkg.GitHubWebhook{}, &dbpkg.Notification{},
+		&dbpkg.Webhook{}, &dbpkg.GitHubWebhook{}, &dbpkg.Notification{}, &dbpkg.Attachment{},
 	); err != nil {
 		t.Fatal(err)
 	}
 	cfg := &config.Config{
-		Hostname:   "test",
-		Port:       3456,
-		PublicURL:  "http://test",
-		AdminToken: "admintest",
+		Hostname:       "test",
+		Port:           3456,
+		PublicURL:      "http://test",
+		AdminToken:     "admintest",
+		AttachmentsDir: t.TempDir(),
 	}
 	rl := ratelimit.New(cfg)
 	return NewServer(gdb, cfg, rl, []byte("# skill\n{{BASE_URL}}"), "")
@@ -251,5 +253,81 @@ func TestPostCreateAndGet(t *testing.T) {
 	defer res3.Body.Close()
 	if res3.StatusCode != http.StatusOK {
 		t.Fatalf("get post %d", res3.StatusCode)
+	}
+}
+
+func TestPostAttachmentRoundTrip(t *testing.T) {
+	s := testServer(t)
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	reg, _ := http.Post(ts.URL+"/api/v1/agents", "application/json", bytes.NewReader([]byte(`{"name":"AttachAgent"}`)))
+	var agent map[string]any
+	_ = json.NewDecoder(reg.Body).Decode(&agent)
+	reg.Body.Close()
+	key, _ := agent["api_key"].(string)
+
+	req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/v1/projects", bytes.NewReader([]byte(`{"name":"ap","description":""}`)))
+	req.Header.Set("Authorization", "Bearer "+key)
+	req.Header.Set("Content-Type", "application/json")
+	res, _ := http.DefaultClient.Do(req)
+	var proj map[string]any
+	_ = json.NewDecoder(res.Body).Decode(&proj)
+	res.Body.Close()
+	pid, _ := proj["id"].(string)
+
+	body := `{"title":"T","content":"c","type":"discussion","tags":[]}`
+	req2, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/v1/projects/"+pid+"/posts", bytes.NewReader([]byte(body)))
+	req2.Header.Set("Authorization", "Bearer "+key)
+	req2.Header.Set("Content-Type", "application/json")
+	res2, _ := http.DefaultClient.Do(req2)
+	var post map[string]any
+	_ = json.NewDecoder(res2.Body).Decode(&post)
+	res2.Body.Close()
+	postID, _ := post["id"].(string)
+
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	part, err := mw.CreateFormFile("file", "note.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := part.Write([]byte("hello attachment")); err != nil {
+		t.Fatal(err)
+	}
+	if err := mw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	req3, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/v1/posts/"+postID+"/attachments", &buf)
+	req3.Header.Set("Content-Type", mw.FormDataContentType())
+	req3.Header.Set("Authorization", "Bearer "+key)
+	res3, err := http.DefaultClient.Do(req3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res3.Body.Close()
+	if res3.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(res3.Body)
+		t.Fatalf("upload %d: %s", res3.StatusCode, string(b))
+	}
+	var att map[string]any
+	if err := json.NewDecoder(res3.Body).Decode(&att); err != nil {
+		t.Fatal(err)
+	}
+	aid, _ := att["id"].(string)
+	if aid == "" {
+		t.Fatal("missing attachment id")
+	}
+
+	res4, err := http.Get(ts.URL + "/api/v1/attachments/" + aid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res4.Body.Close()
+	if res4.StatusCode != http.StatusOK {
+		t.Fatalf("download %d", res4.StatusCode)
+	}
+	b, _ := io.ReadAll(res4.Body)
+	if string(b) != "hello attachment" {
+		t.Fatalf("body %q", string(b))
 	}
 }

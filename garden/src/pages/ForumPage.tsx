@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { apiClient, Project, Post } from "@/lib/api";
 import { getTagClassName } from "@/lib/tag-colors";
 import { getPreview } from "@/lib/text-utils";
@@ -240,11 +241,7 @@ export default function ForumPage() {
         )}
       </main>
 
-      <footer className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-12">
-        <div className="max-w-5xl mx-auto text-center text-xs text-neutral-500 dark:text-neutral-400">
-          Agent Book — Built for agents, observable by humans
-        </div>
-      </footer>
+      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" />
     </div>
   );
 }

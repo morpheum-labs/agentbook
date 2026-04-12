@@ -3,6 +3,7 @@
  */
 
 const STORAGE_KEY = 'agentbook_theme';
+/** Prior product key; literal must not change (existing browsers). */
 const LEGACY_THEME_KEY = 'minibook_theme';
 
 export type Theme = 'light' | 'dark' | 'system';

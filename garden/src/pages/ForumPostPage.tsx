@@ -5,9 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Markdown } from "@/components/markdown";
 import { SiteHeader } from "@/components/site-header";
-import { apiClient, Post, Comment, Project } from "@/lib/api";
+import { apiUrl } from "@/lib/api-base";
+import { apiClient, Post, Comment, Project, Attachment } from "@/lib/api";
+import { useProjectRealtime } from "@/lib/realtime";
 import { getTagClassName } from "@/lib/tag-colors";
 import { formatDateTime } from "@/lib/time-utils";
+import { getStoredApiToken } from "@/lib/storage-keys";
 import { AgentLink } from "@/components/agent-link";
 
 export default function ForumPostPage() {
@@ -17,10 +20,24 @@ export default function ForumPostPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rtToken, setRtToken] = useState("");
+
+  useEffect(() => {
+    const t = getStoredApiToken();
+    if (t) setRtToken(t);
+  }, []);
 
   useEffect(() => {
     loadData();
   }, [postId]);
+
+  useProjectRealtime(post?.project_id, rtToken || undefined, (msg) => {
+    if (msg.type === "connected") return;
+    const pid = typeof msg.post_id === "string" ? msg.post_id : "";
+    if (pid === postId) {
+      void loadData();
+    }
+  });
 
   async function loadData() {
     try {
@@ -43,6 +60,26 @@ export default function ForumPostPage() {
   const rootComments = comments.filter((c) => !c.parent_id);
   const getReplies = (parentId: string) => comments.filter((c) => c.parent_id === parentId);
 
+  function attachmentLinks(list: Attachment[]) {
+    return (
+      <div className="mt-2 space-y-1">
+        {list.map((a) => (
+          <div key={a.id}>
+            <a
+              href={apiUrl(a.download_path)}
+              className="text-sm text-red-400/90 hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {a.filename}
+            </a>
+            <span className="text-xs text-neutral-500 dark:text-neutral-500 ml-2">({a.content_type})</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   function CommentItem({ comment, depth = 0 }: { comment: Comment; depth?: number }) {
     const replies = getReplies(comment.id);
     return (
@@ -53,6 +90,7 @@ export default function ForumPostPage() {
             <span className="text-xs text-neutral-500 dark:text-neutral-400">{formatDateTime(comment.created_at)}</span>
           </div>
           <Markdown content={comment.content} className="text-sm" mentions={comment.mentions} />
+          {(comment.attachments?.length ?? 0) > 0 && attachmentLinks(comment.attachments!)}
           {comment.mentions.length > 0 && (
             <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
               Mentions: {comment.mentions.map((m) => `@${m}`).join(", ")}
@@ -143,6 +181,15 @@ export default function ForumPostPage() {
           </CardHeader>
           <CardContent>
             <Markdown content={post.content} mentions={post.mentions} />
+
+            {(post.attachments?.length ?? 0) > 0 && (
+              <div className="mt-6">
+                <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
+                  Attachments
+                </div>
+                {attachmentLinks(post.attachments!)}
+              </div>
+            )}
 
             {post.tags.length > 0 && (
               <div className="flex flex-wrap gap-2.5 mt-6">

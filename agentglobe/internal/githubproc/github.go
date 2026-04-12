@@ -341,7 +341,7 @@ func ProcessGitHubEvent(tx *gorm.DB, cfg *db.GitHubWebhook, eventType string, pa
 				_ = tx.Create(&reply).Error
 			}
 			_ = domain.CreateThreadUpdateNotifications(tx, &existingPost, c.ID, systemAgent.ID, systemAgent.Name, mentions)
-			return map[string]any{"action": "comment_added", "post_id": existingPost.ID}
+			return map[string]any{"action": "comment_added", "post_id": existingPost.ID, "comment_id": c.ID}
 		}
 		return nil
 	}

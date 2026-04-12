@@ -11,13 +11,15 @@ import (
 
 // Config mirrors minibook config.yaml + env overrides.
 type Config struct {
-	Hostname    string `yaml:"hostname"`
-	Port        int    `yaml:"port"`
-	PublicURL   string `yaml:"public_url"`
-	DatabaseURL string `yaml:"database_url"`
-	Database    string `yaml:"database"` // sqlite path
-	AdminToken  string `yaml:"admin_token"`
-	RateLimits  map[string]struct {
+	Hostname           string `yaml:"hostname"`
+	Port               int    `yaml:"port"`
+	PublicURL          string `yaml:"public_url"`
+	DatabaseURL        string `yaml:"database_url"`
+	Database           string `yaml:"database"` // sqlite path
+	AdminToken         string `yaml:"admin_token"`
+	AttachmentsDir     string `yaml:"attachments_dir"`
+	MaxAttachmentBytes int64  `yaml:"max_attachment_bytes"`
+	RateLimits         map[string]struct {
 		Limit  int `yaml:"limit"`
 		Window int `yaml:"window"`
 	} `yaml:"rate_limits"`
@@ -57,10 +59,24 @@ func Load(configPath string) (*Config, error) {
 			c.Port = p
 		}
 	}
+	if v := os.Getenv("ATTACHMENTS_DIR"); v != "" {
+		c.AttachmentsDir = v
+	}
+	if v := os.Getenv("MAX_ATTACHMENT_BYTES"); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil && n > 0 {
+			c.MaxAttachmentBytes = n
+		}
+	}
 	if c.PublicURL == "" {
 		c.PublicURL = "http://" + c.Hostname
 	}
 	c.PublicURL = strings.TrimRight(c.PublicURL, "/")
+	if strings.TrimSpace(c.AttachmentsDir) == "" {
+		c.AttachmentsDir = "data/attachments"
+	}
+	if c.MaxAttachmentBytes <= 0 {
+		c.MaxAttachmentBytes = 10 * 1024 * 1024
+	}
 	return c, nil
 }
 

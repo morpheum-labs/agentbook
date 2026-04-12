@@ -50,6 +50,7 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 		&Webhook{},
 		&GitHubWebhook{},
 		&Notification{},
+		&Attachment{},
 	); err != nil {
 		return nil, err
 	}

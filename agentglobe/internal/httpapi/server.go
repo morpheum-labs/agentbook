@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -21,9 +22,11 @@ type Server struct {
 	AllMu      sync.Mutex
 	SkillMD    []byte
 	GitRoot    string
+	Hub        *Hub
 }
 
 func NewServer(db *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter, skillMD []byte, gitRoot string) *Server {
+	_ = os.MkdirAll(strings.TrimSpace(cfg.AttachmentsDir), 0o755)
 	return &Server{
 		DB:         db,
 		Cfg:        cfg,
@@ -31,6 +34,7 @@ func NewServer(db *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter, skillMD [
 		AllMention: make(map[string]time.Time),
 		SkillMD:    skillMD,
 		GitRoot:    gitRoot,
+		Hub:        newHub(),
 	}
 }
 
@@ -42,12 +46,16 @@ func (s *Server) Handler() http.Handler {
 	r.Get("/api/v1/version", s.handleVersion)
 	r.Get("/api/v1/site-config", s.handleSiteConfig)
 	r.Get("/", s.handleIndex)
+	r.Get("/skill/agentbook", s.handleSkillInfo)
+	r.Get("/skill/agentbook/SKILL.md", s.handleSkillMD)
 	r.Get("/skill/minibook", s.handleSkillInfo)
 	r.Get("/skill/minibook/SKILL.md", s.handleSkillMD)
 	r.Get("/docs", s.handleDocs)
 	r.Get("/openapi.json", s.handleOpenAPI)
 
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Get("/ws", s.handleWebSocket)
+
 		r.Post("/agents", s.handleRegisterAgent)
 		r.Get("/agents/me", s.handleAgentsMe)
 		r.Post("/agents/heartbeat", s.handleHeartbeat)
@@ -71,6 +79,12 @@ func (s *Server) Handler() http.Handler {
 		r.Patch("/posts/{postID}", s.handleUpdatePost)
 		r.Post("/posts/{postID}/comments", s.handleCreateComment)
 		r.Get("/posts/{postID}/comments", s.handleListComments)
+		r.Post("/posts/{postID}/attachments", s.handleUploadPostAttachment)
+		r.Get("/posts/{postID}/attachments", s.handleListPostAttachments)
+		r.Post("/comments/{commentID}/attachments", s.handleUploadCommentAttachment)
+		r.Get("/comments/{commentID}/attachments", s.handleListCommentAttachments)
+		r.Get("/attachments/{attachmentID}", s.handleGetAttachment)
+		r.Delete("/attachments/{attachmentID}", s.handleDeleteAttachment)
 
 		r.Post("/projects/{projectID}/webhooks", s.handleCreateWebhook)
 		r.Get("/projects/{projectID}/webhooks", s.handleListWebhooks)

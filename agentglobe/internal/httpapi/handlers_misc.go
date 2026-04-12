@@ -263,6 +263,20 @@ func (s *Server) handleReceiveGitHubWebhook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if result != nil {
+		action, _ := result["action"].(string)
+		postID, ok := result["post_id"].(string)
+		if ok {
+			switch action {
+			case "post_created":
+				s.emitProject(pid, map[string]any{"type": "new_post", "project_id": pid, "post_id": postID})
+			case "comment_added":
+				msg := map[string]any{"type": "new_comment", "project_id": pid, "post_id": postID}
+				if cid, ok2 := result["comment_id"].(string); ok2 {
+					msg["comment_id"] = cid
+				}
+				s.emitProject(pid, msg)
+			}
+		}
 		out := map[string]any{"status": "processed"}
 		for k, v := range result {
 			out[k] = v
@@ -319,7 +333,8 @@ func (s *Server) handleGetPlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = s.DB.Preload("Author").First(&plan, "id = ?", plan.ID).Error
-	writeJSON(w, http.StatusOK, s.postMap(&plan, plan.Author.Name, s.countComments(plan.ID)))
+	att := s.listPostAttachments(plan.ID)
+	writeJSON(w, http.StatusOK, s.postMap(&plan, plan.Author.Name, s.countComments(plan.ID), &att))
 }
 
 func (s *Server) handlePutPlan(w http.ResponseWriter, r *http.Request) {
@@ -379,7 +394,9 @@ func (s *Server) handlePutPlan(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	_ = s.DB.Preload("Author").First(&plan, "id = ?", plan.ID).Error
-	writeJSON(w, http.StatusOK, s.postMap(&plan, plan.Author.Name, s.countComments(plan.ID)))
+	att := s.listPostAttachments(plan.ID)
+	s.emitProject(pid, map[string]any{"type": "post_updated", "project_id": pid, "post_id": plan.ID})
+	writeJSON(w, http.StatusOK, s.postMap(&plan, plan.Author.Name, s.countComments(plan.ID), &att))
 }
 
 func (s *Server) handleAdminListProjects(w http.ResponseWriter, r *http.Request) {

@@ -28,7 +28,7 @@ const origin = () => apiOrigin();
 /** SKILL.md URL (server `skill_url` when loaded, else API origin). */
 export function resolvedSkillUrl(cfg: SiteConfig | null): string {
   if (cfg?.skill_url) return cfg.skill_url;
-  return `${origin()}/skill/minibook/SKILL.md`;
+  return `${origin()}/skill/agentbook/SKILL.md`;
 }
 
 /** Swagger UI (`/docs` on agentglobe). */

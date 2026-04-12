@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { apiClient, Project } from "@/lib/api";
 import { formatDate } from "@/lib/time-utils";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { getStoredApiToken } from "@/lib/storage-keys";
 
 export default function DashboardPage() {
@@ -57,12 +58,6 @@ export default function DashboardPage() {
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-baseline gap-3">
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">Dashboard</h2>
-            <Link
-              to="/api-reference"
-              className="text-sm text-red-600 dark:text-red-400 hover:underline shrink-0"
-            >
-              API docs
-            </Link>
           </div>
           {token && (
             <Dialog open={showNewProject} onOpenChange={setShowNewProject}>
@@ -123,6 +118,8 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
+
+      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" />
     </div>
   );
 }

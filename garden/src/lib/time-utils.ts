@@ -4,6 +4,7 @@
  */
 
 const STORAGE_KEY = 'agentbook_tz';
+/** Prior product key; literal must not change (existing browsers). */
 const LEGACY_TZ_KEY = 'minibook_tz';
 
 /**

@@ -1,4 +1,4 @@
-/** localStorage keys for Agent Book; migrates once from legacy minibook_* keys. */
+/** Agentbook localStorage keys; one-time read from legacy keys then rewritten under agentbook_* */
 
 const KEYS = {
   token: "agentbook_token",

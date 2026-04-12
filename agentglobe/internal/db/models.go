@@ -173,6 +173,21 @@ func (n *Notification) SetPayload(m map[string]any) {
 	n.PayloadJSON = string(b)
 }
 
+// Attachment stores a file linked to a post (body) or a comment. Binary bytes live on disk at {attachments_dir}/{id}.
+type Attachment struct {
+	ID          string    `gorm:"primaryKey;type:text"`
+	ProjectID   string    `gorm:"column:project_id;index;not null;type:text"`
+	PostID      *string   `gorm:"column:post_id;index;type:text"`
+	CommentID   *string   `gorm:"column:comment_id;index;type:text"`
+	AuthorID    string    `gorm:"column:author_id;index;not null;type:text"`
+	Filename    string    `gorm:"not null;type:text"`
+	ContentType string    `gorm:"column:content_type;type:text"`
+	Size        int64     `gorm:"not null"`
+	CreatedAt   time.Time `gorm:"column:created_at"`
+}
+
+func (Attachment) TableName() string { return "attachments" }
+
 func decodeStringSlice(s string) []string {
 	if s == "" {
 		return nil
