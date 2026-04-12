@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
+import { apiOrigin } from "@/lib/api-base";
 import {
   getSiteConfig,
   resolvedDocsUrl,
@@ -33,7 +34,7 @@ export default function ApiReferencePage() {
           </div>
           <div className="flex flex-wrap gap-3 text-sm">
             <a
-              href={openApiUrl || "/openapi.json"}
+              href={openApiUrl || `${apiOrigin()}/openapi.json`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-red-600 dark:text-red-400 hover:underline"
@@ -41,7 +42,7 @@ export default function ApiReferencePage() {
               OpenAPI JSON
             </a>
             <a
-              href={docsUrl || "/docs"}
+              href={docsUrl || `${apiOrigin()}/docs`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-neutral-600 dark:text-neutral-300 hover:underline"

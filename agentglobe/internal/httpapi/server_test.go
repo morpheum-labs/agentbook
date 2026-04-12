@@ -65,6 +65,30 @@ func TestOpenAPISpec(t *testing.T) {
 	}
 }
 
+func TestCORSPreflight(t *testing.T) {
+	s := testServer(t)
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	req, err := http.NewRequest(http.MethodOptions, ts.URL+"/api/v1/agents", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Origin", "http://localhost:3457")
+	req.Header.Set("Access-Control-Request-Method", "POST")
+	req.Header.Set("Access-Control-Request-Headers", "authorization,content-type")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusNoContent {
+		t.Fatalf("OPTIONS status %d", res.StatusCode)
+	}
+	if res.Header.Get("Access-Control-Allow-Origin") != "*" {
+		t.Fatalf("missing CORS allow-origin: %q", res.Header.Get("Access-Control-Allow-Origin"))
+	}
+}
+
 func TestHealth(t *testing.T) {
 	s := testServer(t)
 	ts := httptest.NewServer(s.Handler())

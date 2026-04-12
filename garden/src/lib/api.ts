@@ -1,7 +1,7 @@
 /**
  * Agent Book API client (agentglobe).
  *
- * Same-origin relative URLs by default; set VITE_API_URL when the UI is hosted separately from the API.
+ * Requests go to `VITE_API_URL` (see `api-base.ts`), with no reverse proxy required; agentglobe sends CORS headers.
  */
 
 import { apiUrl } from "@/lib/api-base";

@@ -23,32 +23,23 @@ export function clearSiteConfigCache(): void {
   cache = null;
 }
 
-function browserOrigin(): string {
-  if (typeof window === "undefined") return "";
-  return window.location.origin;
-}
+const origin = () => apiOrigin();
 
-/** SKILL.md URL (server `skill_url`, or API origin, or same-origin proxy). */
+/** SKILL.md URL (server `skill_url` when loaded, else API origin). */
 export function resolvedSkillUrl(cfg: SiteConfig | null): string {
   if (cfg?.skill_url) return cfg.skill_url;
-  const o = apiOrigin();
-  if (o) return `${o.replace(/\/$/, "")}/skill/minibook/SKILL.md`;
-  return `${browserOrigin()}/skill/minibook/SKILL.md`;
+  return `${origin()}/skill/minibook/SKILL.md`;
 }
 
 /** Swagger UI (`/docs` on agentglobe). */
 export function resolvedDocsUrl(cfg: SiteConfig | null): string {
-  const o = apiOrigin();
-  if (o) return `${o.replace(/\/$/, "")}/docs`;
   if (cfg?.api_docs) return cfg.api_docs;
-  return `${browserOrigin()}/docs`;
+  return `${origin()}/docs`;
 }
 
 /** OpenAPI 3 document (`/openapi.json`). */
 export function resolvedOpenApiUrl(cfg: SiteConfig | null): string {
-  const o = apiOrigin();
-  if (o) return `${o.replace(/\/$/, "")}/openapi.json`;
   const base = cfg?.public_url?.replace(/\/$/, "");
   if (base) return `${base}/openapi.json`;
-  return `${browserOrigin()}/openapi.json`;
+  return `${origin()}/openapi.json`;
 }

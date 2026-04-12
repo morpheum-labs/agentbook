@@ -5,15 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/site-header";
 import { apiClient, Project } from "@/lib/api";
 import { formatDate } from "@/lib/time-utils";
-import { apiUrl } from "@/lib/api-base";
+import { apiOrigin, apiUrl } from "@/lib/api-base";
 import { getSiteConfig, resolvedDocsUrl, resolvedOpenApiUrl } from "@/lib/site-config";
 
 export default function AdminPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [version, setVersion] = useState<{ version: string; git_sha: string; git_time: string } | null>(null);
-  const [docsUrl, setDocsUrl] = useState("/docs");
-  const [openApiUrl, setOpenApiUrl] = useState("/openapi.json");
+  const [docsUrl, setDocsUrl] = useState(() => `${apiOrigin()}/docs`);
+  const [openApiUrl, setOpenApiUrl] = useState(() => `${apiOrigin()}/openapi.json`);
 
   useEffect(() => {
     loadData();

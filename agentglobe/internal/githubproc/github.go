@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/morpheumlabs/agentbook/agentglobe/internal/db"
@@ -237,8 +238,28 @@ func bodyOrPlaceholder(body string) string {
 	return body
 }
 
+// githubResolveMentions validates @names, applies @all only when permitted and rate limit allows (same rules as HTTP API).
+func githubResolveMentions(tx *gorm.DB, projectID string, systemAgent *db.Agent, content string, allLastUsed map[string]time.Time, allMu *sync.Mutex) (mentions []string, finalMentions []string, applyAll bool) {
+	rawNames, hasAll := domain.ParseMentions(content)
+	mentions = domain.ValidateMentionNames(tx, rawNames)
+	finalMentions = append([]string(nil), mentions...)
+	if !hasAll {
+		return mentions, finalMentions, false
+	}
+	ok, _ := domain.CanUseAllMention(tx, systemAgent.ID, projectID, false)
+	if !ok {
+		return mentions, finalMentions, false
+	}
+	ok2, _ := domain.CheckAllMentionRateLimit(allLastUsed, allMu, projectID)
+	if !ok2 {
+		return mentions, finalMentions, false
+	}
+	finalMentions = append(finalMentions, "all")
+	return mentions, finalMentions, true
+}
+
 // ProcessGitHubEvent mirrors minibook github_webhook.process_github_event.
-func ProcessGitHubEvent(tx *gorm.DB, cfg *db.GitHubWebhook, eventType string, payload map[string]any, systemAgent *db.Agent) map[string]any {
+func ProcessGitHubEvent(tx *gorm.DB, cfg *db.GitHubWebhook, eventType string, payload map[string]any, systemAgent *db.Agent, allLastUsed map[string]time.Time, allMu *sync.Mutex) map[string]any {
 	if !shouldProcessEvent(cfg, eventType, payload) {
 		return nil
 	}
@@ -268,7 +289,7 @@ func ProcessGitHubEvent(tx *gorm.DB, cfg *db.GitHubWebhook, eventType string, pa
 	default:
 		return nil
 	}
-	names, _ := domain.ParseMentions(content)
+	mentions, finalMentions, applyAll := githubResolveMentions(tx, cfg.ProjectID, systemAgent, content, allLastUsed, allMu)
 	nowT := time.Now().UTC()
 
 	if found {
@@ -281,10 +302,11 @@ func ProcessGitHubEvent(tx *gorm.DB, cfg *db.GitHubWebhook, eventType string, pa
 				Content:   content,
 				CreatedAt: nowT,
 			}
-			c.SetMentions(names)
+			c.SetMentions(finalMentions)
 			if err := tx.Create(&c).Error; err != nil {
 				return nil
 			}
+			existingPost.UpdatedAt = nowT
 			if eventType == "pull_request" && action == "closed" {
 				pr := payload["pull_request"].(map[string]any)
 				merged, _ := pr["merged"].(bool)
@@ -293,14 +315,32 @@ func ProcessGitHubEvent(tx *gorm.DB, cfg *db.GitHubWebhook, eventType string, pa
 				} else {
 					existingPost.Status = "closed"
 				}
-				existingPost.UpdatedAt = nowT
-				_ = tx.Save(&existingPost).Error
 			}
-			if len(names) > 0 {
-				_ = domain.CreateNotifications(tx, names, "mention", map[string]any{
+			if err := tx.Save(&existingPost).Error; err != nil {
+				return nil
+			}
+			if len(mentions) > 0 {
+				_ = domain.CreateNotifications(tx, mentions, "mention", map[string]any{
 					"post_id": existingPost.ID, "comment_id": c.ID, "by": systemAgent.Name,
 				})
 			}
+			if applyAll {
+				domain.RecordAllMention(allLastUsed, allMu, cfg.ProjectID)
+				cid := c.ID
+				_ = domain.CreateAllNotifications(tx, cfg.ProjectID, systemAgent.ID, systemAgent.Name, existingPost.ID, &cid)
+			}
+			if existingPost.AuthorID != systemAgent.ID {
+				reply := db.Notification{
+					ID:        domain.NewEntityID(),
+					AgentID:   existingPost.AuthorID,
+					Type:      "reply",
+					Read:      false,
+					CreatedAt: nowT,
+				}
+				reply.SetPayload(map[string]any{"post_id": existingPost.ID, "comment_id": c.ID, "by": systemAgent.Name})
+				_ = tx.Create(&reply).Error
+			}
+			_ = domain.CreateThreadUpdateNotifications(tx, &existingPost, c.ID, systemAgent.ID, systemAgent.Name, mentions)
 			return map[string]any{"action": "comment_added", "post_id": existingPost.ID}
 		}
 		return nil
@@ -318,14 +358,18 @@ func ProcessGitHubEvent(tx *gorm.DB, cfg *db.GitHubWebhook, eventType string, pa
 	}
 	post.GithubRef = &githubRef
 	post.SetTags(tags)
-	post.SetMentions(names)
+	post.SetMentions(finalMentions)
 	if err := tx.Create(&post).Error; err != nil {
 		return nil
 	}
-	if len(names) > 0 {
-		_ = domain.CreateNotifications(tx, names, "mention", map[string]any{
+	if len(mentions) > 0 {
+		_ = domain.CreateNotifications(tx, mentions, "mention", map[string]any{
 			"post_id": post.ID, "title": post.Title, "by": systemAgent.Name,
 		})
+	}
+	if applyAll {
+		domain.RecordAllMention(allLastUsed, allMu, cfg.ProjectID)
+		_ = domain.CreateAllNotifications(tx, cfg.ProjectID, systemAgent.ID, systemAgent.Name, post.ID, nil)
 	}
 	return map[string]any{"action": "post_created", "post_id": post.ID}
 }

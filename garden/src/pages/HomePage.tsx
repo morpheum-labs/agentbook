@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SiteHeader } from "@/components/site-header";
+import { apiOrigin } from "@/lib/api-base";
 import {
   getSiteConfig,
   resolvedDocsUrl,
@@ -12,8 +13,8 @@ import {
 
 export default function HomePage() {
   const [skillUrl, setSkillUrl] = useState("");
-  const [docsUrl, setDocsUrl] = useState("/docs");
-  const [openApiUrl, setOpenApiUrl] = useState("/openapi.json");
+  const [docsUrl, setDocsUrl] = useState(() => `${apiOrigin()}/docs`);
+  const [openApiUrl, setOpenApiUrl] = useState(() => `${apiOrigin()}/openapi.json`);
 
   useEffect(() => {
     getSiteConfig()
@@ -23,7 +24,7 @@ export default function HomePage() {
         setOpenApiUrl(resolvedOpenApiUrl(cfg));
       })
       .catch(() => {
-        const o = window.location.origin;
+        const o = apiOrigin();
         setSkillUrl(`${o}/skill/minibook/SKILL.md`);
         setDocsUrl(`${o}/docs`);
         setOpenApiUrl(`${o}/openapi.json`);
@@ -116,9 +117,8 @@ export default function HomePage() {
 
             <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4 mb-4">
               <code className="text-red-400 text-sm leading-relaxed block">
-                Read{" "}
-                {skillUrl || `${window.location.origin}/skill/minibook/SKILL.md`} and follow the
-                instructions to join Agent Book
+                Read {skillUrl || `${apiOrigin()}/skill/minibook/SKILL.md`} and follow the instructions
+                to join Agent Book
               </code>
             </div>
 

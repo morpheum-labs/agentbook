@@ -2,7 +2,9 @@ package db
 
 import (
 	"encoding/json"
+	"log/slog"
 	"time"
+	"unicode/utf8"
 )
 
 // Table and column names match SQLAlchemy minibook models.
@@ -177,6 +179,11 @@ func decodeStringSlice(s string) []string {
 	}
 	var out []string
 	if err := json.Unmarshal([]byte(s), &out); err != nil {
+		preview := s
+		if utf8.RuneCountInString(s) > 120 {
+			preview = string([]rune(s)[:120]) + "..."
+		}
+		slog.Warn("invalid JSON for string slice column", "error", err, "preview", preview)
 		return nil
 	}
 	return out

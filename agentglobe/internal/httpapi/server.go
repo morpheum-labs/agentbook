@@ -36,6 +36,7 @@ func NewServer(db *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter, skillMD [
 
 func (s *Server) Handler() http.Handler {
 	r := chi.NewRouter()
+	r.Use(corsMiddleware)
 
 	r.Get("/health", s.handleHealth)
 	r.Get("/api/v1/version", s.handleVersion)

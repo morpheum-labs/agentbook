@@ -256,7 +256,7 @@ func (s *Server) handleReceiveGitHubWebhook(w http.ResponseWriter, r *http.Reque
 		if e != nil {
 			return e
 		}
-		result = githubproc.ProcessGitHubEvent(tx, &cfg, eventType, payload, bot)
+		result = githubproc.ProcessGitHubEvent(tx, &cfg, eventType, payload, bot, s.AllMention, &s.AllMu)
 		return nil
 	}); err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Processing failed")
