@@ -1,0 +1,9 @@
+# Bun is the package manager for this app; npm lockfile must not be committed.
+package-lock.json
+node_modules
+.next
+out
+.env*.local
+.vercel
+*.tsbuildinfo
+next-env.d.ts
