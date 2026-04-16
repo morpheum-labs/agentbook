@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	dbpkg "github.com/morpheumlabs/agentbook/agentglobe/internal/db"
 	"github.com/morpheumlabs/agentbook/agentglobe/internal/domain"
+	"gorm.io/gorm"
 )
 
 func (s *Server) handleRegisterAgent(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +30,7 @@ func (s *Server) handleRegisterAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var existing dbpkg.Agent
-	if err := s.DB.Where("name = ?", name).First(&existing).Error; err == nil {
+	if err := s.dbCtx(r).Where("name = ?", name).First(&existing).Error; err == nil {
 		writeDetail(w, http.StatusBadRequest, "Agent name already taken")
 		return
 	}
@@ -39,7 +40,7 @@ func (s *Server) handleRegisterAgent(w http.ResponseWriter, r *http.Request) {
 		APIKey:    "mb_" + strings.ReplaceAll(uuid.NewString(), "-", ""),
 		CreatedAt: time.Now().UTC(),
 	}
-	if err := s.DB.Create(&a).Error; err != nil {
+	if err := s.dbCtx(r).Create(&a).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not create agent")
 		return
 	}
@@ -61,7 +62,7 @@ func (s *Server) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	}
 	now := time.Now().UTC()
 	a.LastSeen = &now
-	if err := s.DB.Model(a).Update("last_seen", now).Error; err != nil {
+	if err := s.dbCtx(r).Model(a).Update("last_seen", now).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not update")
 		return
 	}
@@ -79,7 +80,7 @@ func (s *Server) handleRateLimitStats(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleListAgents(w http.ResponseWriter, r *http.Request) {
 	onlineOnly := r.URL.Query().Get("online_only") == "true"
 	var agents []dbpkg.Agent
-	if err := s.DB.Find(&agents).Error; err != nil {
+	if err := s.dbCtx(r).Find(&agents).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "DB error")
 		return
 	}
@@ -96,30 +97,30 @@ func (s *Server) handleListAgents(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleAgentByName(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 	var a dbpkg.Agent
-	if err := s.DB.Where("name = ?", name).First(&a).Error; err != nil {
+	if err := s.dbCtx(r).Where("name = ?", name).First(&a).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Agent not found")
 		return
 	}
-	s.writeAgentProfile(w, &a)
+	s.writeAgentProfile(w, r, &a)
 }
 
 func (s *Server) handleAgentProfile(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "agentID")
 	var a dbpkg.Agent
-	if err := s.DB.First(&a, "id = ?", id).Error; err != nil {
+	if err := s.dbCtx(r).First(&a, "id = ?", id).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Agent not found")
 		return
 	}
-	s.writeAgentProfile(w, &a)
+	s.writeAgentProfile(w, r, &a)
 }
 
-func (s *Server) writeAgentProfile(w http.ResponseWriter, a *dbpkg.Agent) {
+func (s *Server) writeAgentProfile(w http.ResponseWriter, r *http.Request, a *dbpkg.Agent) {
 	var members []dbpkg.ProjectMember
-	_ = s.DB.Preload("Agent").Where("agent_id = ?", a.ID).Find(&members).Error
+	_ = s.dbCtx(r).Preload("Agent").Where("agent_id = ?", a.ID).Find(&members).Error
 	memberships := make([]map[string]any, 0)
 	for _, m := range members {
 		var p dbpkg.Project
-		if err := s.DB.First(&p, "id = ?", m.ProjectID).Error; err != nil {
+		if err := s.dbCtx(r).First(&p, "id = ?", m.ProjectID).Error; err != nil {
 			continue
 		}
 		isLead := p.PrimaryLeadAgentID != nil && *p.PrimaryLeadAgentID == a.ID
@@ -128,7 +129,7 @@ func (s *Server) writeAgentProfile(w http.ResponseWriter, a *dbpkg.Agent) {
 		})
 	}
 	var recentPosts []dbpkg.Post
-	_ = s.DB.Where("author_id = ?", a.ID).Order("created_at DESC").Limit(5).Find(&recentPosts).Error
+	_ = s.dbCtx(r).Where("author_id = ?", a.ID).Order("created_at DESC").Limit(5).Find(&recentPosts).Error
 	rp := make([]map[string]any, 0)
 	for _, p := range recentPosts {
 		rp = append(rp, map[string]any{
@@ -137,12 +138,12 @@ func (s *Server) writeAgentProfile(w http.ResponseWriter, a *dbpkg.Agent) {
 		})
 	}
 	var recentComments []dbpkg.Comment
-	_ = s.DB.Where("author_id = ?", a.ID).Order("created_at DESC").Limit(5).Find(&recentComments).Error
+	_ = s.dbCtx(r).Where("author_id = ?", a.ID).Order("created_at DESC").Limit(5).Find(&recentComments).Error
 	rc := make([]map[string]any, 0)
 	for _, c := range recentComments {
 		var p dbpkg.Post
 		title := "Unknown"
-		if err := s.DB.First(&p, "id = ?", c.PostID).Error; err == nil {
+		if err := s.dbCtx(r).First(&p, "id = ?", c.PostID).Error; err == nil {
 			title = p.Title
 		}
 		prev := c.Content
@@ -176,7 +177,7 @@ func (s *Server) handleCreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var existing dbpkg.Project
-	if err := s.DB.Where("name = ?", strings.TrimSpace(body.Name)).First(&existing).Error; err == nil {
+	if err := s.dbCtx(r).Where("name = ?", strings.TrimSpace(body.Name)).First(&existing).Error; err == nil {
 		writeDetail(w, http.StatusBadRequest, "Project name already taken")
 		return
 	}
@@ -190,7 +191,7 @@ func (s *Server) handleCreateProject(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:          time.Now().UTC(),
 	}
 	p.SetRoleDescriptions(map[string]string{})
-	if err := s.DB.Create(&p).Error; err != nil {
+	if err := s.dbCtx(r).Create(&p).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not create project")
 		return
 	}
@@ -201,15 +202,15 @@ func (s *Server) handleCreateProject(w http.ResponseWriter, r *http.Request) {
 		Role:      "lead",
 		JoinedAt:  time.Now().UTC(),
 	}
-	if err := s.DB.Create(&member).Error; err != nil {
+	if err := s.dbCtx(r).Create(&member).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not add member")
 		return
 	}
-	writeJSON(w, http.StatusOK, s.projectResponse(&p))
+	writeJSON(w, http.StatusOK, s.projectResponse(s.dbCtx(r), &p))
 }
 
-func (s *Server) projectResponse(p *dbpkg.Project) map[string]any {
-	_ = s.DB.Preload("PrimaryLead").First(p, "id = ?", p.ID).Error
+func (s *Server) projectResponse(db *gorm.DB, p *dbpkg.Project) map[string]any {
+	_ = db.Preload("PrimaryLead").First(p, "id = ?", p.ID).Error
 	leadName := any(nil)
 	if p.PrimaryLead != nil {
 		leadName = p.PrimaryLead.Name
@@ -225,14 +226,15 @@ func (s *Server) projectResponse(p *dbpkg.Project) map[string]any {
 }
 
 func (s *Server) handleListProjects(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	var projects []dbpkg.Project
-	if err := s.DB.Find(&projects).Error; err != nil {
+	if err := db.Find(&projects).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "DB error")
 		return
 	}
 	out := make([]map[string]any, 0, len(projects))
 	for i := range projects {
-		out = append(out, s.projectResponse(&projects[i]))
+		out = append(out, s.projectResponse(db, &projects[i]))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -240,11 +242,11 @@ func (s *Server) handleListProjects(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleGetProject(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "projectID")
 	var p dbpkg.Project
-	if err := s.DB.First(&p, "id = ?", id).Error; err != nil {
+	if err := s.dbCtx(r).First(&p, "id = ?", id).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Project not found")
 		return
 	}
-	writeJSON(w, http.StatusOK, s.projectResponse(&p))
+	writeJSON(w, http.StatusOK, s.projectResponse(s.dbCtx(r), &p))
 }
 
 func (s *Server) handleJoinProject(w http.ResponseWriter, r *http.Request) {
@@ -262,12 +264,12 @@ func (s *Server) handleJoinProject(w http.ResponseWriter, r *http.Request) {
 		role = "member"
 	}
 	var p dbpkg.Project
-	if err := s.DB.First(&p, "id = ?", pid).Error; err != nil {
+	if err := s.dbCtx(r).First(&p, "id = ?", pid).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Project not found")
 		return
 	}
 	var dup dbpkg.ProjectMember
-	if err := s.DB.Where("agent_id = ? AND project_id = ?", a.ID, pid).First(&dup).Error; err == nil {
+	if err := s.dbCtx(r).Where("agent_id = ? AND project_id = ?", a.ID, pid).First(&dup).Error; err == nil {
 		writeDetail(w, http.StatusBadRequest, "Already a member")
 		return
 	}
@@ -278,16 +280,16 @@ func (s *Server) handleJoinProject(w http.ResponseWriter, r *http.Request) {
 		Role:      role,
 		JoinedAt:  time.Now().UTC(),
 	}
-	if err := s.DB.Create(&m).Error; err != nil {
+	if err := s.dbCtx(r).Create(&m).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not join")
 		return
 	}
-	writeJSON(w, http.StatusOK, s.memberResponse(&m))
+	writeJSON(w, http.StatusOK, s.memberResponse(s.dbCtx(r), &m))
 }
 
-func (s *Server) memberResponse(m *dbpkg.ProjectMember) map[string]any {
+func (s *Server) memberResponse(db *gorm.DB, m *dbpkg.ProjectMember) map[string]any {
 	var ag dbpkg.Agent
-	_ = s.DB.First(&ag, "id = ?", m.AgentID).Error
+	_ = db.First(&ag, "id = ?", m.AgentID).Error
 	out := map[string]any{
 		"agent_id":   m.AgentID,
 		"agent_name": ag.Name,
@@ -304,15 +306,16 @@ func (s *Server) memberResponse(m *dbpkg.ProjectMember) map[string]any {
 }
 
 func (s *Server) handleListMembers(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	pid := chi.URLParam(r, "projectID")
 	var members []dbpkg.ProjectMember
-	if err := s.DB.Preload("Agent").Where("project_id = ?", pid).Find(&members).Error; err != nil {
+	if err := db.Preload("Agent").Where("project_id = ?", pid).Find(&members).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "DB error")
 		return
 	}
 	out := make([]map[string]any, 0, len(members))
 	for i := range members {
-		out = append(out, s.memberResponse(&members[i]))
+		out = append(out, s.memberResponse(db, &members[i]))
 	}
 	writeJSON(w, http.StatusOK, out)
 }

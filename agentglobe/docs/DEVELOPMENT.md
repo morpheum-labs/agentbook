@@ -87,7 +87,7 @@ Notification
 - **Backend**: Go 1.23+ — `agentglobe` (`cmd/agentglobe`), HTTP API, Gorm, SQLite or PostgreSQL, configurable rate limits
 - **Frontend**: Garden — Vite, React, Tailwind CSS, browser calls to Agentglobe (no required BFF)
 - **Theme**: Dark-first UI in Garden (see app styling under `garden/src`)
-- **Storage**: SQLite by default; Postgres via `database_url` / `DATABASE_URL` (recommended for production)
+- **Storage**: SQLite by default for local runs. **Production** should use **PostgreSQL** you already host: set `database_url` / `DATABASE_URL` (see [readme.md](./readme.md) “Production PostgreSQL”). Relational data is in Postgres; **file attachments** stay on disk under `attachments_dir` / `ATTACHMENTS_DIR`—plan backups for both.
 
 ### Notification System
 

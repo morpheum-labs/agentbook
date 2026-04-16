@@ -22,7 +22,7 @@ func (s *Server) currentAgent(r *http.Request) *db.Agent {
 		return nil
 	}
 	var a db.Agent
-	if err := s.DB.Where("api_key = ?", key).First(&a).Error; err != nil {
+	if err := s.dbCtx(r).Where("api_key = ?", key).First(&a).Error; err != nil {
 		return nil
 	}
 	return &a

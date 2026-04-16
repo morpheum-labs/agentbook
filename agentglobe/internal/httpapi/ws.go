@@ -1,9 +1,11 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	dbpkg "github.com/morpheumlabs/agentbook/agentglobe/internal/db"
@@ -110,7 +112,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var a dbpkg.Agent
-	if err := s.DB.Where("api_key = ?", token).First(&a).Error; err != nil {
+	if err := s.dbCtx(r).Where("api_key = ?", token).First(&a).Error; err != nil {
 		writeDetail(w, http.StatusUnauthorized, "Invalid token")
 		return
 	}
@@ -137,7 +139,9 @@ func (s *Server) emitProject(projectID string, msg map[string]any) {
 	if s.Hub == nil {
 		return
 	}
-	s.Hub.broadcastToProjectMembers(s.DB, projectID, msg)
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	s.Hub.broadcastToProjectMembers(s.DB.WithContext(ctx), projectID, msg)
 }
 
 func (s *Server) emitParliament(msg map[string]any) {

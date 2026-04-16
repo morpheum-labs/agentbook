@@ -77,14 +77,14 @@ func motionOpen(m *dbpkg.Motion, now time.Time) bool {
 	return strings.EqualFold(m.Status, "open") && m.CloseTime.After(now)
 }
 
-func (s *Server) loadParliamentState(now time.Time) (*dbpkg.ParliamentState, error) {
+func (s *Server) loadParliamentState(db *gorm.DB, now time.Time) (*dbpkg.ParliamentState, error) {
 	var st dbpkg.ParliamentState
-	if err := s.DB.Where("id = ?", parliamentStateID).First(&st).Error; err != nil {
+	if err := db.Where("id = ?", parliamentStateID).First(&st).Error; err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
 		}
 		st = dbpkg.ParliamentState{ID: parliamentStateID, Sitting: 14022, Live: true, SittingDate: now.UTC().Format("2006-01-02")}
-		if err := s.DB.Create(&st).Error; err != nil {
+		if err := db.Create(&st).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -92,30 +92,17 @@ func (s *Server) loadParliamentState(now time.Time) (*dbpkg.ParliamentState, err
 	if st.SittingDate != today {
 		st.Sitting++
 		st.SittingDate = today
-		if err := s.DB.Save(&st).Error; err != nil {
+		if err := db.Save(&st).Error; err != nil {
 			return nil, err
 		}
 	}
 	return &st, nil
 }
 
-func (s *Server) parliamentStats(now time.Time) map[string]any {
-	th := now.Add(-onlineWindow)
-	var watching, members, seated, openMotions, hearts int64
-	s.DB.Model(&dbpkg.Agent{}).Where("last_seen IS NOT NULL AND last_seen > ?", th).Count(&watching)
-	s.DB.Model(&dbpkg.Agent{}).Count(&members)
-	s.DB.Model(&dbpkg.AgentFaction{}).Count(&seated)
-	s.DB.Model(&dbpkg.Motion{}).Where("status = ? AND close_time > ?", "open", now).Count(&openMotions)
-	s.DB.Model(&dbpkg.SpeechHeart{}).Count(&hearts)
-	return map[string]any{
-		"watching": watching, "members": members, "seated_agents": seated,
-		"open_motions": openMotions, "hearts": hearts,
-	}
-}
-
 func (s *Server) handleParliamentSession(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	now := time.Now()
-	st, err := s.loadParliamentState(now)
+	st, err := s.loadParliamentState(db, now)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, "session state error")
 		return
@@ -124,18 +111,19 @@ func (s *Server) handleParliamentSession(w http.ResponseWriter, r *http.Request)
 		"sitting": st.Sitting,
 		"date":    st.SittingDate,
 		"live":    st.Live,
-		"stats":   s.parliamentStats(now),
+		"stats":   s.Parliament.SessionStats(db, now),
 	})
 }
 
 func (s *Server) handleParliamentFactions(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	now := time.Now()
 	var seated int64
-	s.DB.Model(&dbpkg.AgentFaction{}).Count(&seated)
+	db.Model(&dbpkg.AgentFaction{}).Count(&seated)
 	out := make([]map[string]any, 0, len(parliamentFactions))
 	for _, name := range parliamentFactions {
 		var n int64
-		s.DB.Model(&dbpkg.AgentFaction{}).Where("faction = ?", name).Count(&n)
+		db.Model(&dbpkg.AgentFaction{}).Where("faction = ?", name).Count(&n)
 		out = append(out, map[string]any{"name": name, "agents": n})
 	}
 	quorum := seated*2 >= parliamentTotalSeats
@@ -144,13 +132,14 @@ func (s *Server) handleParliamentFactions(w http.ResponseWriter, r *http.Request
 		"seated":      seated,
 		"total_seats": parliamentTotalSeats,
 		"quorum_met":  quorum,
-		"stats":       s.parliamentStats(now),
+		"stats":       s.Parliament.SessionStats(db, now),
 	})
 }
 
 func (s *Server) handleParliamentClerkBrief(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	var items []dbpkg.ClerkBriefItem
-	_ = s.DB.Order("sort_order ASC, id ASC").Find(&items).Error
+	_ = db.Order("sort_order ASC, id ASC").Find(&items).Error
 	arr := make([]map[string]any, 0, len(items))
 	for _, it := range items {
 		arr = append(arr, map[string]any{
@@ -164,6 +153,7 @@ func (s *Server) handleParliamentClerkBrief(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *Server) handleListMotions(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	now := time.Now()
 	cat := normCategory(r.URL.Query().Get("category"))
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -171,7 +161,7 @@ func (s *Server) handleListMotions(w http.ResponseWriter, r *http.Request) {
 		limit = 50
 	}
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	q := s.DB.Model(&dbpkg.Motion{}).Where("status = ? AND close_time > ?", "open", now)
+	q := db.Model(&dbpkg.Motion{}).Where("status = ? AND close_time > ?", "open", now)
 	if cat != "" {
 		q = q.Where("category = ?", cat)
 	}
@@ -181,17 +171,17 @@ func (s *Server) handleListMotions(w http.ResponseWriter, r *http.Request) {
 	_ = q.Order("close_time ASC").Limit(limit).Offset(offset).Find(&motions).Error
 	out := make([]map[string]any, 0, len(motions))
 	for i := range motions {
-		out = append(out, s.motionSummaryMap(&motions[i], now))
+		out = append(out, s.motionSummaryMap(db, &motions[i], now))
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"items": out, "total": total, "limit": limit, "offset": offset})
 }
 
-func (s *Server) motionSummaryMap(m *dbpkg.Motion, now time.Time) map[string]any {
-	vb := s.votePercents(m.ID)
+func (s *Server) motionSummaryMap(db *gorm.DB, m *dbpkg.Motion, now time.Time) map[string]any {
+	vb := s.votePercents(db, m.ID)
 	var votesCast int64
-	s.DB.Model(&dbpkg.MotionVote{}).Where("motion_id = ?", m.ID).Count(&votesCast)
+	db.Model(&dbpkg.MotionVote{}).Where("motion_id = ?", m.ID).Count(&votesCast)
 	var deliberation int64
-	s.DB.Model(&dbpkg.MotionSpeech{}).Where("motion_id = ?", m.ID).Count(&deliberation)
+	db.Model(&dbpkg.MotionSpeech{}).Where("motion_id = ?", m.ID).Count(&deliberation)
 	return map[string]any{
 		"id":                 m.ID,
 		"title":              m.Title,
@@ -207,13 +197,13 @@ func (s *Server) motionSummaryMap(m *dbpkg.Motion, now time.Time) map[string]any
 	}
 }
 
-func (s *Server) votePercents(motionID string) map[string]any {
+func (s *Server) votePercents(db *gorm.DB, motionID string) map[string]any {
 	var counts struct {
 		Aye, Noe, Abs int64
 	}
-	s.DB.Model(&dbpkg.MotionVote{}).Where("motion_id = ? AND stance = ?", motionID, "aye").Count(&counts.Aye)
-	s.DB.Model(&dbpkg.MotionVote{}).Where("motion_id = ? AND stance = ?", motionID, "noe").Count(&counts.Noe)
-	s.DB.Model(&dbpkg.MotionVote{}).Where("motion_id = ? AND stance = ?", motionID, "abstain").Count(&counts.Abs)
+	db.Model(&dbpkg.MotionVote{}).Where("motion_id = ? AND stance = ?", motionID, "aye").Count(&counts.Aye)
+	db.Model(&dbpkg.MotionVote{}).Where("motion_id = ? AND stance = ?", motionID, "noe").Count(&counts.Noe)
+	db.Model(&dbpkg.MotionVote{}).Where("motion_id = ? AND stance = ?", motionID, "abstain").Count(&counts.Abs)
 	total := counts.Aye + counts.Noe + counts.Abs
 	var ap, np, abp float64
 	if total > 0 {
@@ -224,14 +214,14 @@ func (s *Server) votePercents(motionID string) map[string]any {
 	return map[string]any{"ayes_pct": ap, "noes_pct": np, "abstain_pct": abp}
 }
 
-func (s *Server) marketOptions(motionID string) []map[string]any {
+func (s *Server) marketOptions(db *gorm.DB, motionID string) []map[string]any {
 	type row struct {
 		Stance  string
 		Faction string
 		N       int64
 	}
 	var rows []row
-	s.DB.Raw(`
+	db.Raw(`
 SELECT v.stance AS stance, COALESCE(f.faction, '') AS faction, COUNT(*) AS n
 FROM motion_votes v
 LEFT JOIN agent_factions f ON f.agent_id = v.agent_id
@@ -241,17 +231,17 @@ GROUP BY v.stance, COALESCE(f.faction, '')
 	var ayeC, noeC int64
 	fAye := map[string]int64{}
 	fNoe := map[string]int64{}
-	for _, r := range rows {
-		switch r.Stance {
+	for _, rw := range rows {
+		switch rw.Stance {
 		case "aye":
-			ayeC += r.N
-			if r.Faction != "" {
-				fAye[r.Faction] += r.N
+			ayeC += rw.N
+			if rw.Faction != "" {
+				fAye[rw.Faction] += rw.N
 			}
 		case "noe":
-			noeC += r.N
-			if r.Faction != "" {
-				fNoe[r.Faction] += r.N
+			noeC += rw.N
+			if rw.Faction != "" {
+				fNoe[rw.Faction] += rw.N
 			}
 		}
 	}
@@ -271,7 +261,7 @@ GROUP BY v.stance, COALESCE(f.faction, '')
 		}
 		return out
 	}
-	vb := s.votePercents(motionID)
+	vb := s.votePercents(db, motionID)
 	ayePct, _ := vb["ayes_pct"].(float64)
 	noePct, _ := vb["noes_pct"].(float64)
 	return []map[string]any{
@@ -281,22 +271,24 @@ GROUP BY v.stance, COALESCE(f.faction, '')
 }
 
 func (s *Server) handleGetMotion(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	id := chi.URLParam(r, "motionID")
 	now := time.Now()
 	var m dbpkg.Motion
-	if err := s.DB.Where("id = ?", id).First(&m).Error; err != nil {
+	if err := db.Where("id = ?", id).First(&m).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Motion not found")
 		return
 	}
-	detail := s.motionSummaryMap(&m, now)
-	detail["market_options"] = s.marketOptions(m.ID)
+	detail := s.motionSummaryMap(db, &m, now)
+	detail["market_options"] = s.marketOptions(db, m.ID)
 	writeJSON(w, http.StatusOK, detail)
 }
 
 func (s *Server) handleMotionSeatMap(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	motionID := chi.URLParam(r, "motionID")
 	var m dbpkg.Motion
-	if err := s.DB.Where("id = ?", motionID).First(&m).Error; err != nil {
+	if err := db.Where("id = ?", motionID).First(&m).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Motion not found")
 		return
 	}
@@ -306,7 +298,7 @@ func (s *Server) handleMotionSeatMap(w http.ResponseWriter, r *http.Request) {
 		Faction string
 	}
 	var rows []seatRow
-	s.DB.Raw(`
+	db.Raw(`
 SELECT f.agent_id AS agent_id, f.faction AS faction
 FROM agent_factions f
 ORDER BY f.faction, f.agent_id`).Scan(&rows)
@@ -355,6 +347,7 @@ ORDER BY f.faction, f.agent_id`).Scan(&rows)
 }
 
 func (s *Server) handleCreateMotion(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	a := s.requireAgent(w, r)
 	if a == nil {
 		return
@@ -404,16 +397,18 @@ func (s *Server) handleCreateMotion(w http.ResponseWriter, r *http.Request) {
 		Subtext: strings.TrimSpace(body.Subtext), CloseTime: ct.UTC(), MotionType: mt,
 		Status: "open", CreatedAt: time.Now().UTC(),
 	}
-	if err := s.DB.Create(&m).Error; err != nil {
+	if err := db.Create(&m).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not create motion")
 		return
 	}
 	s.emitParliament(map[string]any{"type": "clerk_brief_refresh"})
-	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.parliamentStats(time.Now())})
-	writeJSON(w, http.StatusOK, s.motionSummaryMap(&m, time.Now()))
+	now := time.Now()
+	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.Parliament.SessionStats(db, now)})
+	writeJSON(w, http.StatusOK, s.motionSummaryMap(db, &m, now))
 }
 
 func (s *Server) handleCastVote(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	a := s.requireAgent(w, r)
 	if a == nil {
 		return
@@ -427,7 +422,7 @@ func (s *Server) handleCastVote(w http.ResponseWriter, r *http.Request) {
 	}
 	motionID := chi.URLParam(r, "motionID")
 	var m dbpkg.Motion
-	if err := s.DB.Where("id = ?", motionID).First(&m).Error; err != nil {
+	if err := db.Where("id = ?", motionID).First(&m).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Motion not found")
 		return
 	}
@@ -451,7 +446,7 @@ func (s *Server) handleCastVote(w http.ResponseWriter, r *http.Request) {
 	if body.SpeechID != nil && strings.TrimSpace(*body.SpeechID) != "" {
 		sid := strings.TrimSpace(*body.SpeechID)
 		var sp dbpkg.MotionSpeech
-		if err := s.DB.Where("id = ? AND motion_id = ?", sid, motionID).First(&sp).Error; err != nil {
+		if err := db.Where("id = ? AND motion_id = ?", sid, motionID).First(&sp).Error; err != nil {
 			writeDetail(w, http.StatusBadRequest, "speech_id does not belong to this motion")
 			return
 		}
@@ -462,33 +457,34 @@ func (s *Server) handleCastVote(w http.ResponseWriter, r *http.Request) {
 	v := dbpkg.MotionVote{
 		MotionID: motionID, AgentID: a.ID, Stance: st, SpeechID: body.SpeechID, UpdatedAt: time.Now().UTC(),
 	}
-	if err := s.DB.Save(&v).Error; err != nil {
+	if err := db.Save(&v).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not save vote")
 		return
 	}
-	vb := s.votePercents(motionID)
+	vb := s.votePercents(db, motionID)
 	var totalVotes int64
-	s.DB.Model(&dbpkg.MotionVote{}).Where("motion_id = ?", motionID).Count(&totalVotes)
+	db.Model(&dbpkg.MotionVote{}).Where("motion_id = ?", motionID).Count(&totalVotes)
 	ayePct, _ := vb["ayes_pct"].(float64)
 	noePct, _ := vb["noes_pct"].(float64)
 	s.emitParliament(map[string]any{
 		"type": "motion_updated", "motion_id": motionID,
 		"ayes_pct": ayePct, "noes_pct": noePct, "new_vote_count": totalVotes,
 	})
-	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.parliamentStats(time.Now())})
+	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.Parliament.SessionStats(db, time.Now())})
 	writeJSON(w, http.StatusOK, map[string]any{
 		"motion_id": motionID, "stance": st, "vote_breakdown": vb, "votes_cast": totalVotes,
 	})
 }
 
 func (s *Server) handleMotionVotes(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	motionID := chi.URLParam(r, "motionID")
 	var m dbpkg.Motion
-	if err := s.DB.Where("id = ?", motionID).First(&m).Error; err != nil {
+	if err := db.Where("id = ?", motionID).First(&m).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Motion not found")
 		return
 	}
-	vb := s.votePercents(motionID)
+	vb := s.votePercents(db, motionID)
 	type agg struct {
 		Faction string
 		Aye     int64
@@ -496,7 +492,7 @@ func (s *Server) handleMotionVotes(w http.ResponseWriter, r *http.Request) {
 		Abs     int64
 	}
 	var rows []agg
-	s.DB.Raw(`
+	db.Raw(`
 SELECT COALESCE(f.faction, 'unseated') AS faction,
   SUM(CASE WHEN v.stance = 'aye' THEN 1 ELSE 0 END) AS aye,
   SUM(CASE WHEN v.stance = 'noe' THEN 1 ELSE 0 END) AS noe,
@@ -513,13 +509,14 @@ GROUP BY COALESCE(f.faction, 'unseated')
 		})
 	}
 	var total int64
-	s.DB.Model(&dbpkg.MotionVote{}).Where("motion_id = ?", motionID).Count(&total)
+	db.Model(&dbpkg.MotionVote{}).Where("motion_id = ?", motionID).Count(&total)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"motion_id": motionID, "votes_cast": total, "vote_breakdown": vb, "by_faction": bloc,
 	})
 }
 
 func (s *Server) handleCreateSpeech(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	a := s.requireAgent(w, r)
 	if a == nil {
 		return
@@ -533,7 +530,7 @@ func (s *Server) handleCreateSpeech(w http.ResponseWriter, r *http.Request) {
 	}
 	motionID := chi.URLParam(r, "motionID")
 	var m dbpkg.Motion
-	if err := s.DB.Where("id = ?", motionID).First(&m).Error; err != nil {
+	if err := db.Where("id = ?", motionID).First(&m).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Motion not found")
 		return
 	}
@@ -567,18 +564,18 @@ func (s *Server) handleCreateSpeech(w http.ResponseWriter, r *http.Request) {
 		ID: uuid.NewString(), MotionID: motionID, AuthorID: a.ID,
 		Text: strings.TrimSpace(body.Text), Lang: lang, Stance: st, CreatedAt: time.Now().UTC(),
 	}
-	if err := s.DB.Create(&sp).Error; err != nil {
+	if err := db.Create(&sp).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not create speech")
 		return
 	}
 	s.emitParliament(map[string]any{"type": "new_speech", "motion_id": motionID, "speech_id": sp.ID, "stance": st})
-	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.parliamentStats(time.Now())})
+	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.Parliament.SessionStats(db, time.Now())})
 	writeJSON(w, http.StatusOK, map[string]any{"id": sp.ID})
 }
 
-func (s *Server) speechCardMap(sp *dbpkg.MotionSpeech, authorName, faction string) map[string]any {
+func (s *Server) speechCardMap(db *gorm.DB, sp *dbpkg.MotionSpeech, authorName, faction string) map[string]any {
 	var hearts int64
-	s.DB.Model(&dbpkg.SpeechHeart{}).Where("speech_id = ?", sp.ID).Count(&hearts)
+	db.Model(&dbpkg.SpeechHeart{}).Where("speech_id = ?", sp.ID).Count(&hearts)
 	return map[string]any{
 		"id": sp.ID, "motion_id": sp.MotionID, "author_id": sp.AuthorID, "author_name": authorName,
 		"faction": faction, "faction_color": factionHex(faction),
@@ -588,14 +585,15 @@ func (s *Server) speechCardMap(sp *dbpkg.MotionSpeech, authorName, faction strin
 }
 
 func (s *Server) handleListSpeeches(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	motionID := chi.URLParam(r, "motionID")
 	var m dbpkg.Motion
-	if err := s.DB.Where("id = ?", motionID).First(&m).Error; err != nil {
+	if err := db.Where("id = ?", motionID).First(&m).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Motion not found")
 		return
 	}
 	_ = m
-	q := s.DB.Model(&dbpkg.MotionSpeech{}).Where("motion_id = ?", motionID)
+	q := db.Model(&dbpkg.MotionSpeech{}).Where("motion_id = ?", motionID)
 	if st := normStance(r.URL.Query().Get("stance")); st != "" {
 		q = q.Where("stance = ?", st)
 	}
@@ -604,41 +602,43 @@ func (s *Server) handleListSpeeches(w http.ResponseWriter, r *http.Request) {
 	out := make([]map[string]any, 0, len(speeches))
 	for i := range speeches {
 		var ag dbpkg.Agent
-		_ = s.DB.Where("id = ?", speeches[i].AuthorID).First(&ag).Error
+		_ = db.Where("id = ?", speeches[i].AuthorID).First(&ag).Error
 		var fac dbpkg.AgentFaction
 		fname := ""
-		if err := s.DB.Where("agent_id = ?", speeches[i].AuthorID).First(&fac).Error; err == nil {
+		if err := db.Where("agent_id = ?", speeches[i].AuthorID).First(&fac).Error; err == nil {
 			fname = fac.Faction
 		}
-		out = append(out, s.speechCardMap(&speeches[i], ag.Name, fname))
+		out = append(out, s.speechCardMap(db, &speeches[i], ag.Name, fname))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
 
 func (s *Server) handleGetSpeech(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	id := chi.URLParam(r, "speechID")
 	var sp dbpkg.MotionSpeech
-	if err := s.DB.Where("id = ?", id).First(&sp).Error; err != nil {
+	if err := db.Where("id = ?", id).First(&sp).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Speech not found")
 		return
 	}
 	var ag dbpkg.Agent
-	_ = s.DB.Where("id = ?", sp.AuthorID).First(&ag).Error
+	_ = db.Where("id = ?", sp.AuthorID).First(&ag).Error
 	var fac dbpkg.AgentFaction
 	fname := ""
-	if err := s.DB.Where("agent_id = ?", sp.AuthorID).First(&fac).Error; err == nil {
+	if err := db.Where("agent_id = ?", sp.AuthorID).First(&fac).Error; err == nil {
 		fname = fac.Faction
 	}
-	writeJSON(w, http.StatusOK, s.speechCardMap(&sp, ag.Name, fname))
+	writeJSON(w, http.StatusOK, s.speechCardMap(db, &sp, ag.Name, fname))
 }
 
 func (s *Server) handleAgentsMeFactionGet(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	a := s.requireAgent(w, r)
 	if a == nil {
 		return
 	}
 	var fac dbpkg.AgentFaction
-	if err := s.DB.Where("agent_id = ?", a.ID).First(&fac).Error; err != nil {
+	if err := db.Where("agent_id = ?", a.ID).First(&fac).Error; err != nil {
 		writeJSON(w, http.StatusOK, map[string]any{
 			"faction": "", "updated_at": nil, "history": []any{},
 		})
@@ -652,6 +652,7 @@ func (s *Server) handleAgentsMeFactionGet(w http.ResponseWriter, r *http.Request
 }
 
 func (s *Server) handleAgentsMeFactionPatch(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	a := s.requireAgent(w, r)
 	if a == nil {
 		return
@@ -677,20 +678,21 @@ func (s *Server) handleAgentsMeFactionPatch(w http.ResponseWriter, r *http.Reque
 	}
 	now := time.Now().UTC()
 	fac := dbpkg.AgentFaction{AgentID: a.ID, Faction: f, UpdatedAt: now}
-	if err := s.DB.Save(&fac).Error; err != nil {
+	if err := db.Save(&fac).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not save faction")
 		return
 	}
 	var n int64
-	s.DB.Model(&dbpkg.AgentFaction{}).Where("faction = ?", f).Count(&n)
+	db.Model(&dbpkg.AgentFaction{}).Where("faction = ?", f).Count(&n)
 	s.emitParliament(map[string]any{"type": "faction_update", "faction": f, "agent_count": n})
-	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.parliamentStats(time.Now())})
+	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.Parliament.SessionStats(db, time.Now())})
 	writeJSON(w, http.StatusOK, map[string]any{
 		"faction": fac.Faction, "updated_at": fac.UpdatedAt.UTC().Format(time.RFC3339Nano),
 	})
 }
 
 func (s *Server) handleFactionMembers(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	name := normFaction(chi.URLParam(r, "factionName"))
 	if name == "" {
 		writeDetail(w, http.StatusBadRequest, "Unknown faction")
@@ -702,12 +704,12 @@ func (s *Server) handleFactionMembers(w http.ResponseWriter, r *http.Request) {
 	}
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 	var facs []dbpkg.AgentFaction
-	q := s.DB.Where("faction = ?", name).Order("updated_at DESC").Limit(limit).Offset(offset)
+	q := db.Where("faction = ?", name).Order("updated_at DESC").Limit(limit).Offset(offset)
 	_ = q.Find(&facs).Error
 	out := make([]map[string]any, 0, len(facs))
 	for _, f := range facs {
 		var ag dbpkg.Agent
-		if err := s.DB.Where("id = ?", f.AgentID).First(&ag).Error; err != nil {
+		if err := db.Where("id = ?", f.AgentID).First(&ag).Error; err != nil {
 			continue
 		}
 		out = append(out, map[string]any{
@@ -718,6 +720,7 @@ func (s *Server) handleFactionMembers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSpeechHeartPost(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	a := s.requireAgent(w, r)
 	if a == nil {
 		return
@@ -731,41 +734,42 @@ func (s *Server) handleSpeechHeartPost(w http.ResponseWriter, r *http.Request) {
 	}
 	speechID := chi.URLParam(r, "speechID")
 	var sp dbpkg.MotionSpeech
-	if err := s.DB.Where("id = ?", speechID).First(&sp).Error; err != nil {
+	if err := db.Where("id = ?", speechID).First(&sp).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Speech not found")
 		return
 	}
 	var existing dbpkg.SpeechHeart
-	err := s.DB.Where("speech_id = ? AND agent_id = ?", speechID, a.ID).First(&existing).Error
+	err := db.Where("speech_id = ? AND agent_id = ?", speechID, a.ID).First(&existing).Error
 	if err == nil {
-		if err := s.DB.Delete(&existing).Error; err != nil {
+		if err := db.Delete(&existing).Error; err != nil {
 			writeDetail(w, http.StatusInternalServerError, "Could not update heart")
 			return
 		}
 	} else {
 		h := dbpkg.SpeechHeart{SpeechID: speechID, AgentID: a.ID, CreatedAt: time.Now().UTC()}
-		if err := s.DB.Create(&h).Error; err != nil {
+		if err := db.Create(&h).Error; err != nil {
 			writeDetail(w, http.StatusInternalServerError, "Could not add heart")
 			return
 		}
 	}
 	var n int64
-	s.DB.Model(&dbpkg.SpeechHeart{}).Where("speech_id = ?", speechID).Count(&n)
+	db.Model(&dbpkg.SpeechHeart{}).Where("speech_id = ?", speechID).Count(&n)
 	var hearted int64
-	s.DB.Model(&dbpkg.SpeechHeart{}).Where("speech_id = ? AND agent_id = ?", speechID, a.ID).Count(&hearted)
-	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.parliamentStats(time.Now())})
+	db.Model(&dbpkg.SpeechHeart{}).Where("speech_id = ? AND agent_id = ?", speechID, a.ID).Count(&hearted)
+	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.Parliament.SessionStats(db, time.Now())})
 	writeJSON(w, http.StatusOK, map[string]any{"hearted": hearted > 0, "heart_count": n})
 }
 
 func (s *Server) handleSpeechHeartDelete(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
 	a := s.requireAgent(w, r)
 	if a == nil {
 		return
 	}
 	speechID := chi.URLParam(r, "speechID")
-	s.DB.Where("speech_id = ? AND agent_id = ?", speechID, a.ID).Delete(&dbpkg.SpeechHeart{})
+	db.Where("speech_id = ? AND agent_id = ?", speechID, a.ID).Delete(&dbpkg.SpeechHeart{})
 	var n int64
-	s.DB.Model(&dbpkg.SpeechHeart{}).Where("speech_id = ?", speechID).Count(&n)
-	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.parliamentStats(time.Now())})
+	db.Model(&dbpkg.SpeechHeart{}).Where("speech_id = ?", speechID).Count(&n)
+	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.Parliament.SessionStats(db, time.Now())})
 	writeJSON(w, http.StatusOK, map[string]any{"hearted": false, "heart_count": n})
 }

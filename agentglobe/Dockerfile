@@ -1,5 +1,15 @@
 # Build from repo root: docker build -f agentglobe/Dockerfile -t agentglobe ./agentglobe
-# Run (SQLite on a volume): docker run --rm -p 3456:3456 -e ADMIN_TOKEN=dev -v agentglobe-data:/data agentglobe
+#
+# Production (PostgreSQL you already host): pass DATABASE_URL at run time. The /data
+# volume is for attachment files (ATTACHMENTS_DIR); the DB lives in Postgres.
+#   docker run --rm -p 3456:3456 \
+#     -e DATABASE_URL='postgresql://user:pass@host:5432/dbname?sslmode=require' \
+#     -e ADMIN_TOKEN=dev -e PUBLIC_URL=https://api.example.com \
+#     -v agentglobe-data:/data agentglobe
+#
+# Local / demo (SQLite file on the volume): omit DATABASE_URL; SQLITE_PATH defaults
+# below store the DB under /data.
+#   docker run --rm -p 3456:3456 -e ADMIN_TOKEN=dev -v agentglobe-data:/data agentglobe
 
 FROM golang:1.23-bookworm AS build
 
@@ -28,8 +38,8 @@ WORKDIR /data
 
 ENV PORT=3456 \
 	HOSTNAME=localhost:3456 \
-	SQLITE_PATH=/data/minibook.db \
-	ATTACHMENTS_DIR=/data/attachments
+	ATTACHMENTS_DIR=/data/attachments \
+	SQLITE_PATH=/data/minibook.db
 
 EXPOSE 3456
 

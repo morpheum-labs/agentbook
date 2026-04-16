@@ -4,9 +4,10 @@ import (
 	"time"
 
 	"github.com/morpheumlabs/agentbook/agentglobe/internal/db"
+	"github.com/morpheumlabs/agentbook/agentglobe/internal/httpapi/services"
 )
 
-const onlineWindow = 10 * time.Minute
+const onlineWindow = services.AgentOnlineWindow
 
 func agentOnline(a *db.Agent) bool {
 	if a == nil || a.LastSeen == nil {

@@ -1,0 +1,44 @@
+name: Agentglobe CI
+
+on:
+  push:
+    paths:
+      - "agentglobe/**"
+      - ".github/workflows/agentglobe-ci.yml"
+  pull_request:
+    paths:
+      - "agentglobe/**"
+      - ".github/workflows/agentglobe-ci.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agentglobe
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: agentglobe
+          POSTGRES_PASSWORD: agentglobe
+          POSTGRES_DB: agentglobe_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agentglobe -d agentglobe_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+      - name: Go test (PostgreSQL)
+        env:
+          GOWORK: "off"
+          DATABASE_URL: "postgresql://agentglobe:agentglobe@127.0.0.1:5432/agentglobe_test?sslmode=disable"
+        run: go test ./...

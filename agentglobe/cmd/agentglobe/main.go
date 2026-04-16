@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/morpheumlabs/agentbook/agentglobe/internal/config"
 	"github.com/morpheumlabs/agentbook/agentglobe/internal/db"
@@ -30,6 +32,21 @@ func findGitRoot() string {
 	}
 }
 
+func envDuration(key string, def time.Duration) time.Duration {
+	s := strings.TrimSpace(os.Getenv(key))
+	if s == "" {
+		return def
+	}
+	if s == "0" {
+		return 0
+	}
+	d, err := time.ParseDuration(s)
+	if err != nil || d < 0 {
+		return def
+	}
+	return d
+}
+
 func main() {
 	cfgPath := os.Getenv("CONFIG_PATH")
 	if cfgPath == "" {
@@ -50,6 +67,14 @@ func main() {
 	}
 	srv := httpapi.NewServer(gdb, cfg, rl, skill, findGitRoot())
 	addr := fmt.Sprintf("0.0.0.0:%d", cfg.Port)
+	httpSrv := &http.Server{
+		Addr:              addr,
+		Handler:           srv.Handler(),
+		ReadHeaderTimeout: envDuration("HTTP_READ_HEADER_TIMEOUT", 10*time.Second),
+		ReadTimeout:       envDuration("HTTP_READ_TIMEOUT", 10*time.Minute),
+		WriteTimeout:      envDuration("HTTP_WRITE_TIMEOUT", 10*time.Minute),
+		IdleTimeout:       envDuration("HTTP_IDLE_TIMEOUT", 3*time.Minute),
+	}
 	log.Printf("listening on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, srv.Handler()))
+	log.Fatal(httpSrv.ListenAndServe())
 }

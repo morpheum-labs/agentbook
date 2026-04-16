@@ -51,7 +51,7 @@ func (s *Server) handleCreateWebhook(w http.ResponseWriter, r *http.Request) {
 		body.Events = []string{"new_post", "new_comment", "status_change", "mention"}
 	}
 	var p dbpkg.Project
-	if err := s.DB.First(&p, "id = ?", pid).Error; err != nil {
+	if err := s.dbCtx(r).First(&p, "id = ?", pid).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Project not found")
 		return
 	}
@@ -63,7 +63,7 @@ func (s *Server) handleCreateWebhook(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now().UTC(),
 	}
 	wh.SetEvents(body.Events)
-	if err := s.DB.Create(&wh).Error; err != nil {
+	if err := s.dbCtx(r).Create(&wh).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not create webhook")
 		return
 	}
@@ -78,7 +78,7 @@ func (s *Server) handleListWebhooks(w http.ResponseWriter, r *http.Request) {
 	}
 	pid := chi.URLParam(r, "projectID")
 	var hooks []dbpkg.Webhook
-	_ = s.DB.Where("project_id = ?", pid).Find(&hooks).Error
+	_ = s.dbCtx(r).Where("project_id = ?", pid).Find(&hooks).Error
 	out := make([]map[string]any, 0, len(hooks))
 	for _, wh := range hooks {
 		out = append(out, map[string]any{
@@ -94,11 +94,11 @@ func (s *Server) handleDeleteWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 	id := chi.URLParam(r, "webhookID")
 	var wh dbpkg.Webhook
-	if err := s.DB.First(&wh, "id = ?", id).Error; err != nil {
+	if err := s.dbCtx(r).First(&wh, "id = ?", id).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Webhook not found")
 		return
 	}
-	_ = s.DB.Delete(&wh).Error
+	_ = s.dbCtx(r).Delete(&wh).Error
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 }
 
@@ -107,7 +107,7 @@ func (s *Server) handleListNotifications(w http.ResponseWriter, r *http.Request)
 	if a == nil {
 		return
 	}
-	q := s.DB.Where("agent_id = ?", a.ID)
+	q := s.dbCtx(r).Where("agent_id = ?", a.ID)
 	if r.URL.Query().Get("unread_only") == "true" {
 		q = q.Where("read = ?", false)
 	}
@@ -130,12 +130,12 @@ func (s *Server) handleMarkRead(w http.ResponseWriter, r *http.Request) {
 	}
 	id := chi.URLParam(r, "notificationID")
 	var n dbpkg.Notification
-	if err := s.DB.Where("id = ? AND agent_id = ?", id, a.ID).First(&n).Error; err != nil {
+	if err := s.dbCtx(r).Where("id = ? AND agent_id = ?", id, a.ID).First(&n).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Notification not found")
 		return
 	}
 	n.Read = true
-	_ = s.DB.Save(&n).Error
+	_ = s.dbCtx(r).Save(&n).Error
 	writeJSON(w, http.StatusOK, map[string]string{"status": "read"})
 }
 
@@ -144,7 +144,7 @@ func (s *Server) handleMarkAllRead(w http.ResponseWriter, r *http.Request) {
 	if a == nil {
 		return
 	}
-	_ = s.DB.Model(&dbpkg.Notification{}).Where("agent_id = ? AND read = ?", a.ID, false).Update("read", true).Error
+	_ = s.dbCtx(r).Model(&dbpkg.Notification{}).Where("agent_id = ? AND read = ?", a.ID, false).Update("read", true).Error
 	writeJSON(w, http.StatusOK, map[string]string{"status": "all read"})
 }
 
@@ -164,12 +164,12 @@ func (s *Server) handleCreateGitHubWebhook(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	var p dbpkg.Project
-	if err := s.DB.First(&p, "id = ?", pid).Error; err != nil {
+	if err := s.dbCtx(r).First(&p, "id = ?", pid).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Project not found")
 		return
 	}
 	var dup dbpkg.GitHubWebhook
-	if err := s.DB.Where("project_id = ?", pid).First(&dup).Error; err == nil {
+	if err := s.dbCtx(r).Where("project_id = ?", pid).First(&dup).Error; err == nil {
 		writeDetail(w, http.StatusBadRequest, "GitHub webhook already configured. Use PATCH to update.")
 		return
 	}
@@ -185,7 +185,7 @@ func (s *Server) handleCreateGitHubWebhook(w http.ResponseWriter, r *http.Reques
 	}
 	cfg.SetEvents(body.Events)
 	cfg.SetLabels(body.Labels)
-	if err := s.DB.Create(&cfg).Error; err != nil {
+	if err := s.dbCtx(r).Create(&cfg).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not save")
 		return
 	}
@@ -200,7 +200,7 @@ func (s *Server) handleGetGitHubWebhook(w http.ResponseWriter, r *http.Request) 
 	}
 	pid := chi.URLParam(r, "projectID")
 	var cfg dbpkg.GitHubWebhook
-	if err := s.DB.Where("project_id = ?", pid).First(&cfg).Error; err != nil {
+	if err := s.dbCtx(r).Where("project_id = ?", pid).First(&cfg).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "GitHub webhook not configured")
 		return
 	}
@@ -215,11 +215,11 @@ func (s *Server) handleDeleteGitHubWebhook(w http.ResponseWriter, r *http.Reques
 	}
 	pid := chi.URLParam(r, "projectID")
 	var cfg dbpkg.GitHubWebhook
-	if err := s.DB.Where("project_id = ?", pid).First(&cfg).Error; err != nil {
+	if err := s.dbCtx(r).Where("project_id = ?", pid).First(&cfg).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "GitHub webhook not configured")
 		return
 	}
-	_ = s.DB.Delete(&cfg).Error
+	_ = s.dbCtx(r).Delete(&cfg).Error
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 }
 
@@ -231,7 +231,7 @@ func (s *Server) handleReceiveGitHubWebhook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	var cfg dbpkg.GitHubWebhook
-	if err := s.DB.Where("project_id = ? AND active = ?", pid, true).First(&cfg).Error; err != nil {
+	if err := s.dbCtx(r).Where("project_id = ? AND active = ?", pid, true).First(&cfg).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "GitHub webhook not configured for this project")
 		return
 	}
@@ -251,7 +251,7 @@ func (s *Server) handleReceiveGitHubWebhook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	var result map[string]any
-	if err := s.DB.Transaction(func(tx *gorm.DB) error {
+	if err := s.dbCtx(r).Transaction(func(tx *gorm.DB) error {
 		bot, e := s.getOrCreateSystemAgent(tx)
 		if e != nil {
 			return e
@@ -290,7 +290,7 @@ func (s *Server) handleReceiveGitHubWebhook(w http.ResponseWriter, r *http.Reque
 func (s *Server) handleGetRoles(w http.ResponseWriter, r *http.Request) {
 	pid := chi.URLParam(r, "projectID")
 	var p dbpkg.Project
-	if err := s.DB.First(&p, "id = ?", pid).Error; err != nil {
+	if err := s.dbCtx(r).First(&p, "id = ?", pid).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Project not found")
 		return
 	}
@@ -300,7 +300,7 @@ func (s *Server) handleGetRoles(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handlePutRoles(w http.ResponseWriter, r *http.Request) {
 	pid := chi.URLParam(r, "projectID")
 	var p dbpkg.Project
-	if err := s.DB.First(&p, "id = ?", pid).Error; err != nil {
+	if err := s.dbCtx(r).First(&p, "id = ?", pid).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Project not found")
 		return
 	}
@@ -316,25 +316,25 @@ func (s *Server) handlePutRoles(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	p.SetRoleDescriptions(roles)
-	_ = s.DB.Save(&p).Error
+	_ = s.dbCtx(r).Save(&p).Error
 	writeJSON(w, http.StatusOK, map[string]any{"roles": p.RoleDescriptions()})
 }
 
 func (s *Server) handleGetPlan(w http.ResponseWriter, r *http.Request) {
 	pid := chi.URLParam(r, "projectID")
 	var p dbpkg.Project
-	if err := s.DB.First(&p, "id = ?", pid).Error; err != nil {
+	if err := s.dbCtx(r).First(&p, "id = ?", pid).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Project not found")
 		return
 	}
 	var plan dbpkg.Post
-	if err := s.DB.Where("project_id = ? AND type = ?", pid, "plan").First(&plan).Error; err != nil {
+	if err := s.dbCtx(r).Where("project_id = ? AND type = ?", pid, "plan").First(&plan).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "No Grand Plan set for this project")
 		return
 	}
-	_ = s.DB.Preload("Author").First(&plan, "id = ?", plan.ID).Error
-	att := s.listPostAttachments(plan.ID)
-	writeJSON(w, http.StatusOK, s.postMap(&plan, plan.Author.Name, s.countComments(plan.ID), &att))
+	_ = s.dbCtx(r).Preload("Author").First(&plan, "id = ?", plan.ID).Error
+	att := s.listPostAttachments(s.dbCtx(r), plan.ID)
+	writeJSON(w, http.StatusOK, s.postMap(&plan, plan.Author.Name, s.Posts.CountComments(s.dbCtx(r), plan.ID), &att))
 }
 
 func (s *Server) handlePutPlan(w http.ResponseWriter, r *http.Request) {
@@ -348,15 +348,15 @@ func (s *Server) handlePutPlan(w http.ResponseWriter, r *http.Request) {
 	}
 	content := r.URL.Query().Get("content")
 	var project dbpkg.Project
-	if err := s.DB.First(&project, "id = ?", pid).Error; err != nil {
+	if err := s.dbCtx(r).First(&project, "id = ?", pid).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Project not found")
 		return
 	}
 	var plan dbpkg.Post
-	err := s.DB.Where("project_id = ? AND type = ?", pid, "plan").First(&plan).Error
+	err := s.dbCtx(r).Where("project_id = ? AND type = ?", pid, "plan").First(&plan).Error
 	now := time.Now().UTC()
 	if err != nil {
-		bot, err2 := s.getOrCreateSystemAgent(s.DB)
+		bot, err2 := s.getOrCreateSystemAgent(s.dbCtx(r))
 		if err2 != nil {
 			writeDetail(w, http.StatusInternalServerError, "Could not get system agent")
 			return
@@ -376,38 +376,39 @@ func (s *Server) handlePutPlan(w http.ResponseWriter, r *http.Request) {
 		}
 		plan.SetTags(nil)
 		plan.SetMentions(nil)
-		if err := s.DB.Create(&plan).Error; err != nil {
+		if err := s.dbCtx(r).Create(&plan).Error; err != nil {
 			writeDetail(w, http.StatusInternalServerError, "Could not create plan")
 			return
 		}
 	} else {
-		bot, _ := s.getOrCreateSystemAgent(s.DB)
+		bot, _ := s.getOrCreateSystemAgent(s.dbCtx(r))
 		plan.Title = title
 		plan.Content = content
 		z := 0
 		plan.PinOrder = &z
 		plan.AuthorID = bot.ID
 		plan.UpdatedAt = now
-		if err := s.DB.Save(&plan).Error; err != nil {
+		if err := s.dbCtx(r).Save(&plan).Error; err != nil {
 			writeDetail(w, http.StatusInternalServerError, "Could not update plan")
 			return
 		}
 	}
-	_ = s.DB.Preload("Author").First(&plan, "id = ?", plan.ID).Error
-	att := s.listPostAttachments(plan.ID)
+	_ = s.dbCtx(r).Preload("Author").First(&plan, "id = ?", plan.ID).Error
+	att := s.listPostAttachments(s.dbCtx(r), plan.ID)
 	s.emitProject(pid, map[string]any{"type": "post_updated", "project_id": pid, "post_id": plan.ID})
-	writeJSON(w, http.StatusOK, s.postMap(&plan, plan.Author.Name, s.countComments(plan.ID), &att))
+	writeJSON(w, http.StatusOK, s.postMap(&plan, plan.Author.Name, s.Posts.CountComments(s.dbCtx(r), plan.ID), &att))
 }
 
 func (s *Server) handleAdminListProjects(w http.ResponseWriter, r *http.Request) {
 	if !s.requireAdmin(w, r) {
 		return
 	}
+	db := s.dbCtx(r)
 	var projects []dbpkg.Project
-	_ = s.DB.Find(&projects).Error
+	_ = db.Find(&projects).Error
 	out := make([]map[string]any, 0, len(projects))
 	for i := range projects {
-		out = append(out, s.projectResponse(&projects[i]))
+		out = append(out, s.projectResponse(db, &projects[i]))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -418,11 +419,11 @@ func (s *Server) handleAdminGetProject(w http.ResponseWriter, r *http.Request) {
 	}
 	id := chi.URLParam(r, "projectID")
 	var p dbpkg.Project
-	if err := s.DB.First(&p, "id = ?", id).Error; err != nil {
+	if err := s.dbCtx(r).First(&p, "id = ?", id).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Project not found")
 		return
 	}
-	writeJSON(w, http.StatusOK, s.projectResponse(&p))
+	writeJSON(w, http.StatusOK, s.projectResponse(s.dbCtx(r), &p))
 }
 
 func (s *Server) handleAdminPatchProject(w http.ResponseWriter, r *http.Request) {
@@ -431,7 +432,7 @@ func (s *Server) handleAdminPatchProject(w http.ResponseWriter, r *http.Request)
 	}
 	id := chi.URLParam(r, "projectID")
 	var p dbpkg.Project
-	if err := s.DB.First(&p, "id = ?", id).Error; err != nil {
+	if err := s.dbCtx(r).First(&p, "id = ?", id).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Project not found")
 		return
 	}
@@ -448,27 +449,28 @@ func (s *Server) handleAdminPatchProject(w http.ResponseWriter, r *http.Request)
 			p.PrimaryLeadAgentID = nil
 		} else {
 			var m dbpkg.ProjectMember
-			if err := s.DB.Where("project_id = ? AND agent_id = ?", id, v).First(&m).Error; err != nil {
+			if err := s.dbCtx(r).Where("project_id = ? AND agent_id = ?", id, v).First(&m).Error; err != nil {
 				writeDetail(w, http.StatusBadRequest, "Agent must be a project member to be primary lead")
 				return
 			}
 			p.PrimaryLeadAgentID = &v
 		}
 	}
-	_ = s.DB.Save(&p).Error
-	writeJSON(w, http.StatusOK, s.projectResponse(&p))
+	_ = s.dbCtx(r).Save(&p).Error
+	writeJSON(w, http.StatusOK, s.projectResponse(s.dbCtx(r), &p))
 }
 
 func (s *Server) handleAdminListMembers(w http.ResponseWriter, r *http.Request) {
 	if !s.requireAdmin(w, r) {
 		return
 	}
+	db := s.dbCtx(r)
 	pid := chi.URLParam(r, "projectID")
 	var members []dbpkg.ProjectMember
-	_ = s.DB.Preload("Agent").Where("project_id = ?", pid).Find(&members).Error
+	_ = db.Preload("Agent").Where("project_id = ?", pid).Find(&members).Error
 	out := make([]map[string]any, 0, len(members))
 	for i := range members {
-		out = append(out, s.memberResponse(&members[i]))
+		out = append(out, s.memberResponse(db, &members[i]))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -487,13 +489,13 @@ func (s *Server) handleAdminPatchMember(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	var m dbpkg.ProjectMember
-	if err := s.DB.Where("project_id = ? AND agent_id = ?", pid, aid).First(&m).Error; err != nil {
+	if err := s.dbCtx(r).Where("project_id = ? AND agent_id = ?", pid, aid).First(&m).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Member not found in this project")
 		return
 	}
 	m.Role = body.Role
-	_ = s.DB.Save(&m).Error
-	writeJSON(w, http.StatusOK, s.memberResponse(&m))
+	_ = s.dbCtx(r).Save(&m).Error
+	writeJSON(w, http.StatusOK, s.memberResponse(s.dbCtx(r), &m))
 }
 
 func (s *Server) handleAdminRemoveMember(w http.ResponseWriter, r *http.Request) {
@@ -503,12 +505,12 @@ func (s *Server) handleAdminRemoveMember(w http.ResponseWriter, r *http.Request)
 	pid := chi.URLParam(r, "projectID")
 	aid := chi.URLParam(r, "agentID")
 	var p dbpkg.Project
-	if err := s.DB.First(&p, "id = ?", pid).Error; err != nil {
+	if err := s.dbCtx(r).First(&p, "id = ?", pid).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Project not found")
 		return
 	}
 	var m dbpkg.ProjectMember
-	if err := s.DB.Where("project_id = ? AND agent_id = ?", pid, aid).First(&m).Error; err != nil {
+	if err := s.dbCtx(r).Where("project_id = ? AND agent_id = ?", pid, aid).First(&m).Error; err != nil {
 		writeDetail(w, http.StatusNotFound, "Member not found in this project")
 		return
 	}
@@ -516,7 +518,7 @@ func (s *Server) handleAdminRemoveMember(w http.ResponseWriter, r *http.Request)
 		writeDetail(w, http.StatusConflict, "Cannot remove primary lead. Set a new primary lead first.")
 		return
 	}
-	_ = s.DB.Delete(&m).Error
+	_ = s.dbCtx(r).Delete(&m).Error
 	writeJSON(w, http.StatusOK, map[string]string{"status": "removed", "agent_id": aid, "project_id": pid})
 }
 
@@ -525,7 +527,7 @@ func (s *Server) handleAdminListAgents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var agents []dbpkg.Agent
-	_ = s.DB.Find(&agents).Error
+	_ = s.dbCtx(r).Find(&agents).Error
 	out := make([]map[string]any, 0, len(agents))
 	for i := range agents {
 		out = append(out, agentMap(&agents[i], false))
