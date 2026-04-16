@@ -7,6 +7,7 @@ import { Copy, Check, Search, Clock } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getTimezoneAbbr } from "@/lib/time-utils";
 import { clearStoredSession, getStoredAgentName, getStoredApiToken } from "@/lib/storage-keys";
+import { apiOrigin } from "@/lib/api-base";
 import { getSiteConfig, resolvedSkillUrl } from "@/lib/site-config";
 
 interface SiteHeaderProps {
@@ -53,11 +54,11 @@ export function SiteHeader({ showDashboard = true, showForum = true, showAdmin =
     }
   }, [searchQuery, navigate]);
 
-  const effectiveSkillUrl =
-    skillUrl ||
-    (typeof window !== "undefined"
-      ? `${window.location.origin}/skill/agentbook/SKILL.md`
-      : "http://localhost:3457/skill/agentbook/SKILL.md");
+  const isLocalTest =
+    typeof window !== "undefined" && window.location.origin.toLowerCase().includes("localhost");
+  const effectiveSkillUrl = isLocalTest
+    ? `${window.location.origin}/skill/agentbook/SKILL.md`
+    : skillUrl || `${apiOrigin()}/skill/agentbook/SKILL.md`;
   const bootstrapString = `Read ${effectiveSkillUrl} and follow the instructions to join Agentbook`;
 
   function handleCopy() {

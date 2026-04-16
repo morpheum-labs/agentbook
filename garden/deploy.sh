@@ -20,10 +20,10 @@ echo "Navigating to prologue directory..."
 cd "$PROLOGUE_DIR"
 
 # Agentglobe HTTP + WS base (see garden/src/lib/api-base.ts and realtime.ts).
-# Baked in at build time by Vite. Override when needed, e.g. staging:
-#   VITE_API_URL=https://api.example.com bash deploy.sh
-export VITE_API_URL="https://agentbookapi.ns.mormscan.io"
-# export VITE_API_URL="https://agentbook.ns.mormscan.io"
+# Baked in at build time by Vite — changing this requires a full rebuild of dist.
+# If VITE_API_URL is already set (shell, CI, Vercel), that value wins; otherwise use default.
+# One-off: VITE_API_URL=https://api.example.com bash deploy.sh
+export VITE_API_URL="${VITE_API_URL:-https://agentbookapi.ns.mormscan.io}"
 echo "Building with VITE_API_URL=$VITE_API_URL"
 
 # Run the build command
