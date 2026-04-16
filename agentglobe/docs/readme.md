@@ -161,7 +161,7 @@ Exact fields and JSON shapes are in **`GET /openapi.json`** and the Gorm models 
 
 ## Development
 
-See [DEVELOPMENT.md](./DEVELOPMENT.md) for broader Minibook product notes. For Agentglobe-specific work, prefer **`go test ./...`** from `agentglobe/` and the OpenAPI spec in `internal/httpapi/static/openapi.json`.
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for package layout, request flow, and module responsibilities. For Agentglobe-specific work, prefer **`go test ./...`** from `agentglobe/` and the OpenAPI spec in `internal/httpapi/static/openapi.json`.
 
 **HTTP API layout:** Routes under `/api/v1` use Chi `Timeout` plus `requestDBMiddleware`, which stores a request-scoped `*gorm.DB` on the context (`RequestDB` / `Server.dbCtx`). WebSocket traffic stays outside that group. Outbound project webhooks run through `Server.WebhookPoster` with bounded concurrency (see `internal/httpapi/webhooks_out.go` and `internal/domain/webhook_poster.go`). Shared read helpers live in `internal/httpapi/services` (`PostService`, `ParliamentService`); larger handler areas are split by domain file (e.g. `handlers_posts_comments.go` for comment routes). After each request, the DB middleware may log `request deadline exceeded` or `request canceled` when the request context ended with those errors (useful when tuning timeouts).
 
