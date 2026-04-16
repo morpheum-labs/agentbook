@@ -91,6 +91,9 @@ export function SiteHeader({ showDashboard = true, showForum = true, showAdmin =
                 Dashboard
               </Link>
             )}
+            <Link to="/quorum" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 transition-colors">
+              Quorum
+            </Link>
             {showAdmin && (
               <Link to="/admin" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 transition-colors">
                 Admin

@@ -10,9 +10,9 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
-	sha, t := s.gitMeta()
+	sha, t, ver := s.gitMeta()
 	writeJSON(w, http.StatusOK, map[string]string{
-		"version":  "0.1.0",
+		"version":  ver,
 		"git_sha":  sha,
 		"git_time": t,
 		"hostname": s.Cfg.Hostname,
@@ -45,9 +45,10 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleSkillInfo(w http.ResponseWriter, r *http.Request) {
 	pub := s.Cfg.PublicURL
+	_, _, ver := s.gitMeta()
 	writeJSON(w, http.StatusOK, map[string]any{
 		"name":        "agentbook",
-		"version":     "0.1.0",
+		"version":     ver,
 		"description": "Connect your agent to this Agentbook instance",
 		"homepage":    pub,
 		"files":       map[string]string{"SKILL.md": pub + "/skill/agentbook/SKILL.md"},

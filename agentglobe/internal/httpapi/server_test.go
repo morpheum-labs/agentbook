@@ -95,6 +95,56 @@ func TestCORSPreflight(t *testing.T) {
 	}
 }
 
+func TestCORSPreflightAllowlistReflectsOrigin(t *testing.T) {
+	s := testServer(t)
+	s.Cfg.CORSAllowedOrigins = []string{"http://localhost:3457", "https://www.example.com"}
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	req, err := http.NewRequest(http.MethodOptions, ts.URL+"/api/v1/agents", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Origin", "http://localhost:3457")
+	req.Header.Set("Access-Control-Request-Method", "POST")
+	req.Header.Set("Access-Control-Request-Headers", "authorization,content-type")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusNoContent {
+		t.Fatalf("OPTIONS status %d", res.StatusCode)
+	}
+	if got := res.Header.Get("Access-Control-Allow-Origin"); got != "http://localhost:3457" {
+		t.Fatalf("allow-origin: want reflected origin, got %q", got)
+	}
+}
+
+func TestCORSPreflightAllowlistBlocksUnknownOrigin(t *testing.T) {
+	s := testServer(t)
+	s.Cfg.CORSAllowedOrigins = []string{"https://www.example.com"}
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	req, err := http.NewRequest(http.MethodOptions, ts.URL+"/api/v1/agents", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Origin", "https://evil.example")
+	req.Header.Set("Access-Control-Request-Method", "POST")
+	req.Header.Set("Access-Control-Request-Headers", "authorization,content-type")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusNoContent {
+		t.Fatalf("OPTIONS status %d", res.StatusCode)
+	}
+	if res.Header.Get("Access-Control-Allow-Origin") != "" {
+		t.Fatalf("expected no allow-origin for disallowed origin, got %q", res.Header.Get("Access-Control-Allow-Origin"))
+	}
+}
+
 func TestHealth(t *testing.T) {
 	s := testServer(t)
 	ts := httptest.NewServer(s.Handler())

@@ -1,0 +1,792 @@
+/* Quorum parliament UI — scoped; fonts loaded by QuorumParliamentPage */
+
+.quorum-parliament,
+.quorum-parliament * {
+  box-sizing: border-box;
+}
+
+.quorum-parliament {
+  font-family: "DM Sans", sans-serif;
+  background: #f7f4ee;
+  color: #1a1610;
+  min-height: 1020px;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+.quorum-parliament h1,
+.quorum-parliament h2,
+.quorum-parliament p,
+.quorum-parliament article {
+  margin: 0;
+}
+
+.quorum-parliament .qhead h1.qlogo {
+  line-height: 1;
+}
+
+/* HEADER */
+.quorum-parliament .qhead {
+  background: #1a1610;
+  padding: 0 20px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-bottom: 3px solid #c8a850;
+}
+
+.quorum-parliament .qlogo {
+  font-family: Fraunces, serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #f7f4ee;
+  letter-spacing: -0.01em;
+  margin-right: 10px;
+}
+
+.quorum-parliament .qlogo span {
+  color: #c8a850;
+}
+
+.quorum-parliament .qsub {
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+  color: #6a5a40;
+  letter-spacing: 0.12em;
+  margin-right: auto;
+}
+
+.quorum-parliament .qstat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 14px;
+  border-left: 1px solid #2e2a20;
+  height: 100%;
+}
+
+.quorum-parliament .qsv {
+  font-family: "Space Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #f7f4ee;
+}
+
+.quorum-parliament .qsl {
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+  color: #5a4a30;
+  margin-left: 3px;
+}
+
+.quorum-parliament .qlive {
+  background: #c8a850;
+  color: #1a1610;
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 2px;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 14px;
+}
+
+.quorum-parliament .qlive-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #1a1610;
+  animation: quorum-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes quorum-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+
+.quorum-parliament .qsession {
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+  color: #6a5a40;
+  margin-left: 14px;
+  border-left: 1px solid #2e2a20;
+  padding-left: 14px;
+}
+
+/* CLERK STRIP */
+.quorum-parliament .clerk {
+  background: #1e1c14;
+  border-bottom: 2px solid #c8a850;
+  padding: 9px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.quorum-parliament .clerk-title {
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  color: #c8a850;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  padding-top: 1px;
+  flex-shrink: 0;
+}
+
+.quorum-parliament .clerk-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+.quorum-parliament .citem {
+  font-family: "DM Sans", sans-serif;
+  font-size: 9.5px;
+  padding: 4px 10px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-left: 3px solid;
+  white-space: nowrap;
+}
+
+.quorum-parliament .ci-c {
+  background: #1a2e1e;
+  border-color: #4ab870;
+  color: #8ad8a0;
+}
+
+.quorum-parliament .ci-d {
+  background: #2e2010;
+  border-color: #c8a030;
+  color: #e0c060;
+}
+
+.quorum-parliament .ci-n {
+  background: #1e1e2a;
+  border-color: #8878c8;
+  color: #b0a8e0;
+}
+
+.quorum-parliament .ci-r {
+  background: #2e1414;
+  border-color: #d04040;
+  color: #e88080;
+}
+
+.quorum-parliament .clerk-ts {
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+  color: #3a3020;
+  white-space: nowrap;
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+/* FACTION LEGEND */
+.quorum-parliament .factions {
+  background: #f0ece2;
+  border-bottom: 1px solid #ddd8cc;
+  padding: 6px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.quorum-parliament .fleg {
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #8a7a60;
+  margin-right: 4px;
+}
+
+.quorum-parliament .fact {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: "Space Mono", monospace;
+  font-size: 8.5px;
+}
+
+.quorum-parliament .fact-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.quorum-parliament .fact-bull {
+  background: #c8a850;
+}
+
+.quorum-parliament .fact-bear {
+  background: #d04848;
+}
+
+.quorum-parliament .fact-neut {
+  background: #5880d0;
+}
+
+.quorum-parliament .fact-spec {
+  background: #50b880;
+}
+
+.quorum-parliament .fact-lbl-bull {
+  color: #8a6820;
+}
+
+.quorum-parliament .fact-lbl-bear {
+  color: #a03030;
+}
+
+.quorum-parliament .fact-lbl-neut {
+  color: #3858a0;
+}
+
+.quorum-parliament .fact-lbl-spec {
+  color: #2a8050;
+}
+
+.quorum-parliament .fact-count {
+  color: #a89878;
+  margin-left: 2px;
+}
+
+.quorum-parliament .fsep {
+  color: #ccc8bc;
+}
+
+.quorum-parliament .factions-meta {
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+  color: #b0a080;
+  margin-left: auto;
+}
+
+/* MAIN LAYOUT */
+.quorum-parliament .qmain {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr) 230px;
+  gap: 0;
+}
+
+/* DEBATE COLUMNS */
+.quorum-parliament .dcol {
+  background: #f7f4ee;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow: hidden;
+}
+
+.quorum-parliament .dcol-r {
+  border-left: 1px solid #e0d8c8;
+}
+
+.quorum-parliament .dcol-l {
+  border-right: 1px solid #e0d8c8;
+}
+
+.quorum-parliament .dcol-title {
+  font-family: "Space Mono", monospace;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #b0a080;
+  padding: 0 2px 7px;
+  border-bottom: 1px solid #e0d8c8;
+  margin-bottom: 2px;
+}
+
+/* speech */
+.quorum-parliament .speech {
+  background: #fff;
+  border: 1px solid #e0d8c8;
+  border-radius: 4px;
+  border-left: 3px solid;
+  padding: 8px 10px;
+  position: relative;
+}
+
+.quorum-parliament .sp-bull {
+  border-left-color: #c8a850;
+}
+
+.quorum-parliament .sp-bear {
+  border-left-color: #d04848;
+}
+
+.quorum-parliament .sp-neut {
+  border-left-color: #5880d0;
+}
+
+.quorum-parliament .sp-spec {
+  border-left-color: #50b880;
+}
+
+.quorum-parliament .sp-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.quorum-parliament .sp-av {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  border: 2px solid;
+  flex-shrink: 0;
+}
+
+.quorum-parliament .sp-av-bull {
+  background: #fdf6e0;
+  border-color: #c8a850;
+  color: #8a6820;
+}
+
+.quorum-parliament .sp-av-bear {
+  background: #fdeaea;
+  border-color: #d04848;
+  color: #a03030;
+}
+
+.quorum-parliament .sp-av-neut {
+  background: #eaeffc;
+  border-color: #5880d0;
+  color: #3858a0;
+}
+
+.quorum-parliament .sp-av-spec {
+  background: #eaf8f0;
+  border-color: #50b880;
+  color: #2a8050;
+}
+
+.quorum-parliament .sp-name {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #1a1610;
+}
+
+.quorum-parliament .sp-motion {
+  font-family: "Space Mono", monospace;
+  font-size: 7.5px;
+  padding: 2px 5px;
+  border-radius: 2px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.quorum-parliament .mn {
+  background: #fdf6e0;
+  color: #8a6820;
+  border: 1px solid #e8d090;
+}
+
+.quorum-parliament .mb {
+  background: #fdeaea;
+  color: #a03030;
+  border: 1px solid #e8b0b0;
+}
+
+.quorum-parliament .ma {
+  background: #eaeffc;
+  color: #3858a0;
+  border: 1px solid #b0c0e8;
+}
+
+.quorum-parliament .mx {
+  background: #eaf8f0;
+  color: #2a8050;
+  border: 1px solid #a0d8b8;
+}
+
+.quorum-parliament .sp-text {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #3a3020;
+}
+
+.quorum-parliament .sp-lang {
+  font-family: "Space Mono", monospace;
+  font-size: 7px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: #f0ece2;
+  color: #8a7a60;
+  border: 1px solid #ddd8cc;
+  margin-right: 3px;
+  display: inline-block;
+}
+
+.quorum-parliament .sp-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  font-family: "Space Mono", monospace;
+  font-size: 7.5px;
+  color: #b0a080;
+}
+
+.quorum-parliament .sp-ayes {
+  color: #4ab870;
+  font-weight: 700;
+}
+
+.quorum-parliament .sp-noes {
+  color: #d04848;
+  font-weight: 700;
+}
+
+/* CHAMBER CENTRE */
+.quorum-parliament .chamber {
+  background: #f0ece2;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  gap: 10px;
+}
+
+.quorum-parliament .motion-label {
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #b0a080;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.quorum-parliament .motion-badge {
+  font-size: 7.5px;
+  padding: 2px 7px;
+  border-radius: 2px;
+  background: #1a1610;
+  color: #c8a850;
+  letter-spacing: 0.08em;
+}
+
+.quorum-parliament .motion-badge.g {
+  background: #1a2e1e;
+  color: #4ab870;
+}
+
+.quorum-parliament .motion-featured {
+  background: #1a1610;
+  border-radius: 6px;
+  padding: 14px 14px 12px;
+}
+
+.quorum-parliament .mf-num {
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+  color: #6a5a40;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.quorum-parliament .mf-title {
+  font-family: Fraunces, serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #f7f4ee;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+.quorum-parliament .mf-sub {
+  font-family: "Space Mono", monospace;
+  font-size: 8.5px;
+  color: #6a5a40;
+  margin-bottom: 10px;
+}
+
+.quorum-parliament .vbar-wrap {
+  margin: 8px 0 4px;
+}
+
+.quorum-parliament .vbar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+  margin-bottom: 4px;
+}
+
+.quorum-parliament .vbar-label-a {
+  color: #c8a850;
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+}
+
+.quorum-parliament .vbar-label-mid {
+  color: #6a5a40;
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+}
+
+.quorum-parliament .vbar-label-n {
+  color: #d04848;
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+}
+
+.quorum-parliament .vbar-track {
+  height: 8px;
+  border-radius: 2px;
+  background: #2e2a20;
+  overflow: hidden;
+  display: flex;
+}
+
+.quorum-parliament .vbar-aye {
+  background: #c8a850;
+  border-radius: 2px 0 0 2px;
+}
+
+.quorum-parliament .vbar-noe {
+  background: #d04848;
+  border-radius: 0 2px 2px 0;
+}
+
+.quorum-parliament .vbar-abst {
+  background: #3a3628;
+}
+
+.quorum-parliament .vbar-vals {
+  display: flex;
+  justify-content: space-between;
+  font-family: "Space Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.quorum-parliament .vv-a {
+  color: #c8a850;
+}
+
+.quorum-parliament .vv-n {
+  color: #d04848;
+}
+
+.quorum-parliament .vv-ab {
+  color: #6a5a40;
+}
+
+.quorum-parliament .mkt-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.quorum-parliament .mkt-opt {
+  flex: 1;
+  border-radius: 4px;
+  padding: 8px 10px;
+  text-align: center;
+  border: 1px solid;
+}
+
+.quorum-parliament .mkt-a {
+  background: #1e2e1e;
+  border-color: #4ab870;
+}
+
+.quorum-parliament .mkt-b {
+  background: #2e1414;
+  border-color: #d04848;
+}
+
+.quorum-parliament .mkt-oname {
+  font-size: 10px;
+  font-weight: 700;
+  color: #c8c0a8;
+  margin-bottom: 3px;
+}
+
+.quorum-parliament .mkt-opct {
+  font-family: "Space Mono", monospace;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.quorum-parliament .mkt-opct-a {
+  color: #4ab870;
+}
+
+.quorum-parliament .mkt-opct-b {
+  color: #d04848;
+}
+
+.quorum-parliament .mkt-oagents {
+  font-family: "Space Mono", monospace;
+  font-size: 7.5px;
+  color: #5a5040;
+  margin-top: 2px;
+}
+
+.quorum-parliament .seats-wrap {
+  margin-top: 8px;
+}
+
+.quorum-parliament .seats-label {
+  font-family: "Space Mono", monospace;
+  font-size: 7.5px;
+  color: #6a5a40;
+  margin-bottom: 6px;
+  letter-spacing: 0.08em;
+}
+
+.quorum-parliament .seats-svg {
+  width: 100%;
+  height: 64px;
+}
+
+.quorum-parliament .mlist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quorum-parliament .mrow {
+  background: #fff;
+  border: 1px solid #e0d8c8;
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.quorum-parliament .mrow:hover {
+  background: #fdf8f0;
+}
+
+.quorum-parliament .mrow-num {
+  font-family: "Space Mono", monospace;
+  font-size: 9px;
+  color: #b0a080;
+  min-width: 18px;
+}
+
+.quorum-parliament .mrow-num.h {
+  color: #c8a850;
+  font-weight: 700;
+}
+
+.quorum-parliament .mrow-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.quorum-parliament .mrow-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #1a1610;
+  margin-bottom: 1px;
+}
+
+.quorum-parliament .mrow-sub {
+  font-family: "Space Mono", monospace;
+  font-size: 8px;
+  color: #9a8a70;
+}
+
+.quorum-parliament .mrow-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.quorum-parliament .mrow-pct {
+  font-family: "Space Mono", monospace;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quorum-parliament .pct-a {
+  color: #4ab870;
+}
+
+.quorum-parliament .pct-y {
+  color: #c8a850;
+}
+
+.quorum-parliament .pct-r {
+  color: #d04848;
+}
+
+.quorum-parliament .mrow-tag {
+  font-family: "Space Mono", monospace;
+  font-size: 7px;
+  padding: 2px 5px;
+  border-radius: 2px;
+  border: 1px solid;
+}
+
+.quorum-parliament .t-c {
+  background: #eaf8f0;
+  color: #2a8050;
+  border-color: #a0d8b8;
+}
+
+.quorum-parliament .t-d {
+  background: #fdf6e0;
+  color: #8a6820;
+  border-color: #e8d090;
+}
+
+.quorum-parliament .t-n {
+  background: #eaeffc;
+  color: #3858a0;
+  border-color: #b0c0e8;
+}
+
+.quorum-parliament .t-s {
+  background: #fdeaea;
+  color: #a03030;
+  border-color: #e8b0b0;
+}
+
+.quorum-parliament .mrow-bar {
+  width: 44px;
+  height: 3px;
+  border-radius: 1px;
+  background: #e8e0d0;
+  overflow: hidden;
+}
+
+.quorum-parliament .mrow-fill {
+  height: 100%;
+  border-radius: 1px;
+}

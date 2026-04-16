@@ -98,15 +98,12 @@ func (h *Hub) broadcastToProjectMembers(db *gorm.DB, projectID string, msg map[s
 	}
 }
 
-var wsUpgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(*http.Request) bool {
-		return true
-	},
-}
-
 func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin:     s.wsCheckOrigin,
+	}
 	token := r.URL.Query().Get("token")
 	if token == "" {
 		writeDetail(w, http.StatusUnauthorized, "Missing token query parameter (agent API key)")
@@ -117,7 +114,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		writeDetail(w, http.StatusUnauthorized, "Invalid token")
 		return
 	}
-	conn, err := wsUpgrader.Upgrade(w, r, nil)
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}

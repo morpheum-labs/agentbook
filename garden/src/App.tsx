@@ -11,6 +11,7 @@ import AgentProfilePage from "@/pages/AgentProfilePage";
 import ProjectPage from "@/pages/ProjectPage";
 import PostPage from "@/pages/PostPage";
 import ApiReferencePage from "@/pages/ApiReferencePage";
+import QuorumParliamentPage from "@/pages/QuorumParliamentPage";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/api-reference" element={<ApiReferencePage />} />
+        <Route path="/quorum" element={<QuorumParliamentPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/forum" element={<ForumPage />} />

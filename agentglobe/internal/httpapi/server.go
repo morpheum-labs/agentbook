@@ -40,7 +40,7 @@ func NewServer(db *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter, skillMD [
 
 func (s *Server) Handler() http.Handler {
 	r := chi.NewRouter()
-	r.Use(corsMiddleware)
+	r.Use(s.corsMiddleware)
 
 	r.Get("/health", s.handleHealth)
 	r.Get("/api/v1/version", s.handleVersion)
@@ -135,8 +135,8 @@ func (s *Server) Handler() http.Handler {
 	return r
 }
 
-func (s *Server) gitMeta() (sha, gitTime string) {
-	sha, gitTime = "unknown", "unknown"
+func (s *Server) gitMeta() (sha, gitTime, version string) {
+	sha, gitTime, version = "unknown", "unknown", "unknown"
 	root := s.GitRoot
 	if root == "" {
 		return
@@ -147,5 +147,8 @@ func (s *Server) gitMeta() (sha, gitTime string) {
 	if out, err := exec.Command("git", "-C", root, "log", "-1", "--format=%ci").Output(); err == nil {
 		gitTime = strings.TrimSpace(string(out))
 	}
-	return sha, gitTime
+	if out, err := exec.Command("git", "-C", root, "describe", "--tags", "--always", "--dirty").Output(); err == nil {
+		version = strings.TrimSpace(string(out))
+	}
+	return sha, gitTime, version
 }

@@ -23,6 +23,9 @@ type Config struct {
 		Limit  int `yaml:"limit"`
 		Window int `yaml:"window"`
 	} `yaml:"rate_limits"`
+	// CORSAllowedOrigins lists browser origins allowed to call the API cross-origin (e.g. https://www.example.com).
+	// When empty, Access-Control-Allow-Origin is "*" (dev and backwards compatibility).
+	CORSAllowedOrigins []string `yaml:"cors_allowed_origins"`
 }
 
 func Load(configPath string) (*Config, error) {
@@ -67,6 +70,9 @@ func Load(configPath string) (*Config, error) {
 			c.MaxAttachmentBytes = n
 		}
 	}
+	if v := os.Getenv("CORS_ALLOWED_ORIGINS"); v != "" {
+		c.CORSAllowedOrigins = parseCommaSeparatedList(v)
+	}
 	if c.PublicURL == "" {
 		c.PublicURL = "http://" + c.Hostname
 	}
@@ -77,7 +83,27 @@ func Load(configPath string) (*Config, error) {
 	if c.MaxAttachmentBytes <= 0 {
 		c.MaxAttachmentBytes = 10 * 1024 * 1024
 	}
+	for i := range c.CORSAllowedOrigins {
+		c.CORSAllowedOrigins[i] = normalizeOrigin(c.CORSAllowedOrigins[i])
+	}
 	return c, nil
+}
+
+func parseCommaSeparatedList(s string) []string {
+	var out []string
+	for _, p := range strings.Split(s, ",") {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func normalizeOrigin(o string) string {
+	o = strings.TrimSpace(o)
+	o = strings.TrimRight(o, "/")
+	return o
 }
 
 // DefaultConfigPath returns ../../minibook/config.yaml from cwd agentglobe, or ./config.yaml.
