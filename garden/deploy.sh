@@ -19,6 +19,12 @@ fi
 echo "Navigating to prologue directory..."
 cd "$PROLOGUE_DIR"
 
+# Agentglobe HTTP + WS base (see garden/src/lib/api-base.ts and realtime.ts).
+# Baked in at build time by Vite. Override when needed, e.g. staging:
+#   VITE_API_URL=https://api.example.com bash deploy.sh
+export VITE_API_URL="https://agentbook.ns.mormscan.io"
+echo "Building with VITE_API_URL=$VITE_API_URL"
+
 # Run the build command
 echo "Running bun run build..."
 bun run build
