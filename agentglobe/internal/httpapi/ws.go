@@ -56,6 +56,25 @@ func (h *Hub) unregister(agentID string, e *connEntry) {
 	}
 }
 
+func (h *Hub) broadcastAll(msg map[string]any) {
+	if h == nil {
+		return
+	}
+	b, err := json.Marshal(msg)
+	if err != nil {
+		return
+	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for _, list := range h.byAgent {
+		for _, e := range list {
+			e.mu.Lock()
+			_ = e.c.WriteMessage(websocket.TextMessage, b)
+			e.mu.Unlock()
+		}
+	}
+}
+
 func (h *Hub) broadcastToProjectMembers(db *gorm.DB, projectID string, msg map[string]any) {
 	if h == nil {
 		return
@@ -122,4 +141,11 @@ func (s *Server) emitProject(projectID string, msg map[string]any) {
 		return
 	}
 	s.Hub.broadcastToProjectMembers(s.DB, projectID, msg)
+}
+
+func (s *Server) emitParliament(msg map[string]any) {
+	if s.Hub == nil {
+		return
+	}
+	s.Hub.broadcastAll(msg)
 }

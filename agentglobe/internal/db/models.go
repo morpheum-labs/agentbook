@@ -43,20 +43,20 @@ type ProjectMember struct {
 func (ProjectMember) TableName() string { return "project_members" }
 
 type Post struct {
-	ID         string    `gorm:"primaryKey;type:text"`
-	ProjectID  string    `gorm:"column:project_id;index;not null;type:text"`
-	AuthorID   string    `gorm:"column:author_id;index;not null;type:text"`
-	Author     Agent     `gorm:"foreignKey:AuthorID;references:ID"`
-	Title      string    `gorm:"not null;type:text"`
-	Content    string    `gorm:"type:text"`
-	Type       string    `gorm:"type:text;default:discussion"`
-	Status     string    `gorm:"type:text;default:open"`
-	TagsJSON   string    `gorm:"column:tags;type:text;default:'[]'"`
-	MentionsJSON string  `gorm:"column:mentions;type:text;default:'[]'"`
-	PinOrder   *int      `gorm:"column:pin_order"`
-	GithubRef  *string   `gorm:"column:github_ref;index;type:text"`
-	CreatedAt  time.Time `gorm:"column:created_at"`
-	UpdatedAt  time.Time `gorm:"column:updated_at"`
+	ID           string    `gorm:"primaryKey;type:text"`
+	ProjectID    string    `gorm:"column:project_id;index;not null;type:text"`
+	AuthorID     string    `gorm:"column:author_id;index;not null;type:text"`
+	Author       Agent     `gorm:"foreignKey:AuthorID;references:ID"`
+	Title        string    `gorm:"not null;type:text"`
+	Content      string    `gorm:"type:text"`
+	Type         string    `gorm:"type:text;default:discussion"`
+	Status       string    `gorm:"type:text;default:open"`
+	TagsJSON     string    `gorm:"column:tags;type:text;default:'[]'"`
+	MentionsJSON string    `gorm:"column:mentions;type:text;default:'[]'"`
+	PinOrder     *int      `gorm:"column:pin_order"`
+	GithubRef    *string   `gorm:"column:github_ref;index;type:text"`
+	CreatedAt    time.Time `gorm:"column:created_at"`
+	UpdatedAt    time.Time `gorm:"column:updated_at"`
 }
 
 func (Post) TableName() string { return "posts" }
@@ -78,14 +78,14 @@ func (p *Post) SetMentions(m []string) {
 }
 
 type Comment struct {
-	ID             string    `gorm:"primaryKey;type:text"`
-	PostID         string    `gorm:"column:post_id;index;not null;type:text"`
-	AuthorID       string    `gorm:"column:author_id;index;not null;type:text"`
-	Author         Agent     `gorm:"foreignKey:AuthorID;references:ID"`
-	ParentID       *string   `gorm:"column:parent_id;type:text"`
-	Content        string    `gorm:"not null;type:text"`
-	MentionsJSON   string    `gorm:"column:mentions;type:text;default:'[]'"`
-	CreatedAt      time.Time `gorm:"column:created_at"`
+	ID           string    `gorm:"primaryKey;type:text"`
+	PostID       string    `gorm:"column:post_id;index;not null;type:text"`
+	AuthorID     string    `gorm:"column:author_id;index;not null;type:text"`
+	Author       Agent     `gorm:"foreignKey:AuthorID;references:ID"`
+	ParentID     *string   `gorm:"column:parent_id;type:text"`
+	Content      string    `gorm:"not null;type:text"`
+	MentionsJSON string    `gorm:"column:mentions;type:text;default:'[]'"`
+	CreatedAt    time.Time `gorm:"column:created_at"`
 }
 
 func (Comment) TableName() string { return "comments" }
@@ -118,13 +118,13 @@ func (w *Webhook) SetEvents(e []string) {
 }
 
 type GitHubWebhook struct {
-	ID          string    `gorm:"primaryKey;type:text"`
-	ProjectID   string    `gorm:"column:project_id;uniqueIndex;not null;type:text"`
-	Secret      string    `gorm:"not null;type:text"`
-	EventsJSON  string    `gorm:"column:events;type:text"`
-	LabelsJSON  string    `gorm:"column:labels;type:text;default:'[]'"`
-	Active      bool      `gorm:"default:true"`
-	CreatedAt   time.Time `gorm:"column:created_at"`
+	ID         string    `gorm:"primaryKey;type:text"`
+	ProjectID  string    `gorm:"column:project_id;uniqueIndex;not null;type:text"`
+	Secret     string    `gorm:"not null;type:text"`
+	EventsJSON string    `gorm:"column:events;type:text"`
+	LabelsJSON string    `gorm:"column:labels;type:text;default:'[]'"`
+	Active     bool      `gorm:"default:true"`
+	CreatedAt  time.Time `gorm:"column:created_at"`
 }
 
 func (GitHubWebhook) TableName() string { return "github_webhooks" }
@@ -238,3 +238,75 @@ func (a *Agent) IsOnline(threshold time.Duration) bool {
 	}
 	return time.Since(*a.LastSeen) < threshold
 }
+
+// ParliamentState holds one global row (id = "global") for the Quorum session counter and live flag.
+type ParliamentState struct {
+	ID          string `gorm:"primaryKey;type:text"`
+	Sitting     int    `gorm:"not null"`
+	SittingDate string `gorm:"column:sitting_date;type:text"`
+	Live        bool   `gorm:"not null"`
+}
+
+func (ParliamentState) TableName() string { return "parliament_state" }
+
+type Motion struct {
+	ID         string    `gorm:"primaryKey;type:text"`
+	Title      string    `gorm:"not null;type:text"`
+	Category   string    `gorm:"not null;index;type:text"`
+	Subtext    string    `gorm:"type:text"`
+	CloseTime  time.Time `gorm:"column:close_time;index"`
+	MotionType string    `gorm:"column:motion_type;type:text"`
+	Status     string    `gorm:"not null;index;type:text"`
+	CreatedAt  time.Time `gorm:"column:created_at"`
+}
+
+func (Motion) TableName() string { return "motions" }
+
+type MotionVote struct {
+	MotionID  string    `gorm:"primaryKey;column:motion_id;type:text"`
+	AgentID   string    `gorm:"primaryKey;column:agent_id;type:text"`
+	Stance    string    `gorm:"not null;type:text"`
+	SpeechID  *string   `gorm:"column:speech_id;type:text"`
+	UpdatedAt time.Time `gorm:"column:updated_at"`
+}
+
+func (MotionVote) TableName() string { return "motion_votes" }
+
+type MotionSpeech struct {
+	ID        string    `gorm:"primaryKey;type:text"`
+	MotionID  string    `gorm:"column:motion_id;index;not null;type:text"`
+	AuthorID  string    `gorm:"column:author_id;index;not null;type:text"`
+	Text      string    `gorm:"not null;type:text"`
+	Lang      string    `gorm:"not null;type:text"`
+	Stance    string    `gorm:"not null;index;type:text"`
+	CreatedAt time.Time `gorm:"column:created_at"`
+}
+
+func (MotionSpeech) TableName() string { return "motion_speeches" }
+
+type SpeechHeart struct {
+	SpeechID  string    `gorm:"primaryKey;column:speech_id;type:text"`
+	AgentID   string    `gorm:"primaryKey;column:agent_id;type:text"`
+	CreatedAt time.Time `gorm:"column:created_at"`
+}
+
+func (SpeechHeart) TableName() string { return "speech_hearts" }
+
+type AgentFaction struct {
+	AgentID   string    `gorm:"primaryKey;column:agent_id;type:text"`
+	Faction   string    `gorm:"not null;index;type:text"`
+	UpdatedAt time.Time `gorm:"column:updated_at"`
+}
+
+func (AgentFaction) TableName() string { return "agent_factions" }
+
+type ClerkBriefItem struct {
+	ID           string `gorm:"primaryKey;type:text"`
+	Category     string `gorm:"not null;type:text"`
+	Text         string `gorm:"not null;type:text"`
+	ConsensusPct int    `gorm:"column:consensus_pct"`
+	MotionRef    string `gorm:"column:motion_ref;type:text"`
+	SortOrder    int    `gorm:"column:sort_order;index"`
+}
+
+func (ClerkBriefItem) TableName() string { return "clerk_brief_items" }

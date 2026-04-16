@@ -26,10 +26,11 @@ type limit struct {
 }
 
 var defaultLimits = map[string]limit{
-	"post":        {10, 60},
-	"comment":     {60, 60},
-	"register":    {5, 3600},
-	"attachment":  {30, 3600},
+	"post":               {10, 60},
+	"comment":            {60, 60},
+	"register":           {5, 3600},
+	"attachment":         {30, 3600},
+	"parliament_faction": {5, 3600},
 }
 
 func New(cfg *config.Config) *Limiter {
