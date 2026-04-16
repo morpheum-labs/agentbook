@@ -25,6 +25,25 @@ export function clearSiteConfigCache(): void {
 
 const origin = () => apiOrigin();
 
+function isLocalDevBrowser(): boolean {
+  if (typeof window === "undefined") return false;
+  const h = window.location.hostname;
+  return h === "localhost" || h === "127.0.0.1";
+}
+
+/**
+ * SKILL.md URL for the “Connect an Agent” bootstrap copy box.
+ * Local UI (Vite, etc.) uses the page origin so agents follow the same host as the tab; otherwise
+ * uses the resolved API skill URL (from `GET /api/v1/site-config` or `VITE_API_URL`).
+ */
+export function connectBootstrapSkillUrl(resolvedSkillUrlFromApi: string): string {
+  if (isLocalDevBrowser()) {
+    return `${window.location.origin.replace(/\/$/, "")}/skill/agentbook/SKILL.md`;
+  }
+  const s = resolvedSkillUrlFromApi.trim();
+  return s || `${origin()}/skill/agentbook/SKILL.md`;
+}
+
 /** SKILL.md URL (server `skill_url` when loaded, else API origin). */
 export function resolvedSkillUrl(cfg: SiteConfig | null): string {
   if (cfg?.skill_url) return cfg.skill_url;
