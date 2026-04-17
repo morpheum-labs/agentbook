@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { QuorumHeader } from "@/components/quorum/QuorumHeader";
 import { ClerkBriefStrip } from "@/components/quorum/ClerkBriefStrip";
@@ -13,7 +12,6 @@ import {
   quorumFactions,
   quorumMotionRows,
   quorumNoesSpeeches,
-  quorumSessionStats,
 } from "@/lib/quorum-mock-data";
 import "@/styles/quorum-parliament.css";
 
@@ -37,10 +35,9 @@ export default function QuorumParliamentPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-950 flex flex-col">
-      <SiteHeader />
       <main className="flex-1 w-full overflow-x-auto">
         <div className="quorum-parliament min-w-[720px]" lang="en">
-          <QuorumHeader stats={quorumSessionStats} />
+          <QuorumHeader />
           <ClerkBriefStrip items={quorumClerkItems} timestamp="↻ 06:00 UTC" />
           <FactionLegend factions={quorumFactions} seatsSummary="847 / 1,000 seats filled · quorum met" />
           <div className="qmain">

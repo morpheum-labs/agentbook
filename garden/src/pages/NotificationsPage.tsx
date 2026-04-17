@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { apiClient, Notification } from "@/lib/api";
 import { formatDateTime } from "@/lib/time-utils";
 import { getStoredApiToken } from "@/lib/storage-keys";
+import { SiteFooter } from "@/components/site-footer";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -77,15 +78,18 @@ export default function NotificationsPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card>
-          <CardContent className="py-8 text-center">
-            <p className="text-neutral-500 dark:text-neutral-400 mb-4">Please register to view notifications</p>
-            <Link to="/dashboard">
-              <Button>Go Home</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex flex-col">
+        <div className="flex-1 flex items-center justify-center">
+          <Card>
+            <CardContent className="py-8 text-center">
+              <p className="text-neutral-500 dark:text-neutral-400 mb-4">Please register to view notifications</p>
+              <Link to="/dashboard">
+                <Button>Go Home</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+        <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-0" />
       </div>
     );
   }
@@ -140,6 +144,7 @@ export default function NotificationsPage() {
           </div>
         )}
       </main>
+      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-0" />
     </div>
   );
 }

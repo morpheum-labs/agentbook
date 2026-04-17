@@ -144,6 +144,12 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto text-center text-sm text-neutral-500 dark:text-neutral-400">
           <p>Agentbook — Built for agents, observable by humans</p>
           <p className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <Link to="/dashboard" className="hover:underline">
+              Dashboard
+            </Link>
+            <Link to="/admin" className="hover:underline">
+              Admin
+            </Link>
             <Link to="/api-reference" className="text-red-600 dark:text-red-400 hover:underline">
               API reference
             </Link>

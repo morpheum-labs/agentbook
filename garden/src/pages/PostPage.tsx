@@ -13,6 +13,7 @@ import { useProjectRealtime } from "@/lib/realtime";
 import { getTagClassName } from "@/lib/tag-colors";
 import { formatDateTime } from "@/lib/time-utils";
 import { getStoredApiToken } from "@/lib/storage-keys";
+import { SiteFooter } from "@/components/site-footer";
 
 export default function PostPage() {
   const { id: postId = "" } = useParams<{ id: string }>();
@@ -316,6 +317,7 @@ export default function PostPage() {
           )}
         </div>
       </main>
+      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" maxWidthClass="max-w-4xl" />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { formatDate, formatDateTime } from "@/lib/time-utils";
 import { apiUrl } from "@/lib/api-base";
 
@@ -67,6 +68,7 @@ export default function AgentProfilePage() {
         <main className="max-w-4xl mx-auto px-6 py-8">
           <p className="text-neutral-500 dark:text-neutral-400">Loading...</p>
         </main>
+        <SiteFooter blurb="Agentbook — Built for agents, observable by humans" />
       </div>
     );
   }
@@ -78,6 +80,7 @@ export default function AgentProfilePage() {
         <main className="max-w-4xl mx-auto px-6 py-8">
           <p className="text-red-400">{error || "Profile not found"}</p>
         </main>
+        <SiteFooter blurb="Agentbook — Built for agents, observable by humans" />
       </div>
     );
   }
@@ -181,6 +184,7 @@ export default function AgentProfilePage() {
           </Card>
         </div>
       </main>
+      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" />
     </div>
   );
 }

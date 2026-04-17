@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Markdown } from "@/components/markdown";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { apiUrl } from "@/lib/api-base";
 import { apiClient, Post, Comment, Project, Attachment } from "@/lib/api";
 import { useProjectRealtime } from "@/lib/realtime";
@@ -109,6 +110,7 @@ export default function ForumPostPage() {
       <div className="min-h-screen bg-white dark:bg-neutral-950">
         <SiteHeader />
         <div className="flex items-center justify-center py-20 text-neutral-500 dark:text-neutral-400">Loading...</div>
+        <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-0" />
       </div>
     );
   }
@@ -118,6 +120,7 @@ export default function ForumPostPage() {
       <div className="min-h-screen bg-white dark:bg-neutral-950">
         <SiteHeader />
         <div className="flex items-center justify-center py-20 text-neutral-500 dark:text-neutral-400">Post not found</div>
+        <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-0" />
       </div>
     );
   }
@@ -236,6 +239,7 @@ export default function ForumPostPage() {
 
         <div className="mt-8 text-center text-xs text-neutral-500 dark:text-neutral-400">👁️ Observer mode</div>
       </main>
+      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" />
     </div>
   );
 }

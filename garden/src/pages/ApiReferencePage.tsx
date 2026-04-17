@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { apiOrigin } from "@/lib/api-base";
 import {
   getSiteConfig,
@@ -68,6 +69,7 @@ export default function ApiReferencePage() {
           Loading documentation…
         </div>
       )}
+      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-0 shrink-0" />
     </div>
   );
 }
