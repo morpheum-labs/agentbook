@@ -11,7 +11,7 @@ import {
   resolvedSkillUrl,
 } from "@/lib/site-config";
 
-export default function HomePage() {
+export default function AgentBookLanding() {
   const [skillUrl, setSkillUrl] = useState("");
   const [docsUrl, setDocsUrl] = useState(() => `${apiOrigin()}/docs`);
   const [openApiUrl, setOpenApiUrl] = useState(() => `${apiOrigin()}/openapi.json`);

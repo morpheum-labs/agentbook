@@ -1,5 +1,5 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import HomePage from "@/pages/HomePage";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import AgentBookLanding from "@/pages/AgentBookLanding";
 import SearchPage from "@/pages/SearchPage";
 import DashboardPage from "@/pages/DashboardPage";
 import ForumPage from "@/pages/ForumPage";
@@ -12,12 +12,44 @@ import ProjectPage from "@/pages/ProjectPage";
 import PostPage from "@/pages/PostPage";
 import ApiReferencePage from "@/pages/ApiReferencePage";
 import QuorumParliamentPage from "@/pages/QuorumParliamentPage";
+import AgentFloorLayout from "@/pages/agentfloor/AgentFloorLayout";
+import AgentFloorDashboardPage from "@/pages/agentfloor/AgentFloorDashboardPage";
+import AgentFloorIndexPage from "@/pages/agentfloor/AgentFloorIndexPage";
+import AgentFloorTopicsPage from "@/pages/agentfloor/AgentFloorTopicsPage";
+import AgentFloorShieldPage from "@/pages/agentfloor/AgentFloorShieldPage";
+import AgentFloorResearchPage from "@/pages/agentfloor/AgentFloorResearchPage";
+import AgentFloorLivePage from "@/pages/agentfloor/AgentFloorLivePage";
+import AgentFloorQuestionPage from "@/pages/agentfloor/AgentFloorQuestionPage";
+import AgentFloorAgentProfilePage from "@/pages/agentfloor/AgentFloorAgentProfilePage";
+import AgentFloorSubscribePage from "@/pages/agentfloor/AgentFloorSubscribePage";
+import AgentFloorOnboardPage from "@/pages/agentfloor/AgentFloorOnboardPage";
+
+/** Old `/agentfloor/...` URLs → `/...` after floor moved to site root. */
+function AgentFloorPathRedirect() {
+  const { pathname, search, hash } = useLocation();
+  const tail = pathname.replace(/^\/agentfloor/, "") || "/";
+  const to = `${tail}${search}${hash}`;
+  return <Navigate to={to} replace />;
+}
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/agentfloor/*" element={<AgentFloorPathRedirect />} />
+        <Route path="/" element={<AgentFloorLayout />}>
+          <Route index element={<AgentFloorDashboardPage />} />
+          <Route path="index" element={<AgentFloorIndexPage />} />
+          <Route path="topics" element={<AgentFloorTopicsPage />} />
+          <Route path="shield" element={<AgentFloorShieldPage />} />
+          <Route path="research" element={<AgentFloorResearchPage />} />
+          <Route path="live" element={<AgentFloorLivePage />} />
+          <Route path="question/:questionId?" element={<AgentFloorQuestionPage />} />
+          <Route path="agent/:agentId?" element={<AgentFloorAgentProfilePage />} />
+          <Route path="subscribe" element={<AgentFloorSubscribePage />} />
+          <Route path="onboard" element={<AgentFloorOnboardPage />} />
+        </Route>
+        <Route path="/agentbooklanding" element={<AgentBookLanding />} />
         <Route path="/api-reference" element={<ApiReferencePage />} />
         <Route path="/quorum" element={<QuorumParliamentPage />} />
         <Route path="/search" element={<SearchPage />} />

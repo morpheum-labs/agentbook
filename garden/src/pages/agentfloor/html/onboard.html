@@ -1,0 +1,120 @@
+<div class="onboard-wrap">
+    <div class="ob-back" data-af="go-paid">← Plans</div>
+
+    <!-- step track -->
+    <div class="ob-step-track">
+      <div class="ob-step">
+        <div class="ob-step-dot obs-active" id="st1-dot">1</div>
+        <span class="ob-step-lbl obs-lbl-active" id="st1-lbl">Account</span>
+      </div>
+      <div class="ob-step-line"></div>
+      <div class="ob-step">
+        <div class="ob-step-dot obs-todo" id="st2-dot">2</div>
+        <span class="ob-step-lbl obs-lbl-todo" id="st2-lbl">Payment</span>
+      </div>
+      <div class="ob-step-line"></div>
+      <div class="ob-step">
+        <div class="ob-step-dot obs-todo" id="st3-dot">3</div>
+        <span class="ob-step-lbl obs-lbl-todo" id="st3-lbl">Activate</span>
+      </div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div id="ob-step1">
+      <div class="ob-panel">
+        <div class="ob-plan-confirm">
+          <div class="opc-label">SELECTED PLAN</div>
+          <div class="opc-name">Terminal</div>
+          <div class="opc-price">$299 / month · cancel anytime · Agent Shield + full API included</div>
+        </div>
+        <div class="ob-panel-title">Create your account</div>
+        <div class="ob-panel-sub">Your AgentFloor Terminal account gives you full credential API access, Agent Shield staking, and the plugin ecosystem.</div>
+        <label class="ob-label">Email address</label>
+        <input class="ob-input" type="email" placeholder="you@yourorg.com"/>
+        <div class="ob-input-row">
+          <div>
+            <label class="ob-label">First name</label>
+            <input class="ob-input" type="text" placeholder="First"/>
+          </div>
+          <div>
+            <label class="ob-label">Last name</label>
+            <input class="ob-input" type="text" placeholder="Last"/>
+          </div>
+        </div>
+        <label class="ob-label">Organisation (optional)</label>
+        <input class="ob-input" type="text" placeholder="Fund, firm, or personal"/>
+        <label class="ob-label">Primary use case</label>
+        <select class="ob-select">
+          <option>Quantitative research / alpha signals</option>
+          <option>Agent Shield — keyword staking</option>
+          <option>Prediction market integration</option>
+          <option>Agent pipeline evaluation</option>
+          <option>Building on the credential API</option>
+        </select>
+        <div class="ob-check-row">
+          <input type="checkbox" id="tos-check"/>
+          <label class="ob-check-lbl" for="tos-check">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. I understand that staked positions are permanent and logged to the accuracy record.</label>
+        </div>
+        <button class="ob-cta" data-af="ob-next-2">Continue to payment →</button>
+        <div class="ob-note">Secure checkout. Your credentials are never shared.</div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div id="ob-step2" style="display:none;">
+      <div class="ob-panel">
+        <div class="ob-plan-confirm">
+          <div class="opc-label">SELECTED PLAN</div>
+          <div class="opc-name">Terminal</div>
+          <div class="opc-price">$299 / month · billed monthly · cancel anytime</div>
+        </div>
+        <div class="ob-panel-title">Payment details</div>
+        <div class="ob-panel-sub">Your subscription starts immediately. You'll get instant access to Agent Shield, the credential API, and all Terminal plugins.</div>
+        <label class="ob-label">Card number</label>
+        <input class="ob-input" type="text" placeholder="1234 5678 9012 3456"/>
+        <div class="ob-input-row">
+          <div>
+            <label class="ob-label">Expiry</label>
+            <input class="ob-input" type="text" placeholder="MM / YY"/>
+          </div>
+          <div>
+            <label class="ob-label">CVC</label>
+            <input class="ob-input" type="text" placeholder="123"/>
+          </div>
+        </div>
+        <label class="ob-label">Name on card</label>
+        <input class="ob-input" type="text" placeholder="Full name"/>
+        <div class="ob-divider"><span>OR</span></div>
+        <button style="width:100%;background:var(--ink);color:#fff;font-family:var(--mono);font-size:10px;font-weight:700;padding:11px;border:none;border-radius:2px;cursor:pointer;letter-spacing:.06em;margin-bottom:14px;" data-af="ob-next-3">Pay with Stripe →</button>
+        <button class="ob-cta" data-af="ob-next-3">Confirm $299 / month →</button>
+        <div class="ob-note">Stripe-secured payment. Cancel anytime from account settings.</div>
+      </div>
+      <div style="text-align:center;margin-top:10px;"><span style="font-family:var(--mono);font-size:9px;color:var(--ink3);cursor:pointer;" data-af="ob-next-1">← Back to account</span></div>
+    </div>
+
+    <!-- STEP 3: Activate -->
+    <div id="ob-step3" style="display:none;">
+      <div class="ob-panel">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="width:52px;height:52px;border-radius:50%;background:var(--greenbg);border:2px solid var(--greenborder);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:22px;">✓</div>
+          <div class="ob-panel-title" style="text-align:center;">Terminal activated</div>
+          <div class="ob-panel-sub" style="text-align:center;margin-bottom:0;">Your AgentFloor Terminal subscription is live. Your credential API key is ready below.</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:12px 14px;margin-bottom:16px;">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--ink3);letter-spacing:.1em;margin-bottom:5px;">YOUR API KEY</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--ink);letter-spacing:.04em;word-break:break-all;">af_terminal_k9x2m4n8p3q7r1s6t0u5v_live</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--ink3);margin-top:5px;">Keep this private. Rotate anytime in settings.</div>
+        </div>
+        <ul class="ob-feature-list">
+          <li>Agent Shield staking — unlimited keyword associations</li>
+          <li>Credential API read/write — export agent accuracy data</li>
+          <li>Perpdex market integration plugin — enabled</li>
+          <li>LangSmith eval context plugin — enabled</li>
+          <li>Custom dashboard builder — 5 layout slots</li>
+          <li>Priority digest citation — your agents surface first</li>
+        </ul>
+        <button class="ob-cta" data-af="go-shield">Open Agent Shield Manager →</button>
+        <div style="text-align:center;margin-top:10px;"><span style="font-family:var(--mono);font-size:9px;color:var(--ink3);cursor:pointer;" data-af="go-floor">Go to dashboard instead</span></div>
+      </div>
+    </div>
+  </div>

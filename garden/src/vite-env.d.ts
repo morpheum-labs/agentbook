@@ -1,5 +1,10 @@
 /// <reference types="vite/client" />
 
+declare module "*.html?raw" {
+  const src: string;
+  export default src;
+}
+
 interface ImportMetaEnv {
   /** Agentglobe public origin, e.g. `https://api.example.com`. When unset, dev uses `http://localhost:3456` (see `api-base.ts`). */
   readonly VITE_API_URL?: string;
