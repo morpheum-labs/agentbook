@@ -172,6 +172,33 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 		}
 	})
 
+	t.Run("topics page composed payload", func(t *testing.T) {
+		res, err := http.Get(base + "/topics")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("status %d", res.StatusCode)
+		}
+		var body map[string]any
+		if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		hdr, ok := body["header"].(map[string]any)
+		if !ok || hdr["title"] != "Topics" {
+			t.Fatalf("header: %#v", body["header"])
+		}
+		rows, ok := body["feed_rows"].([]any)
+		if !ok || len(rows) < 1 {
+			t.Fatalf("feed_rows: %#v", body["feed_rows"])
+		}
+		first, ok := rows[0].(map[string]any)
+		if !ok || first["direction"] != "long" {
+			t.Fatalf("first row: %#v", rows[0])
+		}
+	})
+
 	t.Run("question positions", func(t *testing.T) {
 		res, err := http.Get(base + "/questions/" + q.ID + "/positions")
 		if err != nil {
@@ -195,4 +222,37 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 			t.Fatal("expected external_signal_ids array")
 		}
 	})
+}
+
+func TestFloorTopicsPageUsesDBWhenDemoSeeded(t *testing.T) {
+	s := testServer(t)
+	if err := dbpkg.SeedFloorDemoTopics(s.DB); err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	res, err := http.Get(ts.URL + "/api/v1/floor/topics")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+	var body map[string]any
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	rows, ok := body["feed_rows"].([]any)
+	if !ok || len(rows) != 6 {
+		t.Fatalf("feed_rows len: %v", body["feed_rows"])
+	}
+	first, ok := rows[0].(map[string]any)
+	if !ok || first["topic_id"] != "Q.01" {
+		t.Fatalf("first row: %#v", rows[0])
+	}
+	last, ok := rows[len(rows)-1].(map[string]any)
+	if !ok || last["position_id"] != "pos_1" || last["proof_label"] != "ZK proof" {
+		t.Fatalf("oldest row should be pos_1 with ZK proof: %#v", rows[len(rows)-1])
+	}
 }

@@ -60,6 +60,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("AGENTGLOBE_FLOOR_SEED_DEMO")), "1") {
+		if err := db.SeedFloorDemoTopics(gdb); err != nil {
+			log.Printf("AGENTGLOBE_FLOOR_SEED_DEMO: seed failed: %v", err)
+		}
+	}
 	rl := ratelimit.New(cfg)
 	skill := httpapi.EmbeddedSkill
 	if len(skill) == 0 {

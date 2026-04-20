@@ -192,6 +192,9 @@ export const floorApi = {
       }`
     ),
 
+  /** Topics page — live position feed + right-rail context (composed payload). */
+  getTopicsPage: () => api<Record<string, unknown>>("/api/v1/floor/topics"),
+
   /** Topic Details — same resource as {@link floorApi.listFloorQuestions} row / single question; prefer for AgentFloor Topic Details UI. */
   getTopicDetails: (questionId: string, queryString?: string) => {
     const qs = queryString ? `?${queryString.replace(/^\?/, "")}` : "";

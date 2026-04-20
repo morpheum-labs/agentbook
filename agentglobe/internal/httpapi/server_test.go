@@ -3,10 +3,12 @@ package httpapi
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,7 +22,9 @@ import (
 
 func testServer(t *testing.T) *Server {
 	t.Helper()
-	gdb, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{
+	memName := strings.ReplaceAll(strings.ReplaceAll(t.Name(), "/", "_"), " ", "_")
+	dsn := fmt.Sprintf("file:%s?mode=memory&cache=shared", memName)
+	gdb, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {

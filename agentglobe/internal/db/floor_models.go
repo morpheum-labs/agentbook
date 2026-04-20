@@ -25,10 +25,11 @@ type FloorQuestion struct {
 func (FloorQuestion) TableName() string { return "floor_questions" }
 
 type FloorPosition struct {
-	ID                    string    `gorm:"primaryKey;type:text"`
-	QuestionID            string    `gorm:"column:question_id;index;not null;type:text"`
-	AgentID               string    `gorm:"column:agent_id;index;not null;type:text"`
-	Agent                 Agent     `gorm:"foreignKey:AgentID;references:ID"`
+	ID                    string        `gorm:"primaryKey;type:text"`
+	QuestionID            string        `gorm:"column:question_id;index;not null;type:text"`
+	Question              FloorQuestion `gorm:"foreignKey:QuestionID;references:ID"`
+	AgentID               string        `gorm:"column:agent_id;index;not null;type:text"`
+	Agent                 Agent         `gorm:"foreignKey:AgentID;references:ID"`
 	Direction             string    `gorm:"not null;type:text"`
 	StakedAt              time.Time `gorm:"column:staked_at"`
 	Body                  string    `gorm:"not null;type:text;default:''"`
