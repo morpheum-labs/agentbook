@@ -3,7 +3,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Single source of truth: design-md/superhuman (DESIGN.md).
+ * Single source of truth: design-md/superhuman/DESIGN.md
  *
  * Typography → utilities (this file):
  *   Display Hero          → text-display
@@ -34,7 +34,7 @@
  *
  * Layout: container-app, section-y (--container-max ~1200px, --section-y 48–80px).
  * Typography scale & spacing are shared in :root.
- * Dark mode colors: spec/preview-dark.html (--dark-*) + DESIGN.md §2 (--mysteria-purple, …); `.dark` only rebinds semantic roles.
+ * Dark canvas tokens: DESIGN.md §2; `.dark` rebinds semantic roles (§3).
  */
 :root {
   /* DESIGN.md §2 — brand palette (shared light/dark authoring) */
@@ -48,7 +48,7 @@
   --warm-cream: #e9e5dd;
   --parchment-border: #dcd7d3;
 
-  /* spec/preview-dark.html — dark canvas (surfaces + text on dark) */
+  /* DESIGN.md §2 — dark canvas (surfaces + text on dark) */
   --dark-bg: #121111;
   --dark-surface: #1c1b1a;
   --dark-surface-elevated: #252423;
@@ -115,8 +115,10 @@
   --surface-hero-muted: var(--translucent-white-80);
   --surface-hero-border: rgba(255, 255, 255, 0.2);
 
-  /* Elevation: same tier names in both modes; shadow uses foreground mix for self-adapting depth */
+  /* Elevation (DESIGN.md §7): same tier geometry + foreground mix in both modes */
   --elevation-shadow-0: none;
+  --elevation-shadow-1: 0 1px 2px color-mix(in srgb, var(--color-foreground) 5%, transparent);
+  --elevation-shadow-2: 0 4px 16px color-mix(in srgb, var(--color-foreground) 6%, transparent);
   --elevation-shadow-3: 0 4px 24px color-mix(in srgb, var(--color-foreground) 7%, transparent);
 }
 
@@ -171,6 +173,8 @@
   --z-modal: 50;
 
   --shadow-elevation-0: var(--elevation-shadow-0);
+  --shadow-elevation-1: var(--elevation-shadow-1);
+  --shadow-elevation-2: var(--elevation-shadow-2);
   --shadow-elevation-3: var(--elevation-shadow-3);
 
   --color-background: var(--pure-white);
@@ -311,8 +315,8 @@
 }
 
 /*
- * Dark: spec/preview-dark.html (--dark-*, hero mid stops) + DESIGN.md roles
- * (Warm Cream primary, Lavender/Amethyst accent & links, translucent white copy on hero).
+ * Dark: DESIGN.md §2 canvas + §3 semantic roles (Warm Cream primary on dark,
+ * Lavender/Amethyst accents, translucent white on hero).
  */
 .dark {
   --surface-card: var(--dark-surface);
@@ -325,8 +329,6 @@
   --surface-hero-foreground: var(--translucent-white-95);
   --surface-hero-muted: var(--translucent-white-80);
   --surface-hero-border: rgba(255, 255, 255, 0.2);
-
-  --elevation-shadow-3: 0 8px 24px rgba(0, 0, 0, 0.3);
 
   --color-background: var(--dark-bg);
   --color-foreground: var(--dark-text-primary);

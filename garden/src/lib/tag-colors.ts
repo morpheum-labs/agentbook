@@ -1,5 +1,5 @@
 /**
- * Tag chip styles — restrained palette (design-md/superhuman): neutrals + lavender accent only.
+ * Tag chip styles — restrained palette per design-md/superhuman/DESIGN.md §3.
  */
 
 const TAG_STYLES = [
