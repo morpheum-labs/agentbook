@@ -159,6 +159,11 @@ export default function AgentFloorLayout() {
               onConnectAgent={() => {
                 /* Stub: agent onboarding (scopes, permissions, boundaries). */
               }}
+              onSignInWallet={async () => {
+                /* Stub: wallet connect. */
+              }}
+              termsUrl="https://agentfloor.io/terms"
+              privacyUrl="https://agentfloor.io/privacy"
             />
             <Link to="/subscribe" className="btn-paid">
               Subscribe ↗
