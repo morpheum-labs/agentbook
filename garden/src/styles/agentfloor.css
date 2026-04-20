@@ -40,6 +40,8 @@
   --red:var(--af-risk);
   --redbg:var(--af-risk-bg);
   --redborder:var(--af-risk-border);
+  /* Modal scrim — DESIGN.md §1 Charcoal Ink */
+  --af-connect-backdrop:color-mix(in srgb,var(--charcoal-ink) 44%,transparent);
   --border:var(--parchment-border);
   --border2:color-mix(in srgb,var(--parchment-border) 65%,var(--charcoal-ink));
   --font:system-ui,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",sans-serif;
@@ -84,6 +86,79 @@
 .af-theme-toggle-icon{width:14px;height:14px;stroke-width:2px;}
 .btn-paid{font-family:var(--mono);font-size:9px;font-weight:700;color:var(--on-fill);padding:5px 14px;background:var(--fill);border:none;border-radius:2px;cursor:pointer;letter-spacing:.06em;}
 .btn-paid:hover{background:var(--fill-hover);}
+
+/* ── CONNECT MODAL (DESIGN.md §4 typography, §5 spacing, §6 radii, §7 elevation; §1–§2 surfaces) ── */
+.agentfloor .af-connect-backdrop{position:fixed;inset:0;z-index:50;background:var(--af-connect-backdrop);}
+.agentfloor .af-connect-card{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:51;
+  width:min(24rem,calc(100vw - var(--page-gutter) * 2));
+  max-height:min(90dvh,100%);
+  overflow:auto;
+  box-sizing:border-box;
+  border-radius:var(--radius-card);
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--fg);
+  box-shadow:0 4px 24px color-mix(in srgb,var(--fg) 7%,transparent);
+  font-family:var(--font);
+}
+.agentfloor .af-connect-head{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:var(--spacing-4);
+  padding:var(--spacing-6) var(--spacing-6) var(--spacing-4);
+  border-bottom:1px solid var(--border);
+}
+.agentfloor .af-connect-title{
+  font-family:var(--serif);
+  font-size:var(--fs-card-heading);
+  line-height:var(--lh-card-heading);
+  letter-spacing:var(--ls-card-heading);
+  font-weight:var(--fw-body);
+  color:var(--fg);
+  margin:0;
+}
+.agentfloor .af-connect-close{
+  display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  width:var(--spacing-10);height:var(--spacing-10);
+  padding:0;border:none;border-radius:var(--radius);
+  background:transparent;color:var(--ink3);cursor:pointer;
+  transition:color .12s,background .12s;
+}
+.agentfloor .af-connect-close:hover{color:var(--fg);background:var(--bg2);}
+.agentfloor .af-connect-close:focus-visible{outline:2px solid var(--af-tone-a);outline-offset:2px;}
+.agentfloor .af-connect-close-icon{width:var(--spacing-5);height:var(--spacing-5);}
+.agentfloor .af-connect-body{
+  padding:var(--spacing-6);
+  display:flex;flex-direction:column;gap:var(--spacing-5);
+}
+.agentfloor .af-connect-support{
+  font-size:var(--fs-caption);
+  line-height:var(--lh-body);
+  font-weight:var(--fw-body);
+  color:var(--ink2);
+  letter-spacing:0;
+  margin:0;
+}
+.agentfloor .af-connect-actions{display:flex;flex-direction:column;gap:var(--spacing-3);}
+.agentfloor .af-connect-btn{
+  width:100%;
+  border-radius:var(--radius);
+  padding:var(--spacing-3) var(--spacing-5);
+  font-family:var(--mono);
+  font-size:var(--fs-body);
+  line-height:var(--lh-button);
+  font-weight:var(--fw-ui-bold);
+  letter-spacing:0;
+  cursor:pointer;
+  border:1px solid transparent;
+  transition:background .12s,border-color .12s,color .12s;
+}
+.agentfloor .af-connect-btn:focus-visible{outline:2px solid var(--af-tone-a);outline-offset:2px;}
+.agentfloor .af-connect-btn--fill{background:var(--fill);color:var(--on-fill);border-color:var(--fill);}
+.agentfloor .af-connect-btn--fill:hover{background:var(--fill-hover);border-color:var(--fill-hover);}
+.agentfloor .af-connect-btn--line{background:transparent;color:var(--ink2);border-color:var(--border);}
+.agentfloor .af-connect-btn--line:hover{color:var(--fg);border-color:var(--border2);}
 
 /* ── DIGEST STRIP ── */
 .digest{background:var(--surface);border-bottom:1px solid var(--border);padding:6px 24px;display:flex;align-items:center;gap:10px;}
@@ -739,6 +814,7 @@
   --red:var(--af-risk);
   --redbg:var(--af-risk-bg);
   --redborder:var(--af-risk-border);
+  --af-connect-backdrop:color-mix(in srgb,var(--dark-bg) 82%,transparent);
 }
 .agentfloor--dark .ti-l{color:var(--dark-text-tertiary);}
 .agentfloor--dark .ti-v{color:var(--dark-text-secondary);}

@@ -8,6 +8,7 @@ import {
   type AgentFloorColorMode,
 } from "@/lib/agentfloor-theme";
 import { AgentFloorToastProvider } from "./agent-floor-toast";
+import { AgentFloorConnectDialog } from "./AgentFloorConnectDialog";
 import "@/styles/agentfloor.css";
 
 function nvClass({ isActive }: { isActive: boolean }) {
@@ -15,6 +16,7 @@ function nvClass({ isActive }: { isActive: boolean }) {
 }
 
 export default function AgentFloorLayout() {
+  const [agentFloorRoot, setAgentFloorRoot] = useState<HTMLDivElement | null>(null);
   const [colorMode, setColorMode] = useState<AgentFloorColorMode>(() =>
     typeof window !== "undefined" ? getAgentFloorColorMode() : "light",
   );
@@ -26,7 +28,10 @@ export default function AgentFloorLayout() {
   }
 
   return (
-    <div className={cn("agentfloor", colorMode === "dark" && "agentfloor--dark")}>
+    <div
+      ref={setAgentFloorRoot}
+      className={cn("agentfloor", colorMode === "dark" && "agentfloor--dark")}
+    >
       <AgentFloorToastProvider>
         <div className="ticker">
           <div className="tick-live">LIVE</div>
@@ -149,9 +154,7 @@ export default function AgentFloorLayout() {
                 <Moon className="af-theme-toggle-icon" aria-hidden />
               )}
             </button>
-            <button type="button" className="btn-free">
-              Sign In
-            </button>
+            <AgentFloorConnectDialog portalContainer={agentFloorRoot} />
             <Link to="/subscribe" className="btn-paid">
               Subscribe ↗
             </Link>
