@@ -33,9 +33,30 @@
  * Elevation (DESIGN.md §6): shadow-elevation-0 … shadow-elevation-3; strong separators → border-foreground/20
  *
  * Layout: container-app, section-y (--container-max ~1200px, --section-y 48–80px).
- * Typography scale & spacing are shared in :root; .dark swaps color-role variables only.
+ * Typography scale & spacing are shared in :root.
+ * Dark mode colors: spec/preview-dark.html (--dark-*) + DESIGN.md §2 (--mysteria-purple, …); `.dark` only rebinds semantic roles.
  */
 :root {
+  /* DESIGN.md §2 — brand palette (shared light/dark authoring) */
+  --mysteria-purple: #1b1938;
+  --lavender-glow: #cbb7fb;
+  --charcoal-ink: #292827;
+  --amethyst-link: #714cb6;
+  --translucent-white-95: rgba(255, 255, 255, 0.95);
+  --translucent-white-80: rgba(255, 255, 255, 0.8);
+  --pure-white: #ffffff;
+  --warm-cream: #e9e5dd;
+  --parchment-border: #dcd7d3;
+
+  /* spec/preview-dark.html — dark canvas (surfaces + text on dark) */
+  --dark-bg: #121111;
+  --dark-surface: #1c1b1a;
+  --dark-surface-elevated: #252423;
+  --dark-border: #3a3938;
+  --dark-text-primary: rgba(255, 255, 255, 0.92);
+  --dark-text-secondary: rgba(255, 255, 255, 0.6);
+  --dark-text-tertiary: rgba(255, 255, 255, 0.4);
+
   --radius: 0.5rem; /* 8px — buttons, inputs, small controls */
   --radius-card: 1rem; /* 16px — cards, dialogs, large containers */
 
@@ -82,16 +103,16 @@
   --section-y: 5rem; /* 80px */
   --container-max: 75rem; /* ~1200px */
 
-  /* Surfaces (paired in .dark) */
-  --surface-card: #ffffff;
-  --surface-card-foreground: #292827;
-  --surface-elevated: #f7f6f4;
-  --surface-elevated-foreground: #292827;
-  --surface-hero-from: #1b1938;
+  /* Light surfaces (DESIGN.md: Pure White canvas, hero → white transition) */
+  --surface-card: var(--pure-white);
+  --surface-card-foreground: var(--charcoal-ink);
+  --surface-elevated: color-mix(in srgb, var(--warm-cream) 18%, var(--pure-white));
+  --surface-elevated-foreground: var(--charcoal-ink);
+  --surface-hero-from: var(--mysteria-purple);
   --surface-hero-mid: #221f42;
-  --surface-hero-to: #f5f3f0;
-  --surface-hero-foreground: rgba(255, 255, 255, 0.95);
-  --surface-hero-muted: rgba(255, 255, 255, 0.8);
+  --surface-hero-to: color-mix(in srgb, var(--pure-white) 94%, var(--warm-cream));
+  --surface-hero-foreground: var(--translucent-white-95);
+  --surface-hero-muted: var(--translucent-white-80);
   --surface-hero-border: rgba(255, 255, 255, 0.2);
 
   /* Elevation: same tier names in both modes; shadow uses foreground mix for self-adapting depth */
@@ -152,39 +173,39 @@
   --shadow-elevation-0: var(--elevation-shadow-0);
   --shadow-elevation-3: var(--elevation-shadow-3);
 
-  --color-background: #ffffff;
-  --color-foreground: #292827;
+  --color-background: var(--pure-white);
+  --color-foreground: var(--charcoal-ink);
   --color-card: var(--surface-card);
   --color-card-foreground: var(--surface-card-foreground);
   --color-popover: var(--surface-elevated);
   --color-popover-foreground: var(--surface-elevated-foreground);
-  --color-primary: #e9e5dd;
-  --color-primary-foreground: #292827;
-  --color-secondary: #f5f3ef;
-  --color-secondary-foreground: #292827;
-  --color-muted: #f5f3ef;
-  --color-muted-foreground: #6b6660;
-  --color-accent: #ebe4f7;
-  --color-accent-foreground: #292827;
+  --color-primary: var(--warm-cream);
+  --color-primary-foreground: var(--charcoal-ink);
+  --color-secondary: color-mix(in srgb, var(--warm-cream) 28%, var(--pure-white));
+  --color-secondary-foreground: var(--charcoal-ink);
+  --color-muted: color-mix(in srgb, var(--warm-cream) 22%, var(--pure-white));
+  --color-muted-foreground: color-mix(in srgb, var(--charcoal-ink) 58%, var(--parchment-border));
+  --color-accent: color-mix(in srgb, var(--lavender-glow) 16%, var(--pure-white));
+  --color-accent-foreground: var(--charcoal-ink);
   --color-destructive: #b42318;
-  --color-destructive-foreground: #ffffff;
-  --color-border: #dcd7d3;
-  --color-input: #dcd7d3;
-  --color-ring: #714cb6;
-  --color-link: #714cb6;
-  --color-chart-1: #714cb6;
-  --color-chart-2: #5b8a6a;
-  --color-chart-3: #5a6b8f;
-  --color-chart-4: #9a7a4a;
-  --color-chart-5: #cbb7fb;
-  --color-sidebar: #faf9f7;
-  --color-sidebar-foreground: #292827;
-  --color-sidebar-primary: #e9e5dd;
-  --color-sidebar-primary-foreground: #292827;
-  --color-sidebar-accent: #ebe4f7;
-  --color-sidebar-accent-foreground: #292827;
-  --color-sidebar-border: #dcd7d3;
-  --color-sidebar-ring: #714cb6;
+  --color-destructive-foreground: var(--pure-white);
+  --color-border: var(--parchment-border);
+  --color-input: var(--parchment-border);
+  --color-ring: var(--amethyst-link);
+  --color-link: var(--amethyst-link);
+  --color-chart-1: var(--amethyst-link);
+  --color-chart-2: color-mix(in srgb, var(--charcoal-ink) 22%, var(--parchment-border));
+  --color-chart-3: color-mix(in srgb, var(--amethyst-link) 35%, var(--pure-white));
+  --color-chart-4: color-mix(in srgb, var(--lavender-glow) 22%, var(--pure-white));
+  --color-chart-5: var(--lavender-glow);
+  --color-sidebar: color-mix(in srgb, var(--warm-cream) 12%, var(--pure-white));
+  --color-sidebar-foreground: var(--charcoal-ink);
+  --color-sidebar-primary: var(--warm-cream);
+  --color-sidebar-primary-foreground: var(--charcoal-ink);
+  --color-sidebar-accent: color-mix(in srgb, var(--lavender-glow) 14%, var(--pure-white));
+  --color-sidebar-accent-foreground: var(--charcoal-ink);
+  --color-sidebar-border: var(--parchment-border);
+  --color-sidebar-ring: var(--amethyst-link);
 
   --color-surface-card: var(--surface-card);
   --color-surface-card-foreground: var(--surface-card-foreground);
@@ -289,48 +310,53 @@
   --animate-accordion-up: accordion-up 0.2s ease-out;
 }
 
-/* Dark: paired surfaces + semantic colors only (type/spacing/elevation tiers unchanged). */
+/*
+ * Dark: spec/preview-dark.html (--dark-*, hero mid stops) + DESIGN.md roles
+ * (Warm Cream primary, Lavender/Amethyst accent & links, translucent white copy on hero).
+ */
 .dark {
-  --surface-card: #1c1b1a;
-  --surface-card-foreground: #ebeae9;
-  --surface-elevated: #252423;
-  --surface-elevated-foreground: #ebeae9;
-  --surface-hero-from: #0a090f;
-  --surface-hero-mid: #15122a;
-  --surface-hero-to: #121111;
-  --surface-hero-foreground: rgba(255, 255, 255, 0.95);
-  --surface-hero-muted: rgba(255, 255, 255, 0.8);
-  --surface-hero-border: rgba(255, 255, 255, 0.14);
+  --surface-card: var(--dark-surface);
+  --surface-card-foreground: var(--dark-text-primary);
+  --surface-elevated: var(--dark-surface-elevated);
+  --surface-elevated-foreground: var(--dark-text-primary);
+  --surface-hero-from: var(--mysteria-purple);
+  --surface-hero-mid: #2a1f5e;
+  --surface-hero-to: #3a2468;
+  --surface-hero-foreground: var(--translucent-white-95);
+  --surface-hero-muted: var(--translucent-white-80);
+  --surface-hero-border: rgba(255, 255, 255, 0.2);
 
-  --color-background: #121111;
-  --color-foreground: #ebeae9;
-  --color-primary: #e9e5dd;
-  --color-primary-foreground: #292827;
-  --color-secondary: #252423;
-  --color-secondary-foreground: #ebeae9;
-  --color-muted: #252423;
-  --color-muted-foreground: #a39f9b;
-  --color-accent: #2f2840;
-  --color-accent-foreground: #ebeae9;
-  --color-destructive: #c42c24;
-  --color-destructive-foreground: #fafafa;
-  --color-border: #3a3938;
-  --color-input: #3a3938;
-  --color-ring: #cbb7fb;
-  --color-link: #cbb7fb;
-  --color-chart-1: #cbb7fb;
-  --color-chart-2: #6bc48a;
-  --color-chart-3: #8aa4e8;
-  --color-chart-4: #d4b56a;
-  --color-chart-5: #a78bdb;
-  --color-sidebar: #121111;
-  --color-sidebar-foreground: #ebeae9;
-  --color-sidebar-primary: #e9e5dd;
-  --color-sidebar-primary-foreground: #292827;
-  --color-sidebar-accent: #252423;
-  --color-sidebar-accent-foreground: #ebeae9;
-  --color-sidebar-border: #3a3938;
-  --color-sidebar-ring: #cbb7fb;
+  --elevation-shadow-3: 0 8px 24px rgba(0, 0, 0, 0.3);
+
+  --color-background: var(--dark-bg);
+  --color-foreground: var(--dark-text-primary);
+  --color-primary: var(--warm-cream);
+  --color-primary-foreground: var(--charcoal-ink);
+  --color-secondary: var(--dark-surface-elevated);
+  --color-secondary-foreground: var(--dark-text-primary);
+  --color-muted: var(--dark-surface-elevated);
+  --color-muted-foreground: var(--dark-text-secondary);
+  --color-accent: color-mix(in srgb, var(--lavender-glow) 14%, var(--dark-surface));
+  --color-accent-foreground: var(--dark-text-primary);
+  --color-destructive: #b42318;
+  --color-destructive-foreground: var(--pure-white);
+  --color-border: var(--dark-border);
+  --color-input: var(--dark-border);
+  --color-ring: var(--lavender-glow);
+  --color-link: var(--lavender-glow);
+  --color-chart-1: var(--amethyst-link);
+  --color-chart-2: color-mix(in srgb, var(--lavender-glow) 22%, var(--dark-surface));
+  --color-chart-3: color-mix(in srgb, var(--lavender-glow) 12%, var(--dark-surface));
+  --color-chart-4: color-mix(in srgb, var(--amethyst-link) 18%, var(--dark-surface));
+  --color-chart-5: var(--lavender-glow);
+  --color-sidebar: var(--dark-bg);
+  --color-sidebar-foreground: var(--dark-text-primary);
+  --color-sidebar-primary: var(--warm-cream);
+  --color-sidebar-primary-foreground: var(--charcoal-ink);
+  --color-sidebar-accent: var(--dark-surface-elevated);
+  --color-sidebar-accent-foreground: var(--dark-text-primary);
+  --color-sidebar-border: var(--dark-border);
+  --color-sidebar-ring: var(--lavender-glow);
 }
 
 @keyframes accordion-down {
