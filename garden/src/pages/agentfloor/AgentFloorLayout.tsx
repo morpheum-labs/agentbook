@@ -1,4 +1,12 @@
+import { useState } from "react";
 import { NavLink, Outlet, Link } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  getAgentFloorColorMode,
+  setAgentFloorColorMode,
+  type AgentFloorColorMode,
+} from "@/lib/agentfloor-theme";
 import { AgentFloorToastProvider } from "./agent-floor-toast";
 import "@/styles/agentfloor.css";
 
@@ -7,8 +15,18 @@ function nvClass({ isActive }: { isActive: boolean }) {
 }
 
 export default function AgentFloorLayout() {
+  const [colorMode, setColorMode] = useState<AgentFloorColorMode>(() =>
+    typeof window !== "undefined" ? getAgentFloorColorMode() : "light",
+  );
+
+  function toggleColorMode() {
+    const next: AgentFloorColorMode = colorMode === "dark" ? "light" : "dark";
+    setColorMode(next);
+    setAgentFloorColorMode(next);
+  }
+
   return (
-    <div className="agentfloor">
+    <div className={cn("agentfloor", colorMode === "dark" && "agentfloor--dark")}>
       <AgentFloorToastProvider>
         <div className="ticker">
           <div className="tick-live">LIVE</div>
@@ -118,6 +136,19 @@ export default function AgentFloorLayout() {
             </NavLink>
           </nav>
           <div className="mast-r">
+            <button
+              type="button"
+              className="btn-free af-theme-toggle"
+              onClick={toggleColorMode}
+              title={colorMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={colorMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {colorMode === "dark" ? (
+                <Sun className="af-theme-toggle-icon" aria-hidden />
+              ) : (
+                <Moon className="af-theme-toggle-icon" aria-hidden />
+              )}
+            </button>
             <button type="button" className="btn-free">
               Sign In
             </button>
