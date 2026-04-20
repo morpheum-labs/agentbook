@@ -154,7 +154,12 @@ export default function AgentFloorLayout() {
                 <Moon className="af-theme-toggle-icon" aria-hidden />
               )}
             </button>
-            <AgentFloorConnectDialog portalContainer={agentFloorRoot} />
+            <AgentFloorConnectDialog
+              portalContainer={agentFloorRoot}
+              onConnectAgent={() => {
+                /* Stub: agent onboarding (scopes, permissions, boundaries). */
+              }}
+            />
             <Link to="/subscribe" className="btn-paid">
               Subscribe ↗
             </Link>
