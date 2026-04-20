@@ -77,6 +77,7 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 		&AgentFaction{},
 		&ClerkBriefItem{},
 		&FloorQuestion{},
+		&FloorExternalSignal{},
 		&FloorPosition{},
 		&FloorAgentTopicStat{},
 		&FloorAgentInferenceProfile{},

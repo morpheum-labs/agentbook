@@ -58,41 +58,46 @@ func floorDecodeJSONArray(raw string) []any {
 
 func floorQuestionMap(q *dbpkg.FloorQuestion) map[string]any {
 	m := map[string]any{
-		"id":                     q.ID,
-		"title":                  q.Title,
-		"category":               q.Category,
-		"resolution_condition":   q.ResolutionCondition,
-		"deadline":               q.Deadline,
-		"probability":            q.Probability,
-		"probability_delta":      q.ProbabilityDelta,
-		"agent_count":            q.AgentCount,
-		"staked_count":           q.StakedCount,
-		"status":                 q.Status,
-		"cluster_breakdown":      floorDecodeJSONObject(q.ClusterBreakdownJSON),
-		"created_at":             q.CreatedAt.UTC().Format(time.RFC3339Nano),
-		"updated_at":             q.UpdatedAt.UTC().Format(time.RFC3339Nano),
+		"id":                   q.ID,
+		"title":                q.Title,
+		"category":             q.Category,
+		"resolution_condition": q.ResolutionCondition,
+		"deadline":             q.Deadline,
+		"probability":          q.Probability,
+		"probability_delta":    q.ProbabilityDelta,
+		"agent_count":          q.AgentCount,
+		"staked_count":         q.StakedCount,
+		"status":               q.Status,
+		"cluster_breakdown":    floorDecodeJSONObject(q.ClusterBreakdownJSON),
+		"created_at":           q.CreatedAt.UTC().Format(time.RFC3339Nano),
+		"updated_at":           q.UpdatedAt.UTC().Format(time.RFC3339Nano),
 	}
 	if q.ZkVerifiedPct != nil {
 		m["zk_verified_pct"] = *q.ZkVerifiedPct
 	} else {
 		m["zk_verified_pct"] = nil
 	}
+	if q.WmContextID != nil {
+		m["wm_context_id"] = *q.WmContextID
+	} else {
+		m["wm_context_id"] = nil
+	}
 	return m
 }
 
 func floorDigestMap(d *dbpkg.FloorDigestEntry) map[string]any {
 	m := map[string]any{
-		"id":                 d.ID,
-		"question_id":        d.QuestionID,
-		"digest_date":        d.DigestDate,
+		"id":          d.ID,
+		"question_id": d.QuestionID,
+		"digest_date": d.DigestDate,
 		// "date" duplicates digest_date for AgentFloor V3 digest / digest-history JSON examples.
-		"date":               d.DigestDate,
-		"consensus_level":    d.ConsensusLevel,
-		"probability":        d.Probability,
-		"probability_delta":  d.ProbabilityDelta,
-		"summary":            d.Summary,
-		"cluster_breakdown":  floorDecodeJSONObject(d.ClusterBreakdownJSON),
-		"created_at":         d.CreatedAt.UTC().Format(time.RFC3339Nano),
+		"date":              d.DigestDate,
+		"consensus_level":   d.ConsensusLevel,
+		"probability":       d.Probability,
+		"probability_delta": d.ProbabilityDelta,
+		"summary":           d.Summary,
+		"cluster_breakdown": floorDecodeJSONObject(d.ClusterBreakdownJSON),
+		"created_at":        d.CreatedAt.UTC().Format(time.RFC3339Nano),
 	}
 	if d.TopLongAgentID != nil {
 		m["top_long_agent_id"] = *d.TopLongAgentID
@@ -118,18 +123,18 @@ func floorPositionMap(p *dbpkg.FloorPosition) map[string]any {
 		name = p.Agent.Name
 	}
 	m := map[string]any{
-		"id":                       p.ID,
-		"question_id":              p.QuestionID,
-		"agent_id":                 p.AgentID,
-		"agent_name":               name,
-		"direction":                p.Direction,
-		"staked_at":                p.StakedAt.UTC().Format(time.RFC3339Nano),
-		"body":                     p.Body,
-		"language":                 p.Language,
-		"resolved":                 p.Resolved,
-		"outcome":                  p.Outcome,
-		"challenge_open":           p.ChallengeOpen,
-		"created_at":               p.CreatedAt.UTC().Format(time.RFC3339Nano),
+		"id":             p.ID,
+		"question_id":    p.QuestionID,
+		"agent_id":       p.AgentID,
+		"agent_name":     name,
+		"direction":      p.Direction,
+		"staked_at":      p.StakedAt.UTC().Format(time.RFC3339Nano),
+		"body":           p.Body,
+		"language":       p.Language,
+		"resolved":       p.Resolved,
+		"outcome":        p.Outcome,
+		"challenge_open": p.ChallengeOpen,
+		"created_at":     p.CreatedAt.UTC().Format(time.RFC3339Nano),
 	}
 	if p.AccuracyScoreAtStake != nil {
 		m["accuracy_score_at_stake"] = *p.AccuracyScoreAtStake
@@ -161,27 +166,28 @@ func floorPositionMap(p *dbpkg.FloorPosition) map[string]any {
 	} else {
 		m["source_comment_id"] = nil
 	}
+	m["external_signal_ids"] = floorDecodeJSONArray(p.ExternalSignalIDsJSON)
 	return m
 }
 
 func floorTopicStatMap(t *dbpkg.FloorAgentTopicStat) map[string]any {
 	return map[string]any{
-		"agent_id":     t.AgentID,
-		"topic_class":  t.TopicClass,
-		"calls":        t.Calls,
-		"correct":      t.Correct,
-		"score":        t.Score,
-		"updated_at":   t.UpdatedAt.UTC().Format(time.RFC3339Nano),
+		"agent_id":    t.AgentID,
+		"topic_class": t.TopicClass,
+		"calls":       t.Calls,
+		"correct":     t.Correct,
+		"score":       t.Score,
+		"updated_at":  t.UpdatedAt.UTC().Format(time.RFC3339Nano),
 	}
 }
 
 func floorProbabilityPointMap(pt *dbpkg.FloorQuestionProbabilityPoint) map[string]any {
 	return map[string]any{
-		"id":           pt.ID,
-		"question_id":  pt.QuestionID,
-		"captured_at":  pt.CapturedAt.UTC().Format(time.RFC3339Nano),
-		"probability":  pt.Probability,
-		"source":       pt.Source,
+		"id":          pt.ID,
+		"question_id": pt.QuestionID,
+		"captured_at": pt.CapturedAt.UTC().Format(time.RFC3339Nano),
+		"probability": pt.Probability,
+		"source":      pt.Source,
 	}
 }
 
@@ -191,20 +197,20 @@ func floorShieldClaimMap(c *dbpkg.FloorShieldClaim, withChallenges bool) map[str
 		agentName = c.Agent.Name
 	}
 	m := map[string]any{
-		"id":                       c.ID,
-		"keyword":                  c.Keyword,
-		"agent_id":                 c.AgentID,
-		"agent_name":               agentName,
-		"rationale":                c.Rationale,
-		"staked_at":                c.StakedAt.UTC().Format(time.RFC3339Nano),
-		"accuracy_threshold_met":   c.AccuracyThresholdMet,
-		"challenge_count":          c.ChallengeCount,
-		"challenge_period_open":      c.ChallengePeriodOpen,
-		"sustained":                c.Sustained,
-		"digest_published":         c.DigestPublished,
-		"status":                   c.Status,
-		"created_at":               c.CreatedAt.UTC().Format(time.RFC3339Nano),
-		"updated_at":               c.UpdatedAt.UTC().Format(time.RFC3339Nano),
+		"id":                     c.ID,
+		"keyword":                c.Keyword,
+		"agent_id":               c.AgentID,
+		"agent_name":             agentName,
+		"rationale":              c.Rationale,
+		"staked_at":              c.StakedAt.UTC().Format(time.RFC3339Nano),
+		"accuracy_threshold_met": c.AccuracyThresholdMet,
+		"challenge_count":        c.ChallengeCount,
+		"challenge_period_open":  c.ChallengePeriodOpen,
+		"sustained":              c.Sustained,
+		"digest_published":       c.DigestPublished,
+		"status":                 c.Status,
+		"created_at":             c.CreatedAt.UTC().Format(time.RFC3339Nano),
+		"updated_at":             c.UpdatedAt.UTC().Format(time.RFC3339Nano),
 	}
 	if c.Category != nil {
 		m["category"] = *c.Category
@@ -281,13 +287,13 @@ func floorShieldVoteMap(v *dbpkg.FloorShieldChallengeVote) map[string]any {
 		vName = v.Voter.Name
 	}
 	return map[string]any{
-		"id":              v.ID,
-		"challenge_id":    v.ChallengeID,
-		"voter_agent_id":  v.VoterAgentID,
+		"id":               v.ID,
+		"challenge_id":     v.ChallengeID,
+		"voter_agent_id":   v.VoterAgentID,
 		"voter_agent_name": vName,
-		"vote":            v.Vote,
-		"weight":          v.Weight,
-		"cast_at":         v.CastAt.UTC().Format(time.RFC3339Nano),
+		"vote":             v.Vote,
+		"weight":           v.Weight,
+		"cast_at":          v.CastAt.UTC().Format(time.RFC3339Nano),
 	}
 }
 
@@ -297,12 +303,12 @@ func floorPositionChallengeMap(c *dbpkg.FloorPositionChallenge) map[string]any {
 		chName = c.Challenger.Name
 	}
 	m := map[string]any{
-		"id":                   c.ID,
-		"position_id":          c.PositionID,
-		"challenger_agent_id":  c.ChallengerAgentID,
+		"id":                    c.ID,
+		"position_id":           c.PositionID,
+		"challenger_agent_id":   c.ChallengerAgentID,
 		"challenger_agent_name": chName,
-		"status":               c.Status,
-		"opened_at":            c.OpenedAt.UTC().Format(time.RFC3339Nano),
+		"status":                c.Status,
+		"opened_at":             c.OpenedAt.UTC().Format(time.RFC3339Nano),
 	}
 	if c.ResolvedAt != nil {
 		m["resolved_at"] = c.ResolvedAt.UTC().Format(time.RFC3339Nano)
@@ -346,12 +352,12 @@ func floorArticleMap(a *dbpkg.FloorResearchArticle) map[string]any {
 
 func floorBroadcastMap(b *dbpkg.FloorBroadcast) map[string]any {
 	m := map[string]any{
-		"id":            b.ID,
-		"title":         b.Title,
-		"status":        b.Status,
-		"starts_at":     b.StartsAt.UTC().Format(time.RFC3339Nano),
-		"question_ids":  floorDecodeJSONArray(b.QuestionIDsJSON),
-		"created_at":    b.CreatedAt.UTC().Format(time.RFC3339Nano),
+		"id":           b.ID,
+		"title":        b.Title,
+		"status":       b.Status,
+		"starts_at":    b.StartsAt.UTC().Format(time.RFC3339Nano),
+		"question_ids": floorDecodeJSONArray(b.QuestionIDsJSON),
+		"created_at":   b.CreatedAt.UTC().Format(time.RFC3339Nano),
 	}
 	if b.EndsAt != nil {
 		m["ends_at"] = b.EndsAt.UTC().Format(time.RFC3339Nano)
@@ -375,6 +381,7 @@ func (s *Server) mountFloorAPI(r chi.Router) {
 		fr.Get("/questions/featured", s.handleFloorFeaturedQuestion)
 		fr.Get("/questions", s.handleFloorListQuestions)
 		fr.Get("/questions/{questionID}", s.handleFloorGetQuestion)
+		fr.Get("/questions/{questionID}/context/worldmonitor", s.handleFloorQuestionWorldMonitorContext)
 		fr.Get("/questions/{questionID}/positions", s.handleFloorQuestionPositions)
 		fr.Get("/questions/{questionID}/digest-history", s.handleFloorQuestionDigests)
 		fr.Get("/questions/{questionID}/digests", s.handleFloorQuestionDigests)
@@ -545,9 +552,15 @@ func (s *Server) handleFloorQuestionDigests(w http.ResponseWriter, r *http.Reque
 		writeDetail(w, http.StatusInternalServerError, "DB error")
 		return
 	}
+	attachWM := strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("include_external_signals")), "true") ||
+		strings.TrimSpace(r.URL.Query().Get("include_external_signals")) == "1"
 	out := make([]map[string]any, 0, len(rows))
 	for i := range rows {
-		out = append(out, floorDigestMap(&rows[i]))
+		m := floorDigestMap(&rows[i])
+		if attachWM {
+			floorDigestAttachExternalSignals(db, m)
+		}
+		out = append(out, m)
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -564,9 +577,15 @@ func (s *Server) handleFloorDigestStrip(w http.ResponseWriter, r *http.Request) 
 		writeDetail(w, http.StatusInternalServerError, "DB error")
 		return
 	}
+	attachWM := strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("include_external_signals")), "true") ||
+		strings.TrimSpace(r.URL.Query().Get("include_external_signals")) == "1"
 	out := make([]map[string]any, 0, len(rows))
 	for i := range rows {
-		out = append(out, floorDigestMap(&rows[i]))
+		m := floorDigestMap(&rows[i])
+		if attachWM {
+			floorDigestAttachExternalSignals(db, m)
+		}
+		out = append(out, m)
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -648,12 +667,12 @@ func (s *Server) handleFloorAgentSignalProfile(w http.ResponseWriter, r *http.Re
 	var shieldClaims int64
 	_ = db.Model(&dbpkg.FloorShieldClaim{}).Where("agent_id = ?", agentID).Count(&shieldClaims).Error
 	writeJSON(w, http.StatusOK, map[string]any{
-		"agent_id":              agentID,
-		"topic_stats":           statMaps,
-		"inference":             infRow,
-		"position_count":        totalPositions,
+		"agent_id":               agentID,
+		"topic_stats":            statMaps,
+		"inference":              infRow,
+		"position_count":         totalPositions,
 		"position_pending_count": pendingPositions,
-		"shield_claim_count":    shieldClaims,
+		"shield_claim_count":     shieldClaims,
 	})
 }
 

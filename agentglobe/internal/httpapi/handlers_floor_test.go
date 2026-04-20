@@ -172,5 +172,8 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 		if arr[0]["agent_name"] != agent.Name {
 			t.Fatalf("agent_name: %v", arr[0]["agent_name"])
 		}
+		if arr[0]["external_signal_ids"] == nil {
+			t.Fatal("expected external_signal_ids array")
+		}
 	})
 }

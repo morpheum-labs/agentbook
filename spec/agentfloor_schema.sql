@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS floor_questions (
   status                  TEXT NOT NULL DEFAULT 'open',  -- open | consensus | disputed | resolved | void
   cluster_breakdown_json  TEXT NOT NULL DEFAULT '{}',    -- {"long":0.57,"neutral":0.10,"short":0.33}
   zk_verified_pct         REAL,                          -- Analyst+ metric; nullable until computed
+  wm_context_id           TEXT,                          -- optional WorldMonitor focal region / zone id
   created_at              TEXT NOT NULL,
   updated_at              TEXT NOT NULL
 );
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS floor_positions (
   challenge_open             INTEGER NOT NULL DEFAULT 0,
   source_post_id             TEXT REFERENCES posts (id) ON DELETE SET NULL,
   source_comment_id          TEXT REFERENCES comments (id) ON DELETE SET NULL,
+  external_signal_ids_json   TEXT NOT NULL DEFAULT '[]', -- JSON array of floor_external_signals.id cited by this position
   created_at                 TEXT NOT NULL
 );
 
@@ -72,6 +74,27 @@ CREATE INDEX IF NOT EXISTS idx_floor_positions_agent_staked
   ON floor_positions (agent_id, staked_at DESC);
 CREATE INDEX IF NOT EXISTS idx_floor_positions_direction
   ON floor_positions (question_id, direction);
+
+-- ---------------------------------------------------------------------------
+-- External OSINT cache (WorldMonitor, etc.) — optional context layer (F7 audit)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS floor_external_signals (
+  id                       TEXT PRIMARY KEY,
+  question_id              TEXT REFERENCES floor_questions (id) ON DELETE CASCADE,
+  topic_class              TEXT,
+  fetched_at               TEXT NOT NULL,
+  source                   TEXT NOT NULL DEFAULT 'worldmonitor',
+  raw_data_json            TEXT NOT NULL DEFAULT '{}',
+  instability_index_json   TEXT NOT NULL DEFAULT '{}',
+  geo_convergence_json     TEXT NOT NULL DEFAULT '{}',
+  forecast_summary_json    TEXT NOT NULL DEFAULT '{}',
+  upstream_signature_ms    INTEGER,
+  fetch_error              TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_floor_external_signals_question ON floor_external_signals (question_id, fetched_at DESC);
+
+-- Existing deployments: add columns/tables with ALTER / CREATE as above (GORM AutoMigrate also applies them).
 
 -- ---------------------------------------------------------------------------
 -- Topic-class accuracy rollups (F1) — updated when positions resolve

@@ -31,7 +31,7 @@ func testServer(t *testing.T) *Server {
 		&dbpkg.Webhook{}, &dbpkg.GitHubWebhook{}, &dbpkg.Notification{}, &dbpkg.Attachment{},
 		&dbpkg.ParliamentState{}, &dbpkg.Motion{}, &dbpkg.MotionVote{}, &dbpkg.MotionSpeech{},
 		&dbpkg.SpeechHeart{}, &dbpkg.AgentFaction{}, &dbpkg.ClerkBriefItem{},
-		&dbpkg.FloorQuestion{}, &dbpkg.FloorPosition{}, &dbpkg.FloorAgentTopicStat{}, &dbpkg.FloorAgentInferenceProfile{},
+		&dbpkg.FloorQuestion{}, &dbpkg.FloorExternalSignal{}, &dbpkg.FloorPosition{}, &dbpkg.FloorAgentTopicStat{}, &dbpkg.FloorAgentInferenceProfile{},
 		&dbpkg.FloorDigestEntry{}, &dbpkg.FloorQuestionProbabilityPoint{}, &dbpkg.FloorShieldClaim{}, &dbpkg.FloorShieldChallenge{},
 		&dbpkg.FloorShieldChallengeVote{}, &dbpkg.FloorPositionChallenge{}, &dbpkg.FloorResearchArticle{}, &dbpkg.FloorBroadcast{},
 	); err != nil {

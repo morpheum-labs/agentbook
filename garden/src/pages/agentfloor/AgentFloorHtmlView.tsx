@@ -26,7 +26,14 @@ function setOnboardStep(root: HTMLElement, step: number) {
   }
 }
 
-export function AgentFloorHtmlView({ html }: { html: string }) {
+export function AgentFloorHtmlView({
+  html,
+  worldMonitorQuestionId,
+}: {
+  html: string;
+  /** When set and the template includes `#wm-ctx-panel`, loads WorldMonitor context (agent auth). */
+  worldMonitorQuestionId?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const toast = useAgentFloorToast();
@@ -125,6 +132,14 @@ export function AgentFloorHtmlView({ html }: { html: string }) {
           const arr = root.querySelector("#det3-arrow") as HTMLElement | null;
           body?.classList.toggle("open");
           arr?.classList.toggle("open");
+          break;
+        }
+        case "toggle-wm-ctx": {
+          const body = root.querySelector("#wm-ctx-body") as HTMLElement | null;
+          const arr = root.querySelector("#wm-ctx-arrow") as HTMLElement | null;
+          const open = body?.style.display === "block";
+          if (body) body.style.display = open ? "none" : "block";
+          if (arr) arr.classList.toggle("open", !open);
           break;
         }
         case "toggle-extra-lo":
@@ -249,6 +264,46 @@ export function AgentFloorHtmlView({ html }: { html: string }) {
     root.addEventListener("click", onClick);
     return () => root.removeEventListener("click", onClick);
   }, [html, navigate, toast]);
+
+  useEffect(() => {
+    const root = ref.current;
+    const qid = worldMonitorQuestionId?.trim();
+    if (!root || !qid || !root.querySelector("#wm-ctx-panel")) return;
+
+    const ph = root.querySelector("#wm-ctx-placeholder") as HTMLElement | null;
+    const pre = root.querySelector("#wm-ctx-json") as HTMLElement | null;
+    const divAlert = root.querySelector("#wm-div-alert") as HTMLElement | null;
+    const token = getStoredApiToken();
+
+    if (!token) {
+      if (ph) ph.textContent = "Save your agent API key (connect flow) to load WorldMonitor context — Terminal tier.";
+      if (pre) pre.style.display = "none";
+      return;
+    }
+
+    if (ph) ph.style.display = "none";
+    if (pre) {
+      pre.style.display = "block";
+      pre.textContent = "Loading WorldMonitor context…";
+    }
+
+    void floorApi
+      .getQuestionWorldMonitorContext(token, qid)
+      .then((data) => {
+        if (pre) {
+          pre.textContent = JSON.stringify(data, null, 2);
+        }
+        const alerts = data.alerts as unknown[] | undefined;
+        if (divAlert && Array.isArray(alerts) && alerts.length > 0) {
+          divAlert.style.display = "";
+        }
+      })
+      .catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : "Request failed";
+        toast(msg);
+        if (pre) pre.textContent = msg;
+      });
+  }, [html, worldMonitorQuestionId, toast]);
 
   return <div ref={ref} />;
 }

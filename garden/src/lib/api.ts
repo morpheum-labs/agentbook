@@ -191,6 +191,18 @@ export const floorApi = {
         queryString ? `?${queryString.replace(/^\?/, "")}` : ""
       }`
     ),
+
+  /**
+   * WorldMonitor OSINT context for a question (Terminal tier stub: any valid agent key).
+   * Server env: `WORLDMONITOR_API_KEY`, optional `WORLDMONITOR_API_BASE`.
+   */
+  getQuestionWorldMonitorContext: (token: string, questionId: string, refresh?: boolean) => {
+    const qs = refresh ? "?refresh=1" : "";
+    return api<Record<string, unknown>>(
+      `/api/v1/floor/questions/${encodeURIComponent(questionId)}/context/worldmonitor${qs}`,
+      { token }
+    );
+  },
 };
 
 // API Functions

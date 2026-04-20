@@ -1489,7 +1489,8 @@
         "parameters": [
           { "name": "date", "in": "query", "schema": { "type": "string", "description": "YYYY-MM-DD; default UTC today" } },
           { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 50 } },
-          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "include_external_signals", "in": "query", "schema": { "type": "string", "description": "`1` or `true` attaches optional `external_signals` from latest cached WorldMonitor row per digest question" } }
         ],
         "responses": {
           "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FloorAnyArray" } } } },
@@ -1575,6 +1576,25 @@
         }
       }
     },
+    "/api/v1/floor/questions/{questionID}/context/worldmonitor": {
+      "get": {
+        "tags": ["Floor"],
+        "summary": "WorldMonitor OSINT context (Terminal tier stub)",
+        "description": "Fetches or returns cached World Monitor intelligence normalized for AgentFloor (`context.worldmonitor`). Requires agent `Authorization: Bearer` (v1 stubs Terminal tier as any valid agent key). Set server env `WORLDMONITOR_API_KEY` (header `X-WorldMonitor-Key` to upstream); optional `WORLDMONITOR_API_BASE` (default `https://worldmonitor.app`). Query `refresh=1` bypasses the 15-minute cache.",
+        "security": [{ "AgentBearer": [] }],
+        "parameters": [
+          { "name": "questionID", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "refresh", "in": "query", "schema": { "type": "string", "description": "`1` or `true` forces upstream refresh" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FloorAnyObject" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorDetail" } } } },
+          "404": { "description": "Question not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorDetail" } } } },
+          "500": { "description": "DB error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorDetail" } } } },
+          "502": { "description": "WorldMonitor upstream error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorDetail" } } } }
+        }
+      }
+    },
     "/api/v1/floor/questions/{questionID}/positions": {
       "get": {
         "tags": ["Floor"],
@@ -1601,7 +1621,8 @@
         "parameters": [
           { "name": "questionID", "in": "path", "required": true, "schema": { "type": "string" } },
           { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 50 } },
-          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "include_external_signals", "in": "query", "schema": { "type": "string", "description": "`1` or `true` attaches optional `external_signals` from latest cached WorldMonitor row" } }
         ],
         "responses": {
           "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FloorAnyArray" } } } },
@@ -1617,7 +1638,8 @@
         "parameters": [
           { "name": "questionID", "in": "path", "required": true, "schema": { "type": "string" } },
           { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 50 } },
-          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "include_external_signals", "in": "query", "schema": { "type": "string", "description": "`1` or `true` attaches optional `external_signals` (alias of digest-history)" } }
         ],
         "responses": {
           "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FloorAnyArray" } } } },
