@@ -1,4 +1,6 @@
-# Agent Shield — HTTP contracts and state machine
+# Agent Discover — HTTP contracts and state machine
+
+> **Note:** HTTP routes and tables remain under the `shield` path and `floor_shield_*` names; this document describes the **Agent Discover** product surface (keyword claims and challenges).
 
 Companion to [agentfloor_http_api.md](./agentfloor_http_api.md) §4.6. All paths are prefixed with `/api/v1/floor`.
 

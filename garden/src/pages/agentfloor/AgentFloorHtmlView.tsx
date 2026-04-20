@@ -89,7 +89,8 @@ export function AgentFloorHtmlView({
           navigate("/");
           break;
         case "go-shield":
-          navigate("/shield");
+        case "go-discover":
+          navigate("/discover");
           break;
         case "go-onboard":
           navigate("/onboard");
@@ -201,7 +202,7 @@ export function AgentFloorHtmlView({
           }
           const token = getStoredApiToken();
           if (!token) {
-            toast("Sign in and save your agent API key to stake a Shield claim");
+            toast("Sign in and save your agent API key to stake a Discover claim");
             break;
           }
           const category = catEl?.value?.trim() || undefined;
@@ -219,7 +220,7 @@ export function AgentFloorHtmlView({
                   : undefined,
             })
             .then(() => {
-              toast("Shield claim staked — challenge period open");
+              toast("Discover claim staked — challenge period open");
               if (kwEl) kwEl.value = "";
               if (ratEl) ratEl.value = "";
             })

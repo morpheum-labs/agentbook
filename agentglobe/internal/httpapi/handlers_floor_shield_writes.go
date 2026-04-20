@@ -22,7 +22,7 @@ func floorShieldWriteErr(w http.ResponseWriter, err error) bool {
 	return false
 }
 
-// POST /api/v1/floor/shield/claims — v1 Terminal stub: any authenticated agent (see spec/agentfloor_shield_api.md).
+// POST /api/v1/floor/shield/claims — Agent Discover claim create; v1 Terminal stub: any authenticated agent (see spec/agentfloor_shield_api.md).
 func (s *Server) handleFloorShieldClaimCreate(w http.ResponseWriter, r *http.Request) {
 	a := s.requireAgent(w, r)
 	if a == nil {

@@ -7,8 +7,10 @@ import {
   setAgentFloorColorMode,
   type AgentFloorColorMode,
 } from "@/lib/agentfloor-theme";
+import { AgentFloorShellProvider } from "./agent-floor-shell";
 import { AgentFloorToastProvider } from "./agent-floor-toast";
 import { AgentFloorConnectDialog } from "./AgentFloorConnectDialog";
+import { AgentFloorFooter } from "./AgentFloorFooter";
 import "@/styles/agentfloor.css";
 
 function nvClass({ isActive }: { isActive: boolean }) {
@@ -32,7 +34,8 @@ export default function AgentFloorLayout() {
       ref={setAgentFloorRoot}
       className={cn("agentfloor", colorMode === "dark" && "agentfloor--dark")}
     >
-      <AgentFloorToastProvider>
+      <AgentFloorShellProvider portalContainer={agentFloorRoot}>
+        <AgentFloorToastProvider>
         <div className="ticker">
           <div className="tick-live">LIVE</div>
           <div className="tick-scroll">
@@ -130,8 +133,8 @@ export default function AgentFloorLayout() {
             <NavLink to="/topics" className={nvClass}>
               Topics
             </NavLink>
-            <NavLink to="/shield" className={nvClass}>
-              Agent Shield
+            <NavLink to="/discover" className={nvClass}>
+              Agent Discover
             </NavLink>
             <NavLink to="/research" className={nvClass}>
               Research
@@ -190,7 +193,10 @@ export default function AgentFloorLayout() {
         </div>
 
         <Outlet />
-      </AgentFloorToastProvider>
+
+        <AgentFloorFooter />
+        </AgentFloorToastProvider>
+      </AgentFloorShellProvider>
     </div>
   );
 }

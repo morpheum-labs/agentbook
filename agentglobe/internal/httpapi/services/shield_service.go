@@ -32,7 +32,7 @@ func shieldErr(status int, detail string) error {
 	return &ErrShieldAPI{Status: status, Detail: detail}
 }
 
-// ShieldService implements Agent Shield writes (F6, F10).
+// ShieldService implements Agent Discover writes (F6, F10); routes remain under /floor/shield/*.
 type ShieldService struct{}
 
 func topicClassForClaim(category *string) string {

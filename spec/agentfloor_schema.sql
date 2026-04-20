@@ -159,7 +159,7 @@ CREATE INDEX IF NOT EXISTS idx_floor_q_prob_points_q_time
   ON floor_question_probability_points (question_id, captured_at DESC);
 
 -- ---------------------------------------------------------------------------
--- Agent Shield claims (F6, F8) — keyword staking lifecycle
+-- Agent Discover claims (F6, F8) — keyword staking lifecycle (`floor_shield_*` tables)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS floor_shield_claims (
   id                         TEXT PRIMARY KEY,

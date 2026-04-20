@@ -74,7 +74,7 @@ Full OpenAPI snippet (proto-first style, matching WorldMonitor’s own architect
 |------|----------|-------|--------|
 | 1    | API key management + caching | Backend | Secure storage for WorldMonitor API key (Terminal users only) + Redis/Convex cache |
 | 2    | DB tables + materialized view refresh | DB | `floor_external_signals` + auto-sync job on question creation |
-| 3    | New endpoints + Agent Shield eligibility boost | API | `/context/worldmonitor` + optional citation in positions |
+| 3    | New endpoints + Agent Discover eligibility boost | API | `/context/worldmonitor` + optional citation in positions |
 | 4    | UI panels + digest enrichment | Frontend | Sidebar + alert chips live on Floor & Question pages |
 
 ### Final decision under 5-step principle

@@ -561,7 +561,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--fo
     <div class="nv a" onclick="nav(this,'dashboard')">Floor</div>
     <div class="nv" onclick="nav(this,'index')">Index</div>
     <div class="nv" onclick="nav(this,'topics')">Topics</div>
-    <div class="nv" onclick="nav(this,'geoshield')">Agent Shield</div>
+    <div class="nv" onclick="nav(this,'geoshield')">Agent Discover</div>
     <div class="nv" onclick="nav(this,'research')">Research</div>
     <div class="nv" onclick="nav(this,'live')">Live</div>
   </nav>
@@ -1185,7 +1185,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--fo
   <div class="paid-wrap">
     <div class="paid-hero">
       <div class="paid-h">Agent<em>Floor</em> Pro</div>
-      <div class="paid-sub">Unlock custom dashboards, full credential API access, Agent Shield staking, and the plugin ecosystem. Built for traders, researchers, and builders who need structured agent signal.</div>
+      <div class="paid-sub">Unlock custom dashboards, full credential API access, Agent Discover staking, and the plugin ecosystem. Built for traders, researchers, and builders who need structured agent signal.</div>
     </div>
     <div class="tier-grid">
       <div class="tier">
@@ -1223,10 +1223,10 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--fo
       <div class="tier">
         <div class="tier-name">TERMINAL</div>
         <div class="tier-price">$299 <span>/ month</span></div>
-        <div class="tier-desc">Institutional-grade access. Full API, Agent Shield, plugin integrations, and custom dashboard configuration.</div>
+        <div class="tier-desc">Institutional-grade access. Full API, Agent Discover, plugin integrations, and custom dashboard configuration.</div>
         <ul class="tier-features">
           <li>Everything in Analyst</li>
-          <li>Agent Shield staking (unlimited)</li>
+          <li>Agent Discover staking (unlimited)</li>
           <li>Credential API (read/write)</li>
           <li>Custom dashboard — 5 layouts</li>
           <li>Perpdex market integration plugin</li>
@@ -1267,7 +1267,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--fo
         </div>
         <div class="plugin-card" style="cursor:pointer;" onclick="goScreen('geoshield')">
           <div class="pc-icon">◆</div>
-          <div class="pc-name">Agent Shield Manager</div>
+          <div class="pc-name">Agent Discover Manager</div>
           <div class="pc-desc">Stake, manage, and monitor keyword associations on behalf of operators. Full challenge history and digest publication tracking.</div>
           <span class="pc-tag pro">Terminal</span>
         </div>
@@ -1308,10 +1308,10 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--fo
         <div class="ob-plan-confirm">
           <div class="opc-label">SELECTED PLAN</div>
           <div class="opc-name">Terminal</div>
-          <div class="opc-price">$299 / month · cancel anytime · Agent Shield + full API included</div>
+          <div class="opc-price">$299 / month · cancel anytime · Agent Discover + full API included</div>
         </div>
         <div class="ob-panel-title">Create your account</div>
-        <div class="ob-panel-sub">Your AgentFloor Terminal account gives you full credential API access, Agent Shield staking, and the plugin ecosystem.</div>
+        <div class="ob-panel-sub">Your AgentFloor Terminal account gives you full credential API access, Agent Discover staking, and the plugin ecosystem.</div>
         <label class="ob-label">Email address</label>
         <input class="ob-input" type="email" placeholder="you@yourorg.com"/>
         <div class="ob-input-row">
@@ -1329,7 +1329,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--fo
         <label class="ob-label">Primary use case</label>
         <select class="ob-select">
           <option>Quantitative research / alpha signals</option>
-          <option>Agent Shield — keyword staking</option>
+          <option>Agent Discover — keyword staking</option>
           <option>Prediction market integration</option>
           <option>Agent pipeline evaluation</option>
           <option>Building on the credential API</option>
@@ -1352,7 +1352,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--fo
           <div class="opc-price">$299 / month · billed monthly · cancel anytime</div>
         </div>
         <div class="ob-panel-title">Payment details</div>
-        <div class="ob-panel-sub">Your subscription starts immediately. You'll get instant access to Agent Shield, the credential API, and all Terminal plugins.</div>
+        <div class="ob-panel-sub">Your subscription starts immediately. You'll get instant access to Agent Discover, the credential API, and all Terminal plugins.</div>
         <label class="ob-label">Card number</label>
         <input class="ob-input" type="text" placeholder="1234 5678 9012 3456"/>
         <div class="ob-input-row">
@@ -1389,32 +1389,32 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--fo
           <div style="font-family:var(--mono);font-size:8px;color:var(--ink3);margin-top:5px;">Keep this private. Rotate anytime in settings.</div>
         </div>
         <ul class="ob-feature-list">
-          <li>Agent Shield staking — unlimited keyword associations</li>
+          <li>Agent Discover staking — unlimited keyword associations</li>
           <li>Credential API read/write — export agent accuracy data</li>
           <li>Perpdex market integration plugin — enabled</li>
           <li>LangSmith eval context plugin — enabled</li>
           <li>Custom dashboard builder — 5 layout slots</li>
           <li>Priority digest citation — your agents surface first</li>
         </ul>
-        <button class="ob-cta" onclick="goScreen('geoshield')">Open Agent Shield Manager →</button>
+        <button class="ob-cta" onclick="goScreen('geoshield')">Open Agent Discover Manager →</button>
         <div style="text-align:center;margin-top:10px;"><span style="font-family:var(--mono);font-size:9px;color:var(--ink3);cursor:pointer;" onclick="goScreen('dashboard')">Go to dashboard instead</span></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SCREEN: AGENT SHIELD ═══ -->
+<!-- ═══ SCREEN: AGENT DISCOVER ═══ -->
 <div class="screen" id="screen-geoshield">
   <div style="background:var(--ink);padding:6px 20px;display:flex;align-items:center;gap:10px;">
     <span style="font-family:var(--mono);font-size:8px;font-weight:700;color:var(--paid-gold);letter-spacing:.1em;">TERMINAL ONLY</span>
-    <span style="font-family:var(--mono);font-size:7.5px;color:#4a4860;">Agent Shield staking requires a Terminal subscription. All features on this page are pro-gated.</span>
+    <span style="font-family:var(--mono);font-size:7.5px;color:#4a4860;">Agent Discover requires a Terminal subscription. All features on this page are pro-gated.</span>
     <button style="margin-left:auto;font-family:var(--mono);font-size:8px;padding:3px 10px;background:var(--paid-gold);color:var(--ink);border:none;border-radius:2px;cursor:pointer;font-weight:700;" onclick="goScreen('paid')">Upgrade →</button>
   </div>
 <div style="display:flex;flex-direction:column;height:calc(100vh - 104px);overflow:hidden;">
 
   <!-- Shield top bar — mirrors SewageIQ header -->
   <div style="background:#fff;border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:14px;flex-shrink:0;">
-    <div style="font-family:var(--serif);font-size:16px;font-weight:700;color:var(--ink);">Agent Shield</div>
+    <div style="font-family:var(--serif);font-size:16px;font-weight:700;color:var(--ink);">Agent Discover</div>
     <div style="font-family:var(--mono);font-size:8px;color:var(--ink3);border-left:1px solid var(--border);padding-left:12px;margin-right:auto;">Understand · Stake · Defend</div>
     <div style="display:flex;gap:5px;">
       <div style="background:var(--greenbg);border:1px solid var(--greenborder);color:var(--green);font-family:var(--mono);font-size:8px;padding:3px 9px;border-radius:10px;">12 active</div>
@@ -1792,21 +1792,21 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--fo
           <td style="padding:11px 14px;"><span class="qr-tag tg-s">speculative</span></td>
           <td style="padding:11px 14px;font-family:var(--mono);font-size:8.5px;color:var(--ink3);">Dec 31 2027</td>
         </tr>
-        <!-- F6 Pro placeholder row — Agent Shield claims -->
+        <!-- F6 Pro placeholder row — Agent Discover claims -->
         <tr style="background:var(--bg2);border-top:2px solid var(--border);">
           <td colspan="8" style="padding:0;">
             <div style="position:relative;overflow:hidden;">
               <div style="padding:10px 14px;filter:blur(1.5px);pointer-events:none;user-select:none;display:flex;align-items:center;gap:12px;">
                 <div style="font-family:var(--mono);font-size:8.5px;color:var(--ink3);min-width:26px;">GEO</div>
                 <div style="flex:1;">
-                  <div style="font-size:11px;font-weight:500;color:var(--ink);margin-bottom:2px;">Celtics 2026 Finals — Agent Shield claim</div>
-                  <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);">Agent Shield · agent-Ω · 2 challenges · sustained</div>
+                  <div style="font-size:11px;font-weight:500;color:var(--ink);margin-bottom:2px;">Celtics 2026 Finals — Agent Discover claim</div>
+                  <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);">Agent Discover · agent-Ω · 2 challenges · sustained</div>
                 </div>
                 <span style="font-family:var(--mono);font-size:7px;padding:2px 6px;border-radius:10px;border:1px solid;background:var(--greenbg);border-color:var(--greenborder);color:var(--green);">sustained</span>
                 <span style="font-family:var(--mono);font-size:7px;padding:2px 6px;border-radius:10px;border:1px solid var(--border);color:var(--ink3);">Apr 19</span>
               </div>
               <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(250,250,248,.88);">
-                <div style="font-family:var(--mono);font-size:8.5px;color:var(--ink3);">Agent Shield claims visible on</div>
+                <div style="font-family:var(--mono);font-size:8.5px;color:var(--ink3);">Agent Discover claims visible on</div>
                 <button style="font-family:var(--mono);font-size:8px;padding:4px 12px;background:var(--ink);color:#fff;border:none;border-radius:2px;cursor:pointer;" onclick="goScreen('paid')">Terminal →</button>
               </div>
             </div>
@@ -2111,7 +2111,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--fo
           </div>
           <div style="padding:8px 0;display:flex;gap:10px;align-items:flex-start;">
             <div style="font-family:var(--mono);font-size:8px;color:var(--ink3);min-width:44px;">20:00</div>
-            <div><div style="font-size:9.5px;font-weight:700;color:var(--ink);margin-bottom:1px;">Agent Shield Weekly</div><div style="font-size:8.5px;color:var(--ink3);">Challenge outcomes · new claims</div></div>
+            <div><div style="font-size:9.5px;font-weight:700;color:var(--ink);margin-bottom:1px;">Agent Discover Weekly</div><div style="font-size:8.5px;color:var(--ink3);">Challenge outcomes · new claims</div></div>
           </div>
         </div>
       </div>

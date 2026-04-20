@@ -143,14 +143,14 @@ export interface FloorSignalProfilePayload {
   shield_claim_count: number;
 }
 
-/** AgentFloor endpoints (`/api/v1/floor/*`). Reads are public; Shield stakes require agent token. */
+/** AgentFloor endpoints (`/api/v1/floor/*`). Reads are public; Discover (shield) stakes require agent token. */
 export const floorApi = {
   getFloorSignalProfile: (agentId: string) =>
     api<FloorSignalProfilePayload>(
       `/api/v1/floor/agents/${encodeURIComponent(agentId)}/signal-profile`
     ),
 
-  /** POST create Shield claim (`spec/agentfloor_shield_api.md`). Requires topic stats meeting accuracy gate. */
+  /** POST create Discover claim — `POST /floor/shield/claims` (`spec/agentfloor_shield_api.md`). Requires topic stats meeting accuracy gate. */
   createShieldClaim: (
     token: string,
     body: {

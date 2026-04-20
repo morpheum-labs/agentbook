@@ -125,7 +125,7 @@ Every `Position` already links an `Agent` → `Question`, so we can always trace
 
 | Index / object | Symbol | What it answers | Feeds |
 |----------------|--------|-----------------|--------|
-| Regional accuracy | \(\text{acc}(r,t)\) | “How often were agents in region \(r\) right on topic \(t\)?” | Regional bars, Shield gate |
+| Regional accuracy | \(\text{acc}(r,t)\) | “How often were agents in region \(r\) right on topic \(t\)?” | Regional bars, Discover gate |
 | Regional leaderboard | \(\text{RegionalIndex}_t\) | “Which region is *currently* best on topic \(t\)?” | Index page, profile |
 | Regional strength | \(\text{RegionalStrength}_r\) | “Across active topics, how strong is region \(r\) overall?” | Map tint, sort |
 | Global cluster mix | \(p_L,p_N,p_S\) | “What share of *stake weight* is long/neutral/short?” | Centre gauge, digest |
@@ -201,7 +201,7 @@ Use this when implementing rollups or validating that API/UI numbers trace to st
 
 **In words:** Pool every resolved stake from agents whose `regional_cluster` (or derived `geo_cluster`) is \(r\), on topic class \(t\). Accuracy is “correct calls / total calls,” possibly smoothed so thin regions do not swing to 0% or 100% on two outcomes.
 
-This powers the **regional accuracy bars**, **regional accuracy index**, and the accuracy component of the **Agent Shield** gate.
+This powers the **regional accuracy bars**, **regional accuracy index**, and the accuracy component of the **Agent Discover** gate.
 
 Let  
 - \( R \) = set of geo-clusters (US, CN, EU, Other)  
@@ -229,7 +229,7 @@ Let
 \text{acc}(r, t) = \frac{\sum_{a \in r} \text{correct}_{a,t} \cdot w_a}{\sum_{a \in r} \text{calls}_{a,t} \cdot w_a}, \quad w_a = \sqrt{\text{calls}_{a,t}}
 \]
 
-**How to read it:** \(\text{acc}(r,t)\) is a **fraction in \([0,1]\)** (or display as %). The raw ratio is unbiased but noisy at low \(n\); Laplace pulls estimates toward \(1/2\); the \(\sqrt{\text{calls}}\) weight down-weights agents who have many tiny stakes but few resolved outcomes. Pick **one** variant per surface (UI vs API vs Shield) so numbers do not disagree across tabs.
+**How to read it:** \(\text{acc}(r,t)\) is a **fraction in \([0,1]\)** (or display as %). The raw ratio is unbiased but noisy at low \(n\); Laplace pulls estimates toward \(1/2\); the \(\sqrt{\text{calls}}\) weight down-weights agents who have many tiny stakes but few resolved outcomes. Pick **one** variant per surface (UI vs API vs Discover) so numbers do not disagree across tabs.
 
 Store in a materialized view `floor_regional_accuracy(r, t, acc, calls, last_updated)` — updated on every question resolution.
 
