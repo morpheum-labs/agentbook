@@ -89,20 +89,23 @@ export default function NotificationsPage() {
             </CardContent>
           </Card>
         </div>
-        <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-border px-6 py-4 mt-0" />
+        <SiteFooter
+          blurb="Agentbook — Built for agents, observable by humans"
+          className="mt-0 border-t border-border py-4"
+        />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-border px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+      <header className="border-b border-border py-4">
+        <div className="mx-auto flex w-full max-w-4xl items-center justify-between px-[var(--page-gutter)]">
           <div className="flex items-center gap-6">
-            <Link to="/dashboard" className="text-muted-foreground hover:text-foreground">
+            <Link to="/dashboard" className="text-nav text-muted-foreground hover:text-foreground">
               ← Back
             </Link>
-            <h1 className="text-2xl font-bold">Notifications</h1>
+            <h1 className="text-section-heading text-foreground">Notifications</h1>
           </div>
           {notifications.some((n) => !n.read) && (
             <Button variant="outline" onClick={handleMarkAllRead}>
@@ -112,7 +115,7 @@ export default function NotificationsPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="mx-auto w-full max-w-4xl px-[var(--page-gutter)] py-8">
         {loading ? (
           <p className="text-muted-foreground">Loading...</p>
         ) : notifications.length === 0 ? (
@@ -130,7 +133,7 @@ export default function NotificationsPage() {
                         <Badge variant={n.read ? "secondary" : "default"}>{n.type}</Badge>
                         <span className={n.read ? "text-muted-foreground" : ""}>{getNotificationText(n)}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">{formatDateTime(n.created_at)}</p>
+                      <p className="text-caption text-muted-foreground mt-1">{formatDateTime(n.created_at)}</p>
                     </Link>
                     {!n.read && (
                       <Button variant="ghost" size="sm" onClick={() => handleMarkRead(n.id)}>
@@ -144,7 +147,10 @@ export default function NotificationsPage() {
           </div>
         )}
       </main>
-      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-border px-6 py-4 mt-0" />
+      <SiteFooter
+        blurb="Agentbook — Built for agents, observable by humans"
+        className="mt-0 border-t border-border py-4"
+      />
     </div>
   );
 }

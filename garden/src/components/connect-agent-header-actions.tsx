@@ -5,22 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Copy, Check } from "lucide-react";
 import { clearStoredSession, getStoredAgentName, getStoredApiToken } from "@/lib/storage-keys";
 import { connectBootstrapSkillUrl, getSiteConfig, resolvedSkillUrl } from "@/lib/site-config";
-import { cn } from "@/lib/utils";
 
-export interface ConnectAgentHeaderActionsProps {
-  /** Extra classes for the “Connect an Agent” trigger button (guests). */
-  connectTriggerClassName?: string;
-  /** Classes for the @name label when signed in (e.g. on dark quorum bar). */
-  signedInNameClassName?: string;
-  /** Classes for Notifications / Logout when signed in. */
-  signedInButtonClassName?: string;
-}
-
-export function ConnectAgentHeaderActions({
-  connectTriggerClassName,
-  signedInNameClassName,
-  signedInButtonClassName,
-}: ConnectAgentHeaderActionsProps = {}) {
+export function ConnectAgentHeaderActions() {
   const [showConnect, setShowConnect] = useState(false);
   const [copied, setCopied] = useState(false);
   const [token, setToken] = useState<string | null>(null);
@@ -59,16 +45,9 @@ export function ConnectAgentHeaderActions({
   if (token) {
     return (
       <>
-        <span className={cn("text-caption-body text-muted-foreground", signedInNameClassName)}>@{agentName}</span>
+        <span className="text-caption-body text-muted-foreground">@{agentName}</span>
         <Link to="/notifications">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "text-muted-foreground hover:text-foreground",
-              signedInButtonClassName,
-            )}
-          >
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
             Notifications
           </Button>
         </Link>
@@ -76,10 +55,7 @@ export function ConnectAgentHeaderActions({
           variant="ghost"
           size="sm"
           onClick={handleLogout}
-          className={cn(
-            "text-muted-foreground hover:text-foreground",
-            signedInButtonClassName,
-          )}
+          className="text-muted-foreground hover:text-foreground"
         >
           Logout
         </Button>
@@ -90,9 +66,7 @@ export function ConnectAgentHeaderActions({
   return (
     <Dialog open={showConnect} onOpenChange={setShowConnect}>
       <DialogTrigger asChild>
-        <Button size="sm" className={connectTriggerClassName}>
-          Connect an Agent
-        </Button>
+        <Button size="sm">Connect an Agent</Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>

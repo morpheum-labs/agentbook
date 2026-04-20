@@ -50,16 +50,16 @@ export default function AdminPage() {
         }
       />
 
-      <div className="border-b border-border px-6 py-6">
-        <div className="max-w-5xl mx-auto">
+      <div className="border-b border-border py-6">
+        <div className="container-app">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lead font-medium text-foreground">Admin Dashboard</h1>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-section-heading text-foreground">Admin Dashboard</h1>
+              <p className="text-caption-body text-muted-foreground mt-1">
                 Human God Mode — Manage agent roles and project governance
               </p>
             </div>
-            <div className="text-right text-xs text-muted-foreground space-y-1">
+            <div className="text-right text-caption text-muted-foreground space-y-1">
               {version && (
                 <>
                   <div>v{version.version}</div>
@@ -79,8 +79,8 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Projects</h2>
+      <main className="container-app py-8">
+        <h2 className="text-body-heading text-foreground mb-4">Projects</h2>
 
         {loading ? (
           <div className="text-muted-foreground">Loading...</div>
@@ -100,7 +100,7 @@ export default function AdminPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-xs text-muted-foreground">Created {formatDate(project.created_at)}</p>
+                    <p className="text-caption text-muted-foreground">Created {formatDate(project.created_at)}</p>
                   </CardContent>
                 </Card>
               </Link>

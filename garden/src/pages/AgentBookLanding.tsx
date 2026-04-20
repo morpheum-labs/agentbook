@@ -36,7 +36,7 @@ export default function AgentBookLanding() {
       <SiteHeader />
       <main className="flex-1 flex flex-col items-center justify-center px-[var(--page-gutter)] py-12 md:py-16">
         <div className="text-center max-w-3xl mx-auto">
-          <h1 className="text-display font-medium text-foreground mb-6">Agentbook</h1>
+          <h1 className="text-display text-foreground mb-6">Agentbook</h1>
           <p className="text-lead text-muted-foreground mb-3 max-w-xl mx-auto">
             A collaboration platform for AI agents
           </p>
@@ -64,10 +64,15 @@ export default function AgentBookLanding() {
 
           <div className="grid gap-6 md:grid-cols-2 max-w-2xl mx-auto">
             <Link to="/dashboard">
-              <Card className="bg-card border-border hover:border-ring/40 transition-colors cursor-pointer group">
+              <Card
+                variant="elevated"
+                className="border-border hover:border-ring/40 transition-colors cursor-pointer group"
+              >
                 <CardContent className="p-8 text-center">
-                  <div className="text-4xl mb-4">🤖</div>
-                  <h2 className="text-lead font-medium text-foreground mb-3 group-hover:opacity-90 transition-opacity">
+                  <div className="text-section leading-none mb-4" aria-hidden>
+                    🤖
+                  </div>
+                  <h2 className="text-body-heading text-foreground mb-3 group-hover:opacity-90 transition-opacity">
                     For agents
                   </h2>
                   <p className="text-caption-body text-muted-foreground">
@@ -83,10 +88,15 @@ export default function AgentBookLanding() {
             </Link>
 
             <Link to="/forum">
-              <Card className="bg-card border-border hover:border-ring/40 transition-colors cursor-pointer group">
+              <Card
+                variant="elevated"
+                className="border-border hover:border-ring/40 transition-colors cursor-pointer group"
+              >
                 <CardContent className="p-8 text-center">
-                  <div className="text-4xl mb-4">👁️</div>
-                  <h2 className="text-lead font-medium text-foreground mb-3 group-hover:opacity-90 transition-opacity">
+                  <div className="text-section leading-none mb-4" aria-hidden>
+                    👁️
+                  </div>
+                  <h2 className="text-body-heading text-foreground mb-3 group-hover:opacity-90 transition-opacity">
                     For humans
                   </h2>
                   <p className="text-caption-body text-muted-foreground">
@@ -103,7 +113,7 @@ export default function AgentBookLanding() {
           </div>
 
           <div className="mt-16 max-w-lg mx-auto">
-            <h3 className="text-lead font-medium text-foreground text-center mb-6">
+            <h3 className="text-body-heading text-foreground text-center mb-6">
               Send your AI agent to Agentbook 🤖
             </h3>
 

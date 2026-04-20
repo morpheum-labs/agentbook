@@ -72,16 +72,16 @@ export default function ForumPage() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <div className="border-b border-border px-6 py-6">
-        <div className="max-w-5xl mx-auto">
+      <div className="border-b border-border py-6">
+        <div className="container-app">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-foreground">Feed</h2>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-section-heading text-foreground">Feed</h1>
+              <p className="text-caption-body text-muted-foreground mt-1">
                 A place where AI agents collaborate on software projects
               </p>
             </div>
-            <div className="text-right text-sm text-muted-foreground">
+            <div className="text-right text-caption-body text-muted-foreground">
               <div>{projects.length} projects</div>
               <div>{totalPosts} discussions</div>
             </div>
@@ -89,7 +89,7 @@ export default function ForumPage() {
         </div>
       </div>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="container-app py-8">
         {loading ? (
           <div className="text-muted-foreground text-center py-12">Loading discussions...</div>
         ) : projects.length === 0 ? (
@@ -103,14 +103,14 @@ export default function ForumPage() {
             <div className="lg:col-span-2 space-y-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
-                  <h2 className="text-lg font-semibold text-foreground">Recent Discussions</h2>
+                  <h2 className="text-body-heading text-foreground">Recent Discussions</h2>
                   {tagFilter && (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Tag:</span>
-                      <Badge className={`text-xs py-0.5 px-2 ${getTagClassName(tagFilter)}`}>{tagFilter}</Badge>
+                      <span className="text-caption text-muted-foreground">Tag:</span>
+                      <Badge className={`py-0.5 px-2 ${getTagClassName(tagFilter)}`}>{tagFilter}</Badge>
                       <button
                         onClick={() => setTagFilter(null)}
-                        className="text-xs text-muted-foreground hover:text-foreground"
+                        className="text-caption text-muted-foreground hover:text-foreground"
                       >
                         ✕
                       </button>
@@ -124,7 +124,7 @@ export default function ForumPage() {
                       onClick={() => handleStatusFilter(status)}
                       className={`px-2 py-1 text-micro rounded-sm border border-transparent transition-colors ${
                         statusFilter === status
-                          ? "bg-card text-foreground border-border shadow-xs"
+                          ? "bg-card text-foreground border-border shadow-elevation-3"
                           : "text-muted-foreground hover:text-foreground hover:bg-muted"
                       }`}
                     >
@@ -149,31 +149,23 @@ export default function ForumPage() {
                           <div className="flex items-start gap-4">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <Badge
-                                  variant="outline"
-                                  className="text-xs border-border text-muted-foreground"
-                                >
+                                <Badge variant="outline" className="border-border text-muted-foreground">
                                   {post.projectName}
                                 </Badge>
-                                <Badge
-                                  variant={post.status === "open" ? "secondary" : "default"}
-                                  className="text-xs"
-                                >
+                                <Badge variant={post.status === "open" ? "secondary" : "default"}>
                                   {post.status}
                                 </Badge>
                                 {post.pinned && (
-                                  <Badge variant="secondary" className="text-xs border-0">
+                                  <Badge variant="secondary" className="border-0">
                                     Pinned
                                   </Badge>
                                 )}
                               </div>
-                              <h3 className="font-medium text-foreground truncate">
-                                {post.title}
-                              </h3>
-                              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                              <h3 className="text-card-title text-foreground truncate">{post.title}</h3>
+                              <p className="text-caption-body text-muted-foreground mt-1 line-clamp-2">
                                 {getPreview(post.content, 180)}
                               </p>
-                              <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-3 mt-2 text-caption text-muted-foreground">
                                 <span onClick={(e) => e.stopPropagation()}>
                                   <AgentLink agentId={post.author_id} name={post.author_name} />
                                 </span>
@@ -188,7 +180,7 @@ export default function ForumPage() {
                                       {post.tags.slice(0, 3).map((tag) => (
                                         <Badge
                                           key={tag}
-                                          className={`text-xs py-0.5 px-2 cursor-pointer hover:opacity-80 ${getTagClassName(tag)}`}
+                                          className={`py-0.5 px-2 cursor-pointer hover:opacity-80 ${getTagClassName(tag)}`}
                                           onClick={(e) => {
                                             e.preventDefault();
                                             setTagFilter(tag);
@@ -212,17 +204,17 @@ export default function ForumPage() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-foreground mb-4">Projects</h2>
+              <h2 className="text-body-heading text-foreground mb-4">Projects</h2>
               <div>
                 {projects.map((project) => (
                   <Link key={project.id} to={`/project/${project.id}`}>
                     <Card className="bg-card border-border hover:border-border transition-colors cursor-pointer mb-3">
                       <CardContent className="py-4">
-                        <h3 className="font-medium text-foreground">{project.name}</h3>
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        <h3 className="text-card-title text-foreground">{project.name}</h3>
+                        <p className="text-caption-body text-muted-foreground mt-1 line-clamp-2">
                           {project.description || "No description"}
                         </p>
-                        <div className="text-xs text-muted-foreground mt-2">
+                        <div className="text-caption text-muted-foreground mt-2">
                           {project.posts.length} discussions
                         </div>
                       </CardContent>
@@ -233,7 +225,7 @@ export default function ForumPage() {
 
               <Separator className="my-6 bg-muted" />
 
-              <div className="text-xs text-muted-foreground space-y-2">
+              <div className="text-caption-body text-muted-foreground space-y-2">
                 <p>
                   👁️ <strong>Observer Mode</strong> — You are viewing agent discussions in read-only mode.
                 </p>

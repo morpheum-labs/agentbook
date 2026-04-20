@@ -65,7 +65,7 @@ export default function AgentProfilePage() {
     return (
       <div className="min-h-screen bg-background">
         <SiteHeader />
-        <main className="max-w-4xl mx-auto px-6 py-8">
+        <main className="mx-auto w-full max-w-4xl px-[var(--page-gutter)] py-8">
           <p className="text-muted-foreground">Loading...</p>
         </main>
         <SiteFooter blurb="Agentbook — Built for agents, observable by humans" />
@@ -77,7 +77,7 @@ export default function AgentProfilePage() {
     return (
       <div className="min-h-screen bg-background">
         <SiteHeader />
-        <main className="max-w-4xl mx-auto px-6 py-8">
+        <main className="mx-auto w-full max-w-4xl px-[var(--page-gutter)] py-8">
           <p className="text-destructive">{error || "Profile not found"}</p>
         </main>
         <SiteFooter blurb="Agentbook — Built for agents, observable by humans" />
@@ -90,12 +90,17 @@ export default function AgentProfilePage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="mx-auto w-full max-w-4xl px-[var(--page-gutter)] py-8">
         <div className="mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-2xl">🤖</div>
+            <div
+              className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-section leading-none"
+              aria-hidden
+            >
+              🤖
+            </div>
             <div>
-              <h1 className="text-lead font-medium text-foreground">{agent.name}</h1>
+              <h1 className="text-section-heading text-foreground">{agent.name}</h1>
               <p className="text-caption-body text-muted-foreground mt-2 max-w-xl leading-[var(--lh-body)]">
                 This page is the <strong>Agentbook</strong> profile (projects and forum activity). It is not the{" "}
                 <strong>AgentFloor signal profile</strong> (topic accuracy and staked signal).{" "}
@@ -116,7 +121,9 @@ export default function AgentProfilePage() {
                   <Badge variant="secondary">○ Offline</Badge>
                 )}
                 {agent.last_seen && (
-                  <span className="text-sm text-muted-foreground">Last seen: {formatDateTime(agent.last_seen)}</span>
+                  <span className="text-caption-body text-muted-foreground">
+                    Last seen: {formatDateTime(agent.last_seen)}
+                  </span>
                 )}
               </div>
             </div>
@@ -126,11 +133,11 @@ export default function AgentProfilePage() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-lg">Project Memberships</CardTitle>
+              <CardTitle>Project Memberships</CardTitle>
             </CardHeader>
             <CardContent>
               {memberships.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No project memberships</p>
+                <p className="text-muted-foreground text-caption-body">No project memberships</p>
               ) : (
                 <ul className="space-y-2">
                   {memberships.map((m) => (
@@ -158,11 +165,11 @@ export default function AgentProfilePage() {
 
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-lg">Recent Posts</CardTitle>
+              <CardTitle>Recent Posts</CardTitle>
             </CardHeader>
             <CardContent>
               {recent_posts.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No posts yet</p>
+                <p className="text-muted-foreground text-caption-body">No posts yet</p>
               ) : (
                 <ul className="space-y-2">
                   {recent_posts.map((p) => (
@@ -173,7 +180,7 @@ export default function AgentProfilePage() {
                       >
                         {p.title}
                       </Link>
-                      <span className="text-muted-foreground text-xs ml-2">{formatDate(p.created_at)}</span>
+                      <span className="text-muted-foreground text-caption ml-2">{formatDate(p.created_at)}</span>
                     </li>
                   ))}
                 </ul>
@@ -183,11 +190,11 @@ export default function AgentProfilePage() {
 
           <Card className="bg-card border-border md:col-span-2">
             <CardHeader>
-              <CardTitle className="text-lg">Recent Comments</CardTitle>
+              <CardTitle>Recent Comments</CardTitle>
             </CardHeader>
             <CardContent>
               {recent_comments.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No comments yet</p>
+                <p className="text-muted-foreground text-caption-body">No comments yet</p>
               ) : (
                 <ul className="space-y-3">
                   {recent_comments.map((c) => (
@@ -198,8 +205,8 @@ export default function AgentProfilePage() {
                       >
                         {c.post_title}
                       </Link>
-                      <p className="text-muted-foreground text-sm mt-1">{c.content_preview}</p>
-                      <span className="text-muted-foreground text-xs">{formatDateTime(c.created_at)}</span>
+                      <p className="text-muted-foreground text-caption-body mt-1">{c.content_preview}</p>
+                      <span className="text-muted-foreground text-caption">{formatDateTime(c.created_at)}</span>
                     </li>
                   ))}
                 </ul>

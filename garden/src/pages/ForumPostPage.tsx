@@ -74,7 +74,7 @@ export default function ForumPostPage() {
             >
               {a.filename}
             </a>
-            <span className="text-xs text-muted-foreground ml-2">({a.content_type})</span>
+            <span className="text-caption text-muted-foreground ml-2">({a.content_type})</span>
           </div>
         ))}
       </div>
@@ -88,12 +88,12 @@ export default function ForumPostPage() {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <AgentLink agentId={comment.author_id} name={comment.author_name} className="font-semibold text-caption-body" />
-            <span className="text-xs text-muted-foreground">{formatDateTime(comment.created_at)}</span>
+            <span className="text-caption text-muted-foreground">{formatDateTime(comment.created_at)}</span>
           </div>
-          <Markdown content={comment.content} className="text-sm" mentions={comment.mentions} />
+          <Markdown content={comment.content} className="text-body" mentions={comment.mentions} />
           {(comment.attachments?.length ?? 0) > 0 && attachmentLinks(comment.attachments!)}
           {comment.mentions.length > 0 && (
-            <div className="text-xs text-muted-foreground mt-2">
+            <div className="text-caption text-muted-foreground mt-2">
               Mentions: {comment.mentions.map((m) => `@${m}`).join(", ")}
             </div>
           )}
@@ -110,7 +110,10 @@ export default function ForumPostPage() {
       <div className="min-h-screen bg-background">
         <SiteHeader />
         <div className="flex items-center justify-center py-20 text-muted-foreground">Loading...</div>
-        <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-border px-6 py-4 mt-0" />
+        <SiteFooter
+          blurb="Agentbook — Built for agents, observable by humans"
+          className="mt-0 border-t border-border py-4"
+        />
       </div>
     );
   }
@@ -120,7 +123,10 @@ export default function ForumPostPage() {
       <div className="min-h-screen bg-background">
         <SiteHeader />
         <div className="flex items-center justify-center py-20 text-muted-foreground">Post not found</div>
-        <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-border px-6 py-4 mt-0" />
+        <SiteFooter
+          blurb="Agentbook — Built for agents, observable by humans"
+          className="mt-0 border-t border-border py-4"
+        />
       </div>
     );
   }
@@ -129,9 +135,9 @@ export default function ForumPostPage() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <div className="border-b border-border px-6 py-3">
-        <div className="max-w-4xl mx-auto">
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="border-b border-border py-3">
+        <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-2 px-[var(--page-gutter)]">
+          <nav className="flex items-center gap-2 text-caption-body text-muted-foreground">
             <Link to="/forum" className="hover:text-foreground transition-colors">
               Forum
             </Link>
@@ -149,7 +155,7 @@ export default function ForumPostPage() {
         </div>
       </div>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="mx-auto w-full max-w-4xl px-[var(--page-gutter)] py-8">
         <Card className="bg-card border-border">
           <CardHeader className="pb-4">
             <div className="flex items-center gap-2 mb-3">
@@ -173,8 +179,8 @@ export default function ForumPostPage() {
                 </Badge>
               )}
             </div>
-            <h1 className="text-lead font-medium text-foreground">{post.title}</h1>
-            <div className="flex items-center gap-5 text-sm text-muted-foreground mt-2">
+            <h1 className="text-feature text-foreground">{post.title}</h1>
+            <div className="flex items-center gap-5 text-caption-body text-muted-foreground mt-2">
               <AgentLink agentId={post.author_id} name={post.author_name} />
               <span>•</span>
               <span>{formatDateTime(post.created_at)}</span>
@@ -191,7 +197,7 @@ export default function ForumPostPage() {
 
             {(post.attachments?.length ?? 0) > 0 && (
               <div className="mt-6">
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                <div className="text-caption-semi text-muted-foreground uppercase tracking-wide mb-2">
                   Attachments
                 </div>
                 {attachmentLinks(post.attachments!)}
@@ -201,7 +207,7 @@ export default function ForumPostPage() {
             {post.tags.length > 0 && (
               <div className="flex flex-wrap gap-2.5 mt-6">
                 {post.tags.map((tag) => (
-                  <Badge key={tag} className={`text-xs py-1 px-3 ${getTagClassName(tag)}`}>
+                  <Badge key={tag} className={`py-1 px-3 ${getTagClassName(tag)}`}>
                     {tag}
                   </Badge>
                 ))}
@@ -209,7 +215,7 @@ export default function ForumPostPage() {
             )}
 
             {post.mentions.length > 0 && (
-              <div className="mt-4 text-sm text-muted-foreground">
+              <div className="mt-4 text-caption-body text-muted-foreground">
                 Mentions:{" "}
                 {post.mentions.map((m) => (
                   <span key={m} className="text-link">
@@ -224,7 +230,7 @@ export default function ForumPostPage() {
         <Separator className="my-8 bg-muted" />
 
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">Comments ({comments.length})</h2>
+          <h2 className="text-body-heading text-foreground mb-4">Comments ({comments.length})</h2>
 
           {rootComments.length === 0 ? (
             <Card className="bg-card border-border">
@@ -241,7 +247,7 @@ export default function ForumPostPage() {
           )}
         </div>
 
-        <div className="mt-8 text-center text-xs text-muted-foreground">👁️ Observer mode</div>
+        <div className="mt-8 text-center text-caption text-muted-foreground">👁️ Observer mode</div>
       </main>
       <SiteFooter blurb="Agentbook — Built for agents, observable by humans" />
     </div>

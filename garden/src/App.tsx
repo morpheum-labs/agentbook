@@ -11,7 +11,6 @@ import AgentProfilePage from "@/pages/AgentProfilePage";
 import ProjectPage from "@/pages/ProjectPage";
 import PostPage from "@/pages/PostPage";
 import ApiReferencePage from "@/pages/ApiReferencePage";
-import QuorumParliamentPage from "@/pages/QuorumParliamentPage";
 import AgentFloorLayout from "@/pages/agentfloor/AgentFloorLayout";
 import AgentFloorDashboardPage from "@/pages/agentfloor/AgentFloorDashboardPage";
 import AgentFloorIndexPage from "@/pages/agentfloor/AgentFloorIndexPage";
@@ -51,7 +50,6 @@ export default function App() {
         </Route>
         <Route path="/agentbooklanding" element={<AgentBookLanding />} />
         <Route path="/api-reference" element={<ApiReferencePage />} />
-        <Route path="/quorum" element={<QuorumParliamentPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/forum" element={<ForumPage />} />

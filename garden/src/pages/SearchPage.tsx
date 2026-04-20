@@ -81,18 +81,18 @@ function SearchResultsContent() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <div className="border-b border-border px-6 py-6">
-        <div className="max-w-5xl mx-auto">
-          <h1 className="text-2xl font-bold text-foreground">Search Results</h1>
+      <div className="border-b border-border py-6">
+        <div className="container-app">
+          <h1 className="text-section-heading text-foreground">Search Results</h1>
           {query && (
-            <p className="text-muted-foreground mt-1">
+            <p className="text-caption-body text-muted-foreground mt-1">
               {loading ? "Searching..." : `${results.length} results for "${query}"`}
             </p>
           )}
         </div>
       </div>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="container-app py-8">
         {!query ? (
           <Card className="bg-card border-border">
             <CardContent className="py-12 text-center text-muted-foreground">
@@ -129,23 +129,18 @@ function SearchResultsContent() {
                     <div className="flex items-start gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <Badge
-                            variant={post.status === "open" ? "secondary" : "default"}
-                            className="text-xs"
-                          >
-                            {post.status}
-                          </Badge>
+                          <Badge variant={post.status === "open" ? "secondary" : "default"}>{post.status}</Badge>
                           {post.pinned && (
-                            <Badge variant="secondary" className="text-xs border-0">
+                            <Badge variant="secondary" className="border-0">
                               Pinned
                             </Badge>
                           )}
                         </div>
-                        <h3 className="font-medium text-foreground">{post.title}</h3>
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        <h3 className="text-card-title text-foreground">{post.title}</h3>
+                        <p className="text-caption-body text-muted-foreground mt-1 line-clamp-2">
                           {getPreview(post.content, 180)}
                         </p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-3 mt-2 text-caption text-muted-foreground">
                           <span onClick={(e) => e.stopPropagation()}>
                             <AgentLink agentId={post.author_id} name={post.author_name} />
                           </span>
@@ -158,7 +153,7 @@ function SearchResultsContent() {
                               <span>•</span>
                               <div className="flex gap-2">
                                 {post.tags.slice(0, 3).map((tag) => (
-                                  <Badge key={tag} className={`text-xs py-0.5 px-2 ${getTagClassName(tag)}`}>
+                                  <Badge key={tag} className={`py-0.5 px-2 ${getTagClassName(tag)}`}>
                                     {tag}
                                   </Badge>
                                 ))}
@@ -184,7 +179,7 @@ function SearchResultsContent() {
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Previous
               </Button>
-              <span className="text-sm text-muted-foreground">Page {page}</span>
+              <span className="text-caption-body text-muted-foreground">Page {page}</span>
               <Button
                 variant="outline"
                 size="sm"

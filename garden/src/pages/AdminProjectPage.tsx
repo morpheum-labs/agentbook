@@ -226,9 +226,9 @@ export default function AdminProjectPage() {
         }
       />
 
-      <div className="border-b border-border px-6 py-3">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center gap-2 text-sm">
+      <div className="border-b border-border py-3">
+        <div className="container-app">
+          <div className="flex items-center gap-2 text-caption-body">
             <Link to="/admin" className="text-muted-foreground hover:text-foreground">
               Admin
             </Link>
@@ -238,17 +238,17 @@ export default function AdminProjectPage() {
         </div>
       </div>
 
-      <div className="border-b border-border px-6 py-6">
-        <div className="max-w-5xl mx-auto">
-          <h1 className="text-lead font-medium text-foreground">{project?.name || "Loading..."}</h1>
-          <p className="text-muted-foreground mt-1">{project?.description || "No description"}</p>
+      <div className="border-b border-border py-6">
+        <div className="container-app">
+          <h1 className="text-section-heading text-foreground">{project?.name || "Loading..."}</h1>
+          <p className="text-caption-body text-muted-foreground mt-1">{project?.description || "No description"}</p>
         </div>
       </div>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="container-app py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">📋 Grand Plan</h2>
+            <h2 className="text-body-heading text-foreground">📋 Grand Plan</h2>
             {!editingPlan && (
               <Button
                 size="sm"
@@ -275,7 +275,7 @@ export default function AdminProjectPage() {
                   onChange={(e) => setPlanContent(e.target.value)}
                   placeholder="Roadmap, goals, priorities..."
                   rows={8}
-                  className="bg-muted border-border font-mono text-sm"
+                  className="bg-muted border-border font-mono text-caption-body"
                 />
                 <div className="flex gap-2">
                   <Button
@@ -299,11 +299,11 @@ export default function AdminProjectPage() {
           ) : plan ? (
             <Card className="bg-card border-border">
               <CardHeader className="pb-2">
-                <CardTitle className="text-foreground text-base">{plan.title}</CardTitle>
+                <CardTitle className="text-foreground text-body-heading">{plan.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <pre className="text-sm text-foreground whitespace-pre-wrap font-mono">{plan.content}</pre>
-                <p className="text-xs text-muted-foreground mt-4">Updated: {formatDateTime(plan.updated_at)}</p>
+                <pre className="text-caption-body text-foreground whitespace-pre-wrap font-mono">{plan.content}</pre>
+                <p className="text-caption text-muted-foreground mt-4">Updated: {formatDateTime(plan.updated_at)}</p>
               </CardContent>
             </Card>
           ) : (
@@ -316,7 +316,7 @@ export default function AdminProjectPage() {
         </div>
 
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Members ({members.length})</h2>
+          <h2 className="text-body-heading text-foreground">Members ({members.length})</h2>
         </div>
 
         {loading ? (
@@ -331,11 +331,11 @@ export default function AdminProjectPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left p-4 text-xs font-medium text-muted-foreground uppercase">Agent</th>
-                    <th className="text-left p-4 text-xs font-medium text-muted-foreground uppercase">Role</th>
-                    <th className="text-left p-4 text-xs font-medium text-muted-foreground uppercase">Status</th>
-                    <th className="text-left p-4 text-xs font-medium text-muted-foreground uppercase">Joined</th>
-                    <th className="text-right p-4 text-xs font-medium text-muted-foreground uppercase">Actions</th>
+                    <th className="text-left p-4 text-caption-semi text-muted-foreground uppercase">Agent</th>
+                    <th className="text-left p-4 text-caption-semi text-muted-foreground uppercase">Role</th>
+                    <th className="text-left p-4 text-caption-semi text-muted-foreground uppercase">Status</th>
+                    <th className="text-left p-4 text-caption-semi text-muted-foreground uppercase">Joined</th>
+                    <th className="text-right p-4 text-caption-semi text-muted-foreground uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -347,7 +347,7 @@ export default function AdminProjectPage() {
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-foreground">@{member.agent_name}</span>
                             {isPrimaryLead && (
-                              <Badge variant="outline" className="border-chart-5/50 text-xs">
+                              <Badge variant="outline" className="border-chart-5/50">
                                 👑 Lead
                               </Badge>
                             )}
@@ -368,7 +368,7 @@ export default function AdminProjectPage() {
                                     key={r}
                                     type="button"
                                     onClick={() => setEditRole(r)}
-                                    className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:text-foreground"
+                                    className="text-caption px-2 py-1 rounded-sm bg-muted text-muted-foreground hover:text-foreground"
                                   >
                                     {r}
                                   </button>
@@ -387,10 +387,10 @@ export default function AdminProjectPage() {
                               Online
                             </Badge>
                           ) : (
-                            <span className="text-muted-foreground text-sm">Offline</span>
+                            <span className="text-muted-foreground text-caption-body">Offline</span>
                           )}
                         </td>
-                        <td className="p-4 text-sm text-muted-foreground">{formatDate(member.joined_at)}</td>
+                        <td className="p-4 text-caption-body text-muted-foreground">{formatDate(member.joined_at)}</td>
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             {editingMember === member.agent_id ? (
@@ -456,7 +456,7 @@ export default function AdminProjectPage() {
 
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">📖 Role Definitions</h2>
+            <h2 className="text-body-heading text-foreground">📖 Role Definitions</h2>
             {!editingRoles && (
               <Button
                 size="sm"
@@ -512,7 +512,7 @@ export default function AdminProjectPage() {
                       <Badge variant="secondary" className="bg-muted text-foreground min-w-[100px] justify-center">
                         {role}
                       </Badge>
-                      <span className="text-sm text-muted-foreground">{desc}</span>
+                      <span className="text-caption-body text-muted-foreground">{desc}</span>
                     </div>
                   ))}
                 </div>

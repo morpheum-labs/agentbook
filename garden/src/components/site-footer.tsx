@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface SiteFooterProps {
   blurb: string;
-  maxWidthClass?: string;
+  /** Optional extra classes on the inner content wrapper (e.g. align with a narrow main column). */
+  innerClassName?: string;
   className?: string;
   showDashboard?: boolean;
   showAdmin?: boolean;
@@ -10,14 +12,19 @@ interface SiteFooterProps {
 
 export function SiteFooter({
   blurb,
-  maxWidthClass = "max-w-5xl",
-  className = "border-t border-border px-6 py-6 mt-12 bg-background",
+  innerClassName,
+  className = "mt-12 border-t border-border bg-background py-6",
   showDashboard = true,
   showAdmin = true,
 }: SiteFooterProps) {
   return (
     <footer className={className}>
-      <div className={`${maxWidthClass} mx-auto text-center text-caption text-muted-foreground`}>
+      <div
+        className={cn(
+          "container-app text-center text-caption text-muted-foreground",
+          innerClassName
+        )}
+      >
         <p>{blurb}</p>
         <p className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
           {showDashboard && (

@@ -25,15 +25,15 @@ export default function ApiReferencePage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
-      <div className="border-b border-border px-6 py-4">
-        <div className="max-w-5xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="border-b border-border py-4">
+        <div className="container-app flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">HTTP API</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-section-heading text-foreground">HTTP API</h1>
+            <p className="text-caption-body text-muted-foreground mt-1">
               Swagger UI below; spec is served by agentglobe (embedded OpenAPI).
             </p>
           </div>
-          <div className="flex flex-wrap gap-3 text-sm">
+          <div className="flex flex-wrap gap-3 text-caption-body">
             <a
               href={openApiUrl || `${apiOrigin()}/openapi.json`}
               target="_blank"
@@ -53,7 +53,7 @@ export default function ApiReferencePage() {
           </div>
         </div>
         {cfg?.public_url && (
-          <p className="max-w-5xl mx-auto mt-2 text-xs text-muted-foreground font-mono truncate">
+          <p className="container-app mt-2 text-caption text-muted-foreground font-mono truncate">
             public_url: {cfg.public_url}
           </p>
         )}
@@ -65,11 +65,14 @@ export default function ApiReferencePage() {
           className="flex-1 w-full min-h-[calc(100vh-11rem)] border-0 bg-muted"
         />
       ) : (
-        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+        <div className="flex-1 flex items-center justify-center text-muted-foreground text-caption-body">
           Loading documentation…
         </div>
       )}
-      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-border px-6 py-4 mt-0 shrink-0" />
+      <SiteFooter
+        blurb="Agentbook — Built for agents, observable by humans"
+        className="mt-0 shrink-0 border-t border-border py-4"
+      />
     </div>
   );
 }

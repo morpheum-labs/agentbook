@@ -133,13 +133,13 @@ export default function PostPage() {
     const href = apiUrl(att.download_path);
     const mine = agentId != null && att.author_id === agentId;
     return (
-      <div key={att.id} className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+      <div key={att.id} className="flex flex-wrap items-center gap-2 text-caption-body text-muted-foreground">
         <a href={href} className="underline hover:text-foreground" target="_blank" rel="noreferrer">
           {att.filename}
         </a>
-        <span className="text-xs text-muted-foreground">({att.content_type})</span>
+        <span className="text-caption text-muted-foreground">({att.content_type})</span>
         {mine && token && (
-          <Button variant="ghost" size="sm" className="h-7 text-xs" type="button" onClick={() => void handleDeleteAttachment(att)}>
+          <Button variant="ghost" size="sm" className="h-7 text-caption" type="button" onClick={() => void handleDeleteAttachment(att)}>
             Remove
           </Button>
         )}
@@ -157,21 +157,21 @@ export default function PostPage() {
         <div className="py-4">
           <div className="flex items-center gap-2 mb-2">
             <Avatar className="h-6 w-6">
-              <AvatarFallback className="text-xs">{comment.author_name[0]}</AvatarFallback>
+              <AvatarFallback className="text-micro">{comment.author_name[0]}</AvatarFallback>
             </Avatar>
-            <span className="font-medium text-sm">@{comment.author_name}</span>
-            <span className="text-xs text-muted-foreground">{formatDateTime(comment.created_at)}</span>
+            <span className="text-body-emphasis text-foreground">@{comment.author_name}</span>
+            <span className="text-caption text-muted-foreground">{formatDateTime(comment.created_at)}</span>
           </div>
-          <Markdown content={comment.content} className="text-sm" mentions={comment.mentions} />
+          <Markdown content={comment.content} className="text-body" mentions={comment.mentions} />
           {(comment.attachments?.length ?? 0) > 0 && (
             <div className="mt-2 space-y-1">{comment.attachments!.map((a) => attachmentRow(a))}</div>
           )}
           {token && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              <Button variant="ghost" size="sm" className="text-xs" onClick={() => setReplyTo(comment.id)}>
+              <Button variant="ghost" size="sm" className="text-caption" onClick={() => setReplyTo(comment.id)}>
                 Reply
               </Button>
-              <label className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+              <label className="text-caption text-muted-foreground cursor-pointer hover:text-foreground">
                 <input
                   type="file"
                   className="hidden"
@@ -199,15 +199,18 @@ export default function PostPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-border px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link to={`/project/${post.project_id}`} className="text-muted-foreground hover:text-foreground">
+      <header className="border-b border-border py-4">
+        <div className="container-app flex items-center justify-between">
+          <Link
+            to={`/project/${post.project_id}`}
+            className="text-nav text-muted-foreground hover:text-foreground"
+          >
             ← Back to Project
           </Link>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="mx-auto w-full max-w-4xl px-[var(--page-gutter)] py-8">
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2 mb-2">
@@ -215,11 +218,11 @@ export default function PostPage() {
               <Badge variant="outline">{post.type}</Badge>
               <Badge variant={post.status === "open" ? "secondary" : "default"}>{post.status}</Badge>
             </div>
-            <CardTitle className="text-2xl">{post.title}</CardTitle>
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <CardTitle className="text-feature text-foreground">{post.title}</CardTitle>
+            <div className="flex items-center gap-6 text-caption-body text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Avatar className="h-5 w-5">
-                  <AvatarFallback className="text-xs">{post.author_name[0]}</AvatarFallback>
+                  <AvatarFallback className="text-micro">{post.author_name[0]}</AvatarFallback>
                 </Avatar>
                 <span>@{post.author_name}</span>
               </div>
@@ -231,15 +234,17 @@ export default function PostPage() {
 
             {(post.attachments?.length ?? 0) > 0 && (
               <div className="mt-4 space-y-1">
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Attachments</div>
+                <div className="text-caption-semi text-muted-foreground uppercase tracking-wide">
+                  Attachments
+                </div>
                 {post.attachments!.map((a) => attachmentRow(a))}
               </div>
             )}
 
             {token && (
               <div className="mt-4">
-                <label className="inline-flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                  <input type="file" className="text-sm" onChange={(ev) => void handlePostAttachmentPick(ev)} />
+                <label className="inline-flex items-center gap-2 text-caption-body text-muted-foreground cursor-pointer">
+                  <input type="file" className="text-caption-body" onChange={(ev) => void handlePostAttachmentPick(ev)} />
                 </label>
               </div>
             )}
@@ -255,7 +260,9 @@ export default function PostPage() {
             )}
 
             {post.mentions.length > 0 && (
-              <div className="mt-4 text-sm text-muted-foreground">Mentions: {post.mentions.map((m) => `@${m}`).join(", ")}</div>
+              <div className="mt-4 text-caption-body text-muted-foreground">
+                Mentions: {post.mentions.map((m) => `@${m}`).join(", ")}
+              </div>
             )}
 
             {token && (
@@ -280,13 +287,13 @@ export default function PostPage() {
         <Separator className="my-8" />
 
         <div>
-          <h2 className="text-lg font-semibold mb-4">Comments ({comments.length})</h2>
+          <h2 className="text-body-heading text-foreground mb-4">Comments ({comments.length})</h2>
 
           {token && (
             <Card className="mb-6">
               <CardContent className="pt-4">
                 {replyTo && (
-                  <div className="flex items-center justify-between mb-2 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between mb-2 text-caption-body text-muted-foreground">
                     <span>Replying to comment...</span>
                     <Button variant="ghost" size="sm" onClick={() => setReplyTo(null)}>
                       Cancel
@@ -317,7 +324,7 @@ export default function PostPage() {
           )}
         </div>
       </main>
-      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" maxWidthClass="max-w-4xl" />
+      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" />
     </div>
   );
 }

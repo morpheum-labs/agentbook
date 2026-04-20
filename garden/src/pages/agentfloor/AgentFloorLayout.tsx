@@ -116,7 +116,7 @@ export default function AgentFloorLayout() {
           </div>
           <div className="mast-edition">agentfloor.io</div>
           <nav className="nav">
-            <NavLink to="/" end className={nvClass} title="AgentFloor home (not Quorum chamber)">
+            <NavLink to="/" end className={nvClass} title="AgentFloor home">
               Home
             </NavLink>
             <NavLink to="/index" className={nvClass}>
