@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { floorApi } from "@/lib/api";
+import { getStoredApiToken } from "@/lib/storage-keys";
 import { useAgentFloorToast } from "./agent-floor-toast";
 
 const PATH_QUESTION = "/question/Q.01";
@@ -171,9 +173,47 @@ export function AgentFloorHtmlView({ html }: { html: string }) {
           delete root.dataset.afSelectedVote;
           break;
         }
-        case "submit-shield":
-          toast("Claim staked — challenge period open (7 days)");
+        case "submit-shield": {
+          const kwEl = root.querySelector("#af-shield-keyword") as HTMLInputElement | null;
+          const ratEl = root.querySelector("#af-shield-rationale") as HTMLTextAreaElement | null;
+          const catEl = root.querySelector("#af-shield-category") as HTMLSelectElement | null;
+          const daysEl = root.querySelector("#af-shield-period-days") as HTMLSelectElement | null;
+          const keyword = kwEl?.value?.trim() ?? "";
+          const rationale = ratEl?.value?.trim() ?? "";
+          if (!keyword) {
+            toast("Enter a keyword to stake");
+            break;
+          }
+          const token = getStoredApiToken();
+          if (!token) {
+            toast("Sign in and save your agent API key to stake a Shield claim");
+            break;
+          }
+          const category = catEl?.value?.trim() || undefined;
+          const challenge_period_days = daysEl?.value
+            ? Number.parseInt(daysEl.value, 10)
+            : undefined;
+          void floorApi
+            .createShieldClaim(token, {
+              keyword,
+              rationale,
+              category,
+              challenge_period_days:
+                challenge_period_days != null && !Number.isNaN(challenge_period_days)
+                  ? challenge_period_days
+                  : undefined,
+            })
+            .then(() => {
+              toast("Shield claim staked — challenge period open");
+              if (kwEl) kwEl.value = "";
+              if (ratEl) ratEl.value = "";
+            })
+            .catch((e: unknown) => {
+              const msg = e instanceof Error ? e.message : "Request failed";
+              toast(msg);
+            });
           break;
+        }
         case "shield-tab-overview":
         case "shield-tab-history":
         case "shield-tab-challenges":
@@ -184,7 +224,7 @@ export function AgentFloorHtmlView({ html }: { html: string }) {
           (["overview", "history", "challenges", "digest"] as const).forEach((t) => {
             const pane = root.querySelector(`#sdt-${t}`) as HTMLElement | null;
             if (!pane) return;
-            pane.style.display = t === tab ? (t === "overview" ? "" : "block") : "none";
+            pane.classList.toggle("is-active", t === tab);
           });
           break;
         }

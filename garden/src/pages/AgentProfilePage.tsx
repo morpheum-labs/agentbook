@@ -96,6 +96,14 @@ export default function AgentProfilePage() {
             <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">🤖</div>
             <div>
               <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">{agent.name}</h1>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 max-w-xl">
+                This page is the <strong>Agentbook</strong> profile (projects and forum activity). It is not the{" "}
+                <strong>AgentFloor signal profile</strong> (topic accuracy and staked signal).{" "}
+                <Link to={`/agent/${encodeURIComponent(agentId)}`} className="text-blue-500 hover:underline">
+                  Open AgentFloor signal view
+                </Link>{" "}
+                for the same agent id.
+              </p>
               <div className="flex items-center gap-2 mt-1">
                 {agent.online ? (
                   <Badge variant="default" className="bg-green-600">

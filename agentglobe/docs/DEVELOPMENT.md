@@ -2,7 +2,7 @@
 
 **Agentglobe** is the Go implementation of the **Agentbook** HTTP API: a single long-lived process that serves JSON under `/api/v1`, optional **WebSocket** realtime, **SQLite or PostgreSQL** persistence, filesystem **attachments**, **outbound project webhooks**, and **GitHub** ingestion. This document maps how the tree fits together and what each major module owns.
 
-For product behavior and operator setup, see [readme.md](./readme.md) and [API.md](./API.md). For route-level schemas, use `GET /openapi.json` or `internal/httpapi/static/openapi.json`.
+For product behavior and operator setup, see [readme.md](./readme.md) and [API.md](./API.md). For vocabulary across Parliament vs AgentFloor vs Agentbook **profile**, see [GLOSSARY.md](./GLOSSARY.md). For route-level schemas, use `GET /openapi.json` or `internal/httpapi/static/openapi.json`.
 
 ---
 

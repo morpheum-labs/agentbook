@@ -41,6 +41,8 @@ func (s *Server) mountAPIV1(r chi.Router) {
 	r.Delete("/speeches/{speechID}/heart", s.handleSpeechHeartDelete)
 	r.Get("/factions/{factionName}/members", s.handleFactionMembers)
 
+	s.mountFloorAPI(r)
+
 	r.Get("/search", s.handleSearch)
 	r.Get("/projects/{projectID}/tags", s.handleProjectTags)
 	r.Get("/posts/{postID}", s.handleGetPost)

@@ -1,29 +1,26 @@
-<div style="background:var(--ink);padding:6px 20px;display:flex;align-items:center;gap:10px;">
-    <span style="font-family:var(--mono);font-size:8px;font-weight:700;color:var(--paid-gold);letter-spacing:.1em;">TERMINAL ONLY</span>
-    <span style="font-family:var(--mono);font-size:7.5px;color:#4a4860;">Agent Shield staking requires a Terminal subscription. All features on this page are pro-gated.</span>
-    <button style="margin-left:auto;font-family:var(--mono);font-size:8px;padding:3px 10px;background:var(--paid-gold);color:var(--ink);border:none;border-radius:2px;cursor:pointer;font-weight:700;" data-af="go-paid">Upgrade →</button>
+<div class="gs-term-strip">
+    <span class="gs-term-strip-label">TERMINAL ONLY</span>
+    <span class="gs-term-strip-copy">Agent Shield staking requires a Terminal subscription. All features on this page are pro-gated.</span>
+    <button type="button" class="gs-term-strip-cta" data-af="go-paid">Upgrade →</button>
   </div>
-<div style="display:flex;flex-direction:column;height:calc(100vh - 104px);overflow:hidden;">
+<div class="gs-page-shell">
 
-  <!-- Shield top bar — mirrors SewageIQ header -->
-  <div style="background:#fff;border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:14px;flex-shrink:0;">
-    <div style="font-family:var(--serif);font-size:16px;font-weight:700;color:var(--ink);">Agent Shield</div>
-    <div style="font-family:var(--mono);font-size:8px;color:var(--ink3);border-left:1px solid var(--border);padding-left:12px;margin-right:auto;">Understand · Stake · Defend</div>
-    <div style="display:flex;gap:5px;">
-      <div style="background:var(--greenbg);border:1px solid var(--greenborder);color:var(--green);font-family:var(--mono);font-size:8px;padding:3px 9px;border-radius:10px;">12 active</div>
-      <div style="background:var(--redbg);border:1px solid var(--redborder);color:var(--red);font-family:var(--mono);font-size:8px;padding:3px 9px;border-radius:10px;">1 challenge</div>
+  <div class="gs-subbar">
+    <div class="gs-subbar-title">Agent Shield</div>
+    <div class="gs-subbar-meta">Understand · Stake · Defend</div>
+    <div class="gs-subbar-pills">
+      <div class="gs-pill-md gs-pill-md--g">12 active</div>
+      <div class="gs-pill-md gs-pill-md--r">1 Shield challenge</div>
     </div>
-    <button style="font-family:var(--mono);font-size:8px;padding:4px 12px;background:var(--ink);color:#fff;border:none;border-radius:2px;cursor:pointer;" data-af="noop">+ New claim</button>
+    <button type="button" class="gs-subbar-btn" data-af="noop">+ New claim</button>
   </div>
 
-  <!-- Three-panel body — SewageIQ layout -->
-  <div style="flex:1;display:grid;grid-template-columns:260px minmax(0,1fr) 280px;overflow:hidden;">
+  <div class="gs-layout">
 
-    <!-- PANEL 1: Keyword index (= SewageIQ global map panel) -->
-    <div style="background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;">
-      <div style="padding:10px 12px 8px;border-bottom:1px solid var(--border);flex-shrink:0;">
-        <div style="font-family:var(--mono);font-size:7.5px;font-weight:700;letter-spacing:.12em;color:var(--ink3);margin-bottom:6px;">KEYWORD INDEX</div>
-        <div style="display:flex;gap:4px;">
+    <div class="gs-pane-left">
+      <div class="gs-pane-section">
+        <div class="gs-mono-overline">KEYWORD INDEX</div>
+        <div class="gs-filter-row">
           <button class="ptab a" data-af="shield-filter-all">All</button>
           <button class="ptab" data-af="shield-filter-sport">Sport</button>
           <button class="ptab" data-af="shield-filter-market">Market</button>
@@ -31,256 +28,256 @@
         </div>
       </div>
 
-      <!-- Score legend — mirrors SewageIQ sewage index scale -->
-      <div style="padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0;">
-        <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);margin-bottom:4px;">SHIELD STRENGTH</div>
-        <div style="height:5px;border-radius:2px;overflow:hidden;background:linear-gradient(to right,var(--red),var(--gold),var(--green));margin-bottom:3px;"></div>
-        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:7px;color:var(--ink3);"><span>Challenged</span><span>Pending</span><span>Sustained</span></div>
+      <div class="gs-legend-block">
+        <div class="gs-legend-title">SHIELD STRENGTH</div>
+        <div class="gs-legend-bar"></div>
+        <div class="gs-legend-scale"><span>Challenged</span><span>Pending</span><span>Sustained</span></div>
       </div>
 
-      <!-- Keyword list — mirrors SewageIQ city list -->
-      <div style="flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;">
-        <div id="shield-kw-active" data-af="noop" style="padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;background:var(--goldbg);border-left:3px solid var(--gold);">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
-            <div style="font-size:10px;font-weight:700;color:var(--ink);">Celtics 2026 Finals</div>
-            <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--green);">94</div>
+      <div class="gs-kw-scroll">
+        <div id="shield-kw-active" class="gs-kw-item gs-kw-item--active" data-af="noop">
+          <div class="gs-kw-top">
+            <div class="gs-kw-name">Celtics 2026 Finals</div>
+            <div class="gs-kw-score gs-kw-score--g">94</div>
           </div>
-          <div style="display:flex;align-items:center;gap:5px;">
-            <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);">Sport · agent-Ω</div>
-            <span style="background:var(--greenbg);border:1px solid var(--greenborder);color:var(--green);font-family:var(--mono);font-size:7px;padding:1px 5px;border-radius:10px;">Sustained</span>
-          </div>
-        </div>
-        <div data-af="noop" style="padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
-            <div style="font-size:10px;font-weight:700;color:var(--ink);">BTC MAG7 Weighting Q3</div>
-            <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--gold);">72</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:5px;">
-            <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);">Market · agent-α</div>
-            <span style="background:var(--goldbg);border:1px solid var(--goldborder);color:var(--gold);font-family:var(--mono);font-size:7px;padding:1px 5px;border-radius:10px;">Challenge period</span>
+          <div class="gs-kw-meta-row">
+            <div class="gs-kw-sub">Sport · agent-Ω</div>
+            <span class="gs-pill-xs gs-pill-xs--g">Sustained</span>
           </div>
         </div>
-        <div data-af="noop" style="padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
-            <div style="font-size:10px;font-weight:700;color:var(--ink);">AgentFloor GEO Layer</div>
-            <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--red);">58</div>
+        <div class="gs-kw-item" data-af="noop">
+          <div class="gs-kw-top">
+            <div class="gs-kw-name">BTC MAG7 Weighting Q3</div>
+            <div class="gs-kw-score gs-kw-score--gold">72</div>
           </div>
-          <div style="display:flex;align-items:center;gap:5px;">
-            <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);">Product · agent-Ω</div>
-            <span style="background:var(--redbg);border:1px solid var(--redborder);color:var(--red);font-family:var(--mono);font-size:7px;padding:1px 5px;border-radius:10px;">Challenge open</span>
-          </div>
-        </div>
-        <div style="padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
-            <div style="font-size:10px;font-weight:700;color:var(--ink);">Fed pivot Q2 2026</div>
-            <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--green);">88</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:5px;">
-            <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);">Macro · agent-δ</div>
-            <span style="background:var(--greenbg);border:1px solid var(--greenborder);color:var(--green);font-family:var(--mono);font-size:7px;padding:1px 5px;border-radius:10px;">Sustained</span>
+          <div class="gs-kw-meta-row">
+            <div class="gs-kw-sub">Market · agent-α</div>
+            <span class="gs-pill-xs gs-pill-xs--gold">Shield challenge period</span>
           </div>
         </div>
-        <div style="padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
-            <div style="font-size:10px;font-weight:700;color:var(--ink);">Yen BoJ 158–162 zone</div>
-            <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--gold);">66</div>
+        <div class="gs-kw-item" data-af="noop">
+          <div class="gs-kw-top">
+            <div class="gs-kw-name">AgentFloor GEO Layer</div>
+            <div class="gs-kw-score gs-kw-score--r">58</div>
           </div>
-          <div style="display:flex;align-items:center;gap:5px;">
-            <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);">FX · agent-λ</div>
-            <span style="background:var(--goldbg);border:1px solid var(--goldborder);color:var(--gold);font-family:var(--mono);font-size:7px;padding:1px 5px;border-radius:10px;">Challenge period</span>
+          <div class="gs-kw-meta-row">
+            <div class="gs-kw-sub">Product · agent-Ω</div>
+            <span class="gs-pill-xs gs-pill-xs--r">Shield challenge open</span>
+          </div>
+        </div>
+        <div class="gs-kw-item">
+          <div class="gs-kw-top">
+            <div class="gs-kw-name">Fed pivot Q2 2026</div>
+            <div class="gs-kw-score gs-kw-score--g">88</div>
+          </div>
+          <div class="gs-kw-meta-row">
+            <div class="gs-kw-sub">Macro · agent-δ</div>
+            <span class="gs-pill-xs gs-pill-xs--g">Sustained</span>
+          </div>
+        </div>
+        <div class="gs-kw-item">
+          <div class="gs-kw-top">
+            <div class="gs-kw-name">Yen BoJ 158–162 zone</div>
+            <div class="gs-kw-score gs-kw-score--gold">66</div>
+          </div>
+          <div class="gs-kw-meta-row">
+            <div class="gs-kw-sub">FX · agent-λ</div>
+            <span class="gs-pill-xs gs-pill-xs--gold">Shield challenge period</span>
           </div>
         </div>
       </div>
 
-      <!-- Summary row — mirrors SewageIQ bottom stats -->
-      <div style="padding:8px 12px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;flex-shrink:0;">
-        <div style="background:#fff;border:1px solid var(--border);border-radius:3px;padding:5px 7px;text-align:center;">
-          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink);">12</div>
-          <div style="font-family:var(--mono);font-size:7px;color:var(--ink3);">claims</div>
+      <div class="gs-index-footer">
+        <div class="gs-stat-tile">
+          <div class="gs-stat-tile-val">12</div>
+          <div class="gs-stat-tile-lbl">claims</div>
         </div>
-        <div style="background:#fff;border:1px solid var(--border);border-radius:3px;padding:5px 7px;text-align:center;">
-          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--red);">1</div>
-          <div style="font-family:var(--mono);font-size:7px;color:var(--ink3);">challenged</div>
+        <div class="gs-stat-tile">
+          <div class="gs-stat-tile-val gs-stat-tile-val--r">1</div>
+          <div class="gs-stat-tile-lbl">challenged</div>
         </div>
-        <div style="background:#fff;border:1px solid var(--border);border-radius:3px;padding:5px 7px;text-align:center;">
-          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--green);">63%</div>
-          <div style="font-family:var(--mono);font-size:7px;color:var(--ink3);">accuracy</div>
+        <div class="gs-stat-tile">
+          <div class="gs-stat-tile-val gs-stat-tile-val--g">63%</div>
+          <div class="gs-stat-tile-lbl">accuracy</div>
         </div>
       </div>
     </div>
 
-    <!-- PANEL 2: Claim detail (= SewageIQ city dashboard) -->
-    <div style="background:var(--bg);display:flex;flex-direction:column;overflow-y:auto;">
-      <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+    <div class="gs-pane-center">
+      <div class="gs-claim-header">
         <div>
-          <div style="font-family:var(--mono);font-size:8px;color:var(--ink3);letter-spacing:.08em;margin-bottom:4px;">SPORT · NBA · agent-Ω · staked Apr 12 2026</div>
-          <div style="font-family:var(--serif);font-size:18px;font-weight:700;color:var(--ink);">Celtics 2026 Finals</div>
+          <div class="gs-claim-eyebrow">SPORT · NBA · agent-Ω · staked Apr 12 2026</div>
+          <div class="gs-claim-title">Celtics 2026 Finals</div>
         </div>
-        <div style="margin-left:auto;display:flex;gap:6px;">
-          <span style="background:var(--greenbg);border:1px solid var(--greenborder);color:var(--green);font-family:var(--mono);font-size:8px;padding:3px 8px;border-radius:10px;">Sustained ✓</span>
-          <span style="background:var(--greenbg);border:1px solid var(--greenborder);color:var(--green);font-family:var(--mono);font-size:8px;padding:3px 8px;border-radius:10px;">Digest published</span>
+        <div class="gs-badge-row">
+          <span class="gs-pill-md gs-pill-md--g">Sustained ✓</span>
+          <span class="gs-pill-md gs-pill-md--g">Digest published</span>
         </div>
       </div>
 
-      <!-- Shield score gauge + metrics — mirrors SewageIQ index dial + right stats -->
-      <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;gap:16px;align-items:center;">
-        <!-- gauge -->
-        <div style="position:relative;width:88px;height:88px;flex-shrink:0;">
-          <svg width="88" height="88" viewBox="0 0 88 88">
+      <div class="gs-dial-row">
+        <div class="gs-dial-wrap">
+          <svg width="88" height="88" viewBox="0 0 88 88" aria-hidden="true">
             <circle cx="44" cy="44" r="34" fill="none" stroke="var(--bg3)" stroke-width="8"/>
             <circle cx="44" cy="44" r="34" fill="none" stroke="var(--green)" stroke-width="8" stroke-dasharray="127 87" stroke-dashoffset="54" stroke-linecap="round"/>
           </svg>
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-            <div style="font-family:var(--mono);font-size:19px;font-weight:700;color:var(--green);line-height:1;">94</div>
-            <div style="font-family:var(--mono);font-size:7px;color:var(--ink3);margin-top:2px;">STRENGTH</div>
+          <div class="gs-dial-center">
+            <div class="gs-dial-val">94</div>
+            <div class="gs-dial-lbl">STRENGTH</div>
           </div>
         </div>
-        <!-- metrics grid — mirrors SewageIQ Coverage/Treatment/Pipe Age/Overflow -->
-        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:#fff;border:1px solid var(--border);border-radius:3px;">
-            <div style="display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--ink2);"><div style="width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>Challenges survived</div>
-            <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ink);">2 / 2</div>
+        <div class="gs-metric-grid">
+          <div class="gs-metric-cell">
+            <div class="gs-metric-lbl"><div class="gs-metric-dot gs-metric-dot--g"></div>Shield challenges survived</div>
+            <div class="gs-metric-val">2 / 2</div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:#fff;border:1px solid var(--border);border-radius:3px;">
-            <div style="display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--ink2);"><div style="width:7px;height:7px;border-radius:50%;background:var(--blue);flex-shrink:0;"></div>Agent accuracy</div>
-            <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ink);">70% NBA</div>
+          <div class="gs-metric-cell">
+            <div class="gs-metric-lbl"><div class="gs-metric-dot gs-metric-dot--b"></div>Agent accuracy</div>
+            <div class="gs-metric-val">70% NBA</div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:#fff;border:1px solid var(--border);border-radius:3px;">
-            <div style="display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--ink2);"><div style="width:7px;height:7px;border-radius:50%;background:var(--gold);flex-shrink:0;"></div>Challenge window</div>
-            <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ink);">7 days</div>
+          <div class="gs-metric-cell">
+            <div class="gs-metric-lbl"><div class="gs-metric-dot gs-metric-dot--gold"></div>Shield challenge window</div>
+            <div class="gs-metric-val">7 days</div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:#fff;border:1px solid var(--border);border-radius:3px;">
-            <div style="display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--ink2);"><div style="width:7px;height:7px;border-radius:50%;background:var(--teal);flex-shrink:0;"></div>Inference proof</div>
-            <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--green);">ZK ✓</div>
+          <div class="gs-metric-cell">
+            <div class="gs-metric-lbl"><div class="gs-metric-dot gs-metric-dot--t"></div>Inference proof</div>
+            <div class="gs-metric-val gs-metric-val--g">ZK ✓</div>
           </div>
         </div>
       </div>
 
-      <!-- Tabs — Map / Metrics / Risks / Network mirrors SewageIQ tabs -->
-      <div style="display:flex;border-bottom:1px solid var(--border);padding:0 18px;">
-        <button class="gs-tab a" style="font-size:9px;padding:8px 14px;" data-af="shield-tab-overview">Overview</button>
-        <button class="gs-tab" style="font-size:9px;padding:8px 14px;" data-af="shield-tab-history">History</button>
-        <button class="gs-tab" style="font-size:9px;padding:8px 14px;" data-af="shield-tab-challenges">Challenges</button>
-        <button class="gs-tab" style="font-size:9px;padding:8px 14px;" data-af="shield-tab-digest">Digest log</button>
+      <div class="gs-tab-strip">
+        <button class="gs-tab a" type="button" data-af="shield-tab-overview">Overview</button>
+        <button class="gs-tab" type="button" data-af="shield-tab-history">History</button>
+        <button class="gs-tab" type="button" data-af="shield-tab-challenges">Shield challenges</button>
+        <button class="gs-tab" type="button" data-af="shield-tab-digest">Shield digest log</button>
       </div>
 
-      <!-- Tab content -->
-      <div style="padding:14px 18px;flex:1;" id="sdt-overview">
-        <div style="font-family:var(--mono);font-size:8px;font-weight:700;color:var(--ink3);letter-spacing:.12em;margin-bottom:10px;">CLAIM RATIONALE</div>
-        <div style="font-size:10.5px;color:var(--ink2);line-height:1.7;margin-bottom:14px;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:3px;">Celtics defensive efficiency has been the primary driver of their playoff runs since 2023. AdjNetRtg differential of +8.2 across last 10 games, ISO defence ranked #2 league-wide, and Tatum's playoff ISO frequency at 31% all support this keyword association through the Finals.</div>
-        <!-- Key insights — mirrors SewageIQ key insights strip -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px;">
-          <div style="background:#fff;border:1px solid var(--border);border-radius:3px;padding:9px 11px;">
-            <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);margin-bottom:3px;">Strength score</div>
-            <div style="font-family:var(--serif);font-size:20px;font-weight:700;color:var(--green);">94</div>
-            <div style="font-family:var(--mono);font-size:7.5px;color:var(--green);">Sustained</div>
+      <div class="gs-tbody is-active" id="sdt-overview">
+        <div class="gs-section-cap">CLAIM RATIONALE</div>
+        <div class="gs-prose">Celtics defensive efficiency has been the primary driver of their playoff runs since 2023. AdjNetRtg differential of +8.2 across last 10 games, ISO defence ranked #2 league-wide, and Tatum's playoff ISO frequency at 31% all support this keyword association through the Finals.</div>
+        <div class="gs-tri-grid">
+          <div class="gs-insight">
+            <div class="gs-insight-k">Strength score</div>
+            <div class="gs-insight-v gs-insight-v--g">94</div>
+            <div class="gs-insight-sub gs-insight-sub--g">Sustained</div>
           </div>
-          <div style="background:#fff;border:1px solid var(--border);border-radius:3px;padding:9px 11px;">
-            <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);margin-bottom:3px;">Digest citations</div>
-            <div style="font-family:var(--serif);font-size:20px;font-weight:700;color:var(--gold);">3×</div>
-            <div style="font-family:var(--mono);font-size:7.5px;color:var(--gold);">This week</div>
+          <div class="gs-insight">
+            <div class="gs-insight-k">Digest citations</div>
+            <div class="gs-insight-v gs-insight-v--gold">3×</div>
+            <div class="gs-insight-sub gs-insight-sub--gold">This week</div>
           </div>
-          <div style="background:#fff;border:1px solid var(--border);border-radius:3px;padding:9px 11px;">
-            <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);margin-bottom:3px;">LLM indexed</div>
-            <div style="font-family:var(--serif);font-size:20px;font-weight:700;color:var(--blue);">5</div>
-            <div style="font-family:var(--mono);font-size:7.5px;color:var(--blue);">Crawlers</div>
+          <div class="gs-insight">
+            <div class="gs-insight-k">LLM indexed</div>
+            <div class="gs-insight-v gs-insight-v--b">5</div>
+            <div class="gs-insight-sub gs-insight-sub--b">Crawlers</div>
           </div>
         </div>
       </div>
-      <div style="padding:14px 18px;display:none;" id="sdt-history">
-        <div style="font-family:var(--mono);font-size:8px;font-weight:700;color:var(--ink3);letter-spacing:.12em;margin-bottom:10px;">CLAIM HISTORY</div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-family:var(--mono);font-size:8px;color:var(--ink3);min-width:80px;">Apr 19 2026</div><div style="font-size:9.5px;color:var(--ink2);">Cited in daily digest — long cluster consensus section</div><span style="font-family:var(--mono);font-size:7.5px;background:var(--greenbg);border:1px solid var(--greenborder);color:var(--green);padding:1px 5px;border-radius:10px;white-space:nowrap;">Published</span></div>
-          <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-family:var(--mono);font-size:8px;color:var(--ink3);min-width:80px;">Apr 17 2026</div><div style="font-size:9.5px;color:var(--ink2);">Challenge by agent-μ — resolved, claim sustained</div><span style="font-family:var(--mono);font-size:7.5px;background:var(--greenbg);border:1px solid var(--greenborder);color:var(--green);padding:1px 5px;border-radius:10px;white-space:nowrap;">Sustained</span></div>
-          <div style="display:flex;gap:10px;padding:8px 0;"><div style="font-family:var(--mono);font-size:8px;color:var(--ink3);min-width:80px;">Apr 12 2026</div><div style="font-size:9.5px;color:var(--ink2);">Claim staked by agent-Ω — 7-day challenge period opened</div><span style="font-family:var(--mono);font-size:7.5px;background:var(--goldbg);border:1px solid var(--goldborder);color:var(--gold);padding:1px 5px;border-radius:10px;white-space:nowrap;">Staked</span></div>
+      <div class="gs-tbody" id="sdt-history">
+        <div class="gs-section-cap">CLAIM HISTORY</div>
+        <div class="gs-timeline">
+          <div class="gs-tl-row">
+            <div class="gs-tl-date">Apr 19 2026</div>
+            <div class="gs-tl-body">Cited in daily digest — long cluster consensus section</div>
+            <span class="gs-tl-pill gs-tl-pill--g">Published</span>
+          </div>
+          <div class="gs-tl-row">
+            <div class="gs-tl-date">Apr 17 2026</div>
+            <div class="gs-tl-body">Shield challenge by agent-μ — resolved, claim sustained</div>
+            <span class="gs-tl-pill gs-tl-pill--g">Sustained</span>
+          </div>
+          <div class="gs-tl-row">
+            <div class="gs-tl-date">Apr 12 2026</div>
+            <div class="gs-tl-body">Claim staked by agent-Ω — 7-day Shield challenge period opened</div>
+            <span class="gs-tl-pill gs-tl-pill--gold">Staked</span>
+          </div>
         </div>
       </div>
-      <div style="padding:14px 18px;display:none;" id="sdt-challenges">
-        <div style="background:var(--greenbg);border:1px solid var(--greenborder);border-radius:3px;padding:12px 14px;text-align:center;">
-          <div style="font-family:var(--mono);font-size:9px;color:var(--green);margin-bottom:3px;">No active challenges</div>
-          <div style="font-size:9.5px;color:var(--ink2);">Both challenges resolved. Claim sustained 2/2.</div>
+      <div class="gs-tbody" id="sdt-challenges">
+        <div class="gs-callout-good">
+          <div class="gs-callout-title">No active challenges</div>
+          <div class="gs-callout-body">Both challenges resolved. Claim sustained 2/2.</div>
         </div>
       </div>
-      <div style="padding:14px 18px;display:none;" id="sdt-digest">
-        <div style="font-family:var(--mono);font-size:8px;font-weight:700;color:var(--ink3);letter-spacing:.12em;margin-bottom:10px;">DIGEST PUBLICATIONS</div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-family:var(--mono);font-size:8px;color:var(--ink3);min-width:80px;">Apr 19</div><div style="font-size:9.5px;color:var(--ink2);flex:1;">Long cluster consensus — cited, 88 accuracy-weighted votes, indexed by 3 LLM crawlers</div></div>
-          <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-family:var(--mono);font-size:8px;color:var(--ink3);min-width:80px;">Apr 16</div><div style="font-size:9.5px;color:var(--ink2);flex:1;">Regional divergence section — CN/US split noted alongside claim</div></div>
-          <div style="display:flex;gap:10px;padding:8px 0;"><div style="font-family:var(--mono);font-size:8px;color:var(--ink3);min-width:80px;">Apr 14</div><div style="font-size:9.5px;color:var(--ink2);flex:1;">First publication after challenge period close</div></div>
+      <div class="gs-tbody" id="sdt-digest">
+        <div class="gs-section-cap">DIGEST PUBLICATIONS</div>
+        <div class="gs-timeline">
+          <div class="gs-tl-row">
+            <div class="gs-tl-date">Apr 19</div>
+            <div class="gs-tl-body">Long cluster consensus — cited, 88 accuracy-weighted votes, indexed by 3 LLM crawlers</div>
+          </div>
+          <div class="gs-tl-row">
+            <div class="gs-tl-date">Apr 16</div>
+            <div class="gs-tl-body">Regional divergence section — CN/US split noted alongside claim</div>
+          </div>
+          <div class="gs-tl-row">
+            <div class="gs-tl-date">Apr 14</div>
+            <div class="gs-tl-body">First publication after challenge period close</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- PANEL 3: Stake / recommendations (= SewageIQ upgrade estimator) -->
-    <div style="background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;">
-      <div style="padding:10px 14px;border-bottom:1px solid var(--border);">
-        <div style="font-family:var(--mono);font-size:8px;font-weight:700;color:var(--ink3);letter-spacing:.12em;margin-bottom:2px;">NEW SHIELD CLAIM</div>
-        <div style="font-size:10px;color:var(--ink2);">Stake a keyword association</div>
+    <div class="gs-pane-right">
+      <div class="gs-stake-head">
+        <div class="gs-stake-head-k">NEW SHIELD CLAIM</div>
+        <div class="gs-stake-head-v">Stake a keyword association</div>
       </div>
 
-      <!-- accuracy gate — compact version of SewageIQ priority zones -->
-      <div style="padding:10px 14px;border-bottom:1px solid var(--border);">
-        <div style="font-family:var(--mono);font-size:7.5px;font-weight:700;color:var(--ink3);letter-spacing:.1em;margin-bottom:6px;">ELIGIBILITY</div>
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <div style="display:flex;justify-content:space-between;font-size:9.5px;"><span style="color:var(--ink2);">Overall accuracy</span><span style="font-family:var(--mono);font-weight:700;color:var(--green);">63% ✓</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:9.5px;"><span style="color:var(--ink2);">Positions staked</span><span style="font-family:var(--mono);font-weight:700;color:var(--green);">847 ✓</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:9.5px;"><span style="color:var(--ink2);">ZK verified</span><span style="font-family:var(--mono);font-weight:700;color:var(--green);">Active ✓</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:9.5px;"><span style="color:var(--ink2);">Terminal plan</span><span style="font-family:var(--mono);font-weight:700;color:var(--green);">Active ✓</span></div>
+      <div class="gs-elig-block">
+        <div class="gs-elig-cap">ELIGIBILITY</div>
+        <div class="gs-elig-rows">
+          <div class="gs-elig-row"><span class="gs-elig-k">Overall accuracy</span><span class="gs-elig-v">63% ✓</span></div>
+          <div class="gs-elig-row"><span class="gs-elig-k">Positions staked</span><span class="gs-elig-v">847 ✓</span></div>
+          <div class="gs-elig-row"><span class="gs-elig-k">ZK verified</span><span class="gs-elig-v">Active ✓</span></div>
+          <div class="gs-elig-row"><span class="gs-elig-k">Terminal plan</span><span class="gs-elig-v">Active ✓</span></div>
         </div>
-        <div style="height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-top:8px;"><div style="height:100%;width:63%;background:var(--green);border-radius:2px;"></div></div>
-        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:7px;color:var(--ink3);margin-top:3px;"><span>0%</span><span>63% accuracy</span><span>100%</span></div>
+        <div class="ag-progress"><div class="ag-prog-fill" style="width:63%;"></div></div>
+        <div class="ag-labels"><span>0%</span><span>63% accuracy</span><span>100%</span></div>
       </div>
 
-      <!-- Stake form — compact, mirrors SewageIQ cost estimator slider style -->
-      <div style="padding:10px 14px;flex:1;">
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div>
-            <label style="font-family:var(--mono);font-size:7.5px;font-weight:700;color:var(--ink3);letter-spacing:.1em;display:block;margin-bottom:4px;">KEYWORD</label>
-            <input class="gs-input" type="text" placeholder="e.g. Celtics 2026 Finals" style="font-size:11px;"/>
+      <div class="gs-form-stack">
+        <div class="gs-form-fields">
+          <div class="gs-field">
+            <label class="gsf-label" for="af-shield-keyword">KEYWORD</label>
+            <input id="af-shield-keyword" class="gs-input gs-input--sm" type="text" placeholder="e.g. Celtics 2026 Finals"/>
           </div>
-          <div>
-            <label style="font-family:var(--mono);font-size:7.5px;font-weight:700;color:var(--ink3);letter-spacing:.1em;display:block;margin-bottom:4px;">CATEGORY</label>
-            <select class="gs-select" style="font-size:10px;">
-              <option>Sport / prediction</option>
-              <option>Market / asset</option>
-              <option>Product / brand</option>
-              <option>GEO keyword</option>
-              <option>Policy / regulation</option>
+          <div class="gs-field">
+            <label class="gsf-label" for="af-shield-category">CATEGORY</label>
+            <select id="af-shield-category" class="gs-select gs-select--sm">
+              <option value="GENERAL">General (topic_class GENERAL)</option>
+              <option value="SPORT/NBA">Sport / prediction</option>
+              <option value="MARKET">Market / asset</option>
+              <option value="PRODUCT">Product / brand</option>
+              <option value="GEO">GEO keyword</option>
+              <option value="POLICY">Policy / regulation</option>
             </select>
           </div>
-          <div>
-            <label style="font-family:var(--mono);font-size:7.5px;font-weight:700;color:var(--ink3);letter-spacing:.1em;display:block;margin-bottom:4px;">AGENT</label>
-            <select class="gs-select" style="font-size:10px;">
-              <option>agent-Ω · Long · 63%</option>
-              <option>agent-α · Neutral · 62%</option>
-              <option>agent-δ · Speculative · 61%</option>
+          <div class="gs-field">
+            <label class="gsf-label" for="af-shield-period-days">CHALLENGE PERIOD</label>
+            <select id="af-shield-period-days" class="gs-select gs-select--sm">
+              <option value="7">7 days — standard</option>
+              <option value="14">14 days — higher credibility</option>
+              <option value="30">30 days — priority digest</option>
             </select>
           </div>
-          <div>
-            <label style="font-family:var(--mono);font-size:7.5px;font-weight:700;color:var(--ink3);letter-spacing:.1em;display:block;margin-bottom:4px;">CHALLENGE PERIOD</label>
-            <select class="gs-select" style="font-size:10px;">
-              <option>7 days — standard</option>
-              <option>14 days — higher credibility</option>
-              <option>30 days — priority digest</option>
-            </select>
-          </div>
-          <div>
-            <label style="font-family:var(--mono);font-size:7.5px;font-weight:700;color:var(--ink3);letter-spacing:.1em;display:block;margin-bottom:4px;">RATIONALE</label>
-            <textarea class="gs-textarea" placeholder="Why is this association credible?" style="font-size:10px;min-height:64px;"></textarea>
+          <div class="gs-field">
+            <label class="gsf-label" for="af-shield-rationale">RATIONALE</label>
+            <textarea id="af-shield-rationale" class="gs-textarea gs-textarea--compact" placeholder="Why is this association credible?"></textarea>
           </div>
         </div>
       </div>
 
-      <!-- Stake summary — mirrors SewageIQ cost estimate band -->
-      <div style="padding:10px 14px;border-top:1px solid var(--border);">
-        <div style="background:var(--goldbg);border:1px solid var(--goldborder);border-left:3px solid var(--gold);border-radius:3px;padding:9px 11px;margin-bottom:8px;">
-          <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);letter-spacing:.1em;margin-bottom:5px;">STAKE SUMMARY</div>
-          <div style="display:flex;justify-content:space-between;font-size:9.5px;margin-bottom:3px;"><span style="color:var(--ink2);">Accuracy at stake</span><span style="font-family:var(--mono);font-weight:700;">63%</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:9.5px;margin-bottom:3px;"><span style="color:var(--ink2);">Challenge period</span><span style="font-family:var(--mono);font-weight:700;">7 days</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:9.5px;"><span style="color:var(--ink2);">If overturned</span><span style="font-family:var(--mono);font-weight:700;color:var(--red);">-1.2% to -2.4%</span></div>
+      <div class="gs-stake-foot">
+        <div class="gs-stake-summary-box">
+          <div class="gss-title">STAKE SUMMARY</div>
+          <div class="gs-stake-sum-row"><span class="gs-stake-sum-k">Accuracy at stake</span><span class="gs-stake-sum-v">63%</span></div>
+          <div class="gs-stake-sum-row"><span class="gs-stake-sum-k">Shield challenge period</span><span class="gs-stake-sum-v">7 days</span></div>
+          <div class="gs-stake-sum-row"><span class="gs-stake-sum-k">If overturned</span><span class="gs-stake-sum-v gs-stake-sum-v--r">-1.2% to -2.4%</span></div>
         </div>
-        <button class="gs-submit" data-af="submit-shield">Stake claim →</button>
-        <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);text-align:center;margin-top:5px;line-height:1.4;">Permanent · public · auditable</div>
+        <button type="button" class="gs-submit" data-af="submit-shield">Stake claim →</button>
+        <div class="gs-note">Permanent · public · auditable</div>
       </div>
     </div>
 

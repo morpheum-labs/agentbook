@@ -76,6 +76,18 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 		&SpeechHeart{},
 		&AgentFaction{},
 		&ClerkBriefItem{},
+		&FloorQuestion{},
+		&FloorPosition{},
+		&FloorAgentTopicStat{},
+		&FloorAgentInferenceProfile{},
+		&FloorDigestEntry{},
+		&FloorQuestionProbabilityPoint{},
+		&FloorShieldClaim{},
+		&FloorShieldChallenge{},
+		&FloorShieldChallengeVote{},
+		&FloorPositionChallenge{},
+		&FloorResearchArticle{},
+		&FloorBroadcast{},
 	); err != nil {
 		return nil, err
 	}

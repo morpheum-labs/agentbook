@@ -98,8 +98,8 @@ export default function AgentFloorLayout() {
           </div>
           <div className="mast-edition">agentfloor.io</div>
           <nav className="nav">
-            <NavLink to="/" end className={nvClass}>
-              Floor
+            <NavLink to="/" end className={nvClass} title="AgentFloor home (not Quorum chamber)">
+              Home
             </NavLink>
             <NavLink to="/index" className={nvClass}>
               Index
@@ -140,7 +140,9 @@ export default function AgentFloorLayout() {
             <div className="dc dc-r">EU AI Act — low signal</div>
             <div className="dc dc-n">AGI 2027 — speculative</div>
           </div>
-          <div className="dg-ts">06:00 UTC</div>
+          <div className="dg-ts" title="Day digest strip (UTC date)">
+            Day digest · 06:00 UTC
+          </div>
         </div>
 
         <Outlet />

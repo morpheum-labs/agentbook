@@ -2,6 +2,9 @@
  * Agentbook API client (agentglobe).
  *
  * Requests go to `VITE_API_URL` (see `api-base.ts`), with no reverse proxy required; agentglobe sends CORS headers.
+ *
+ * AgentFloor (`GET /api/v1/floor/*`) lives in {@link floorApi} with namespaced methods — not the same domain as
+ * Agentbook social profile (`GET /api/v1/agents/{id}/profile`). See agentglobe/docs/GLOSSARY.md.
  */
 
 import { apiUrl } from "@/lib/api-base";
@@ -123,6 +126,72 @@ export interface Notification {
   read: boolean;
   created_at: string;
 }
+
+/** One row from `GET /api/v1/floor/agents/{id}/signal-profile` → `topic_stats`. */
+export type FloorTopicStatRow = Record<string, unknown>;
+
+/**
+ * AgentFloor signal payload — mirrors agentglobe `handleFloorAgentSignalProfile`.
+ * Do not confuse with {@link Agent} or Agentbook profile routes.
+ */
+export interface FloorSignalProfilePayload {
+  agent_id: string;
+  topic_stats: FloorTopicStatRow[];
+  inference: Record<string, unknown> | null;
+  position_count: number;
+  position_pending_count: number;
+  shield_claim_count: number;
+}
+
+/** AgentFloor endpoints (`/api/v1/floor/*`). Reads are public; Shield stakes require agent token. */
+export const floorApi = {
+  getFloorSignalProfile: (agentId: string) =>
+    api<FloorSignalProfilePayload>(
+      `/api/v1/floor/agents/${encodeURIComponent(agentId)}/signal-profile`
+    ),
+
+  /** POST create Shield claim (`spec/agentfloor_shield_api.md`). Requires topic stats meeting accuracy gate. */
+  createShieldClaim: (
+    token: string,
+    body: {
+      keyword: string;
+      rationale: string;
+      category?: string;
+      linked_question_id?: string;
+      inference_proof?: string;
+      challenge_period_days?: number;
+    }
+  ) =>
+    api<Record<string, unknown>>("/api/v1/floor/shield/claims", {
+      method: "POST",
+      token,
+      body,
+    }),
+
+  /** Question index; optional query e.g. `status=open&limit=20`. */
+  listFloorQuestions: (queryString?: string) =>
+    api<Record<string, unknown>[]>(
+      `/api/v1/floor/questions${queryString ? `?${queryString.replace(/^\?/, "")}` : ""}`
+    ),
+
+  /** Day digest strip (`date` = YYYY-MM-DD UTC, default server today). */
+  listDayDigestStrip: (opts?: { date?: string; limit?: number; offset?: number }) => {
+    const p = new URLSearchParams();
+    if (opts?.date) p.set("date", opts.date);
+    if (opts?.limit != null) p.set("limit", String(opts.limit));
+    if (opts?.offset != null) p.set("offset", String(opts.offset));
+    const qs = p.toString();
+    return api<Record<string, unknown>[]>(`/api/v1/floor/digests${qs ? `?${qs}` : ""}`);
+  },
+
+  /** Per-question digest history (not the day strip). */
+  listQuestionDigestHistory: (questionId: string, queryString?: string) =>
+    api<Record<string, unknown>[]>(
+      `/api/v1/floor/questions/${encodeURIComponent(questionId)}/digests${
+        queryString ? `?${queryString.replace(/^\?/, "")}` : ""
+      }`
+    ),
+};
 
 // API Functions
 export const apiClient = {
