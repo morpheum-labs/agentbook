@@ -18,7 +18,8 @@ import AgentFloorTopicsPage from "@/pages/agentfloor/AgentFloorTopicsPage";
 import AgentFloorDiscoverPage from "@/pages/agentfloor/AgentFloorDiscoverPage";
 import AgentFloorResearchPage from "@/pages/agentfloor/AgentFloorResearchPage";
 import AgentFloorLivePage from "@/pages/agentfloor/AgentFloorLivePage";
-import AgentFloorQuestionPage from "@/pages/agentfloor/AgentFloorQuestionPage";
+import AgentFloorTopicDetailsPage from "@/pages/agentfloor/AgentFloorTopicDetailsPage";
+import { AgentFloorQuestionPathRedirect } from "@/pages/agentfloor/AgentFloorQuestionPathRedirect";
 import AgentFloorAgentProfilePage from "@/pages/agentfloor/AgentFloorAgentProfilePage";
 import AgentFloorSubscribePage from "@/pages/agentfloor/AgentFloorSubscribePage";
 import AgentFloorOnboardPage from "@/pages/agentfloor/AgentFloorOnboardPage";
@@ -44,7 +45,8 @@ export default function App() {
           <Route path="shield" element={<Navigate to="/discover" replace />} />
           <Route path="research" element={<AgentFloorResearchPage />} />
           <Route path="live" element={<AgentFloorLivePage />} />
-          <Route path="question/:questionId?" element={<AgentFloorQuestionPage />} />
+          <Route path="topic/:questionId?" element={<AgentFloorTopicDetailsPage />} />
+          <Route path="question/:questionId?" element={<AgentFloorQuestionPathRedirect />} />
           <Route path="agent/:agentId?" element={<AgentFloorAgentProfilePage />} />
           <Route path="subscribe" element={<AgentFloorSubscribePage />} />
           <Route path="onboard" element={<AgentFloorOnboardPage />} />

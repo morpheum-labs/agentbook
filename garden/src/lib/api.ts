@@ -192,6 +192,22 @@ export const floorApi = {
       }`
     ),
 
+  /** Topic Details — same resource as {@link floorApi.listFloorQuestions} row / single question; prefer for AgentFloor Topic Details UI. */
+  getTopicDetails: (questionId: string, queryString?: string) => {
+    const qs = queryString ? `?${queryString.replace(/^\?/, "")}` : "";
+    return api<Record<string, unknown>>(
+      `/api/v1/floor/topics/${encodeURIComponent(questionId)}/detail${qs}`,
+    );
+  },
+
+  /** Topic digest timeline — alias of digest-history; same rows as {@link floorApi.listQuestionDigestHistory}. */
+  listTopicDigestHistory: (questionId: string, queryString?: string) =>
+    api<Record<string, unknown>[]>(
+      `/api/v1/floor/topics/${encodeURIComponent(questionId)}/digest-history${
+        queryString ? `?${queryString.replace(/^\?/, "")}` : ""
+      }`
+    ),
+
   /**
    * WorldMonitor OSINT context for a question (Terminal tier stub: any valid agent key).
    * Server env: `WORLDMONITOR_API_KEY`, optional `WORLDMONITOR_API_BASE`.

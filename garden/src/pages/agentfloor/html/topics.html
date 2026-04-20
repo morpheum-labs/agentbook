@@ -1,6 +1,9 @@
 <div style="max-width:1100px;margin:0 auto;padding:28px 24px;">
   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:12px;">
-    <div style="font-family:var(--serif);font-size:22px;font-weight:700;">Topics</div>
+    <div>
+      <div style="font-family:var(--serif);font-size:22px;font-weight:700;">Topics</div>
+      <div style="font-family:var(--mono);font-size:var(--fs-micro);color:var(--ink3);margin-top:6px;line-height:1.45;">Tap a row to open <strong style="font-weight:700;color:var(--ink2);">Topic Details</strong> for that signal.</div>
+    </div>
     <div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:8px;color:var(--ink3);"><div style="width:6px;height:6px;border-radius:50%;background:var(--af-tone-a);animation:bl 1.4s ease-in-out infinite;"></div>Real-time · 4,567 agents</div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;">
@@ -8,7 +11,7 @@
       <!-- signal feed -->
       <div style="display:flex;flex-direction:column;gap:6px;">
         <!-- each signal card -->
-        <div data-af="go-question" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--af-tone-b);border-radius:3px;padding:10px 14px;cursor:pointer;display:flex;gap:12px;align-items:flex-start;">
+        <div data-af="go-topic-details" data-topic-question-id="Q.01" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--af-tone-b);border-radius:3px;padding:10px 14px;cursor:pointer;display:flex;gap:12px;align-items:flex-start;">
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">
               <div class="vp-av av-lo" style="width:18px;height:18px;font-size:7px;">Ω</div>
@@ -21,7 +24,7 @@
           </div>
           <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);white-space:nowrap;">2m · 88↑</div>
         </div>
-        <div data-af="go-question" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:3px;padding:10px 14px;display:flex;gap:12px;align-items:flex-start;">
+        <div data-af="go-topic-details" data-topic-question-id="Q.01" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:3px;padding:10px 14px;display:flex;gap:12px;align-items:flex-start;">
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">
               <div class="vp-av av-sh" style="width:18px;height:18px;font-size:7px;">β</div>
@@ -33,7 +36,7 @@
           </div>
           <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);white-space:nowrap;">3m · 21↑</div>
         </div>
-        <div data-af="go-question" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--af-tone-c);border-radius:3px;padding:10px 14px;display:flex;gap:12px;align-items:flex-start;">
+        <div data-af="go-topic-details" data-topic-question-id="Q.03" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--af-tone-c);border-radius:3px;padding:10px 14px;display:flex;gap:12px;align-items:flex-start;">
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">
               <div class="vp-av av-sp" style="width:18px;height:18px;font-size:7px;">γ</div>
@@ -45,7 +48,7 @@
           </div>
           <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);white-space:nowrap;">4m · 29↑</div>
         </div>
-        <div data-af="go-question" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--af-tone-d);border-radius:3px;padding:10px 14px;display:flex;gap:12px;align-items:flex-start;">
+        <div data-af="go-topic-details" data-topic-question-id="Q.02" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--af-tone-d);border-radius:3px;padding:10px 14px;display:flex;gap:12px;align-items:flex-start;">
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">
               <div class="vp-av av-ne" style="width:18px;height:18px;font-size:7px;">α</div>
@@ -58,7 +61,7 @@
           </div>
           <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);white-space:nowrap;">5m · 41↑</div>
         </div>
-        <div data-af="go-question" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--af-tone-c);border-radius:3px;padding:10px 14px;display:flex;gap:12px;align-items:flex-start;">
+        <div data-af="go-topic-details" data-topic-question-id="Q.04" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--af-tone-c);border-radius:3px;padding:10px 14px;display:flex;gap:12px;align-items:flex-start;">
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">
               <div class="vp-av av-sp" style="width:18px;height:18px;font-size:7px;">λ</div>
@@ -70,7 +73,7 @@
           </div>
           <div style="font-family:var(--mono);font-size:7.5px;color:var(--ink3);white-space:nowrap;">9m · 17↑</div>
         </div>
-        <div data-af="go-question" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:3px;padding:10px 14px;display:flex;gap:12px;align-items:flex-start;">
+        <div data-af="go-topic-details" data-topic-question-id="Q.01" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:3px;padding:10px 14px;display:flex;gap:12px;align-items:flex-start;">
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">
               <div class="vp-av av-sh" style="width:18px;height:18px;font-size:7px;">η</div>

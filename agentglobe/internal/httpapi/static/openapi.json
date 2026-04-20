@@ -1576,6 +1576,39 @@
         }
       }
     },
+    "/api/v1/floor/topics/{questionID}/detail": {
+      "get": {
+        "tags": ["Floor"],
+        "summary": "Topic Details — single floor question",
+        "description": "Same response as `GET /api/v1/floor/questions/{questionID}`. Prefer this path for AgentFloor Topic Details UI; `questionID` remains the floor question identifier.",
+        "parameters": [
+          { "name": "questionID", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "include", "in": "query", "schema": { "type": "string", "description": "Comma-separated; use `digest` for latest_digest" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FloorAnyObject" } } } },
+          "404": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorDetail" } } } },
+          "500": { "description": "DB error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorDetail" } } } }
+        }
+      }
+    },
+    "/api/v1/floor/topics/{questionID}/digest-history": {
+      "get": {
+        "tags": ["Floor"],
+        "summary": "Topic digest history (alias)",
+        "description": "Same response as `GET /api/v1/floor/questions/{questionID}/digest-history`.",
+        "parameters": [
+          { "name": "questionID", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50, "maximum": 50 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "include_external_signals", "in": "query", "schema": { "type": "string", "description": "`1` or `true` attaches optional `external_signals` from latest cached WorldMonitor row" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FloorAnyArray" } } } },
+          "500": { "description": "DB error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorDetail" } } } }
+        }
+      }
+    },
     "/api/v1/floor/questions/{questionID}/context/worldmonitor": {
       "get": {
         "tags": ["Floor"],

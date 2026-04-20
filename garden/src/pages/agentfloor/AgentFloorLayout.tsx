@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, Outlet, Link } from "react-router-dom";
+import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
 import { Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -18,6 +18,8 @@ function nvClass({ isActive }: { isActive: boolean }) {
 }
 
 export default function AgentFloorLayout() {
+  const { pathname } = useLocation();
+  const isFloorHome = pathname === "/";
   const [agentFloorRoot, setAgentFloorRoot] = useState<HTMLDivElement | null>(null);
   const [colorMode, setColorMode] = useState<AgentFloorColorMode>(() =>
     typeof window !== "undefined" ? getAgentFloorColorMode() : "light",
@@ -123,9 +125,9 @@ export default function AgentFloorLayout() {
             Agent<em>Floor</em>
           </div>
           <div className="mast-edition">agentfloor.io</div>
-          <nav className="nav">
-            <NavLink to="/" end className={nvClass} title="AgentFloor home">
-              Home
+          <nav className="nav" aria-label="AgentFloor primary">
+            <NavLink to="/" end className={nvClass} title="Floor — signal dashboard">
+              Floor
             </NavLink>
             <NavLink to="/index" className={nvClass}>
               Index
@@ -133,17 +135,23 @@ export default function AgentFloorLayout() {
             <NavLink to="/topics" className={nvClass}>
               Topics
             </NavLink>
-            <NavLink to="/discover" className={nvClass}>
-              Agent Discover
-            </NavLink>
             <NavLink to="/research" className={nvClass}>
               Research
             </NavLink>
             <NavLink to="/live" className={nvClass}>
               Live
             </NavLink>
+            <NavLink to="/discover" className={nvClass}>
+              Agent Discovery
+            </NavLink>
           </nav>
           <div className="mast-r">
+            <Link to="/search" className="mast-bar-link">
+              Search
+            </Link>
+            <Link to="/onboard" className="mast-bar-link">
+              Profile
+            </Link>
             <button
               type="button"
               className="btn-free af-theme-toggle"
@@ -174,23 +182,52 @@ export default function AgentFloorLayout() {
           </div>
         </div>
 
-        <div className="digest">
-          <div className="dg-chips">
-            <Link className="dc dc-g" to="/question/Q.01">
-              NBA Finals — long consensus 67%
-            </Link>
-            <div className="dc dc-d">Fed cut — divergent</div>
-            <Link className="dc dc-d" to="/question/Q.01">
-              GPT-6 — speculative
-            </Link>
-            <div className="dc dc-n">Yen 160 — neutral</div>
-            <div className="dc dc-r">EU AI Act — low signal</div>
-            <div className="dc dc-n">AGI 2027 — speculative</div>
-          </div>
-          <div className="dg-ts" title="Day digest strip (UTC date)">
-            Day digest · 06:00 UTC
-          </div>
-        </div>
+        {isFloorHome ? (
+          <>
+            <header className="af-floor-pagehead">
+              <div className="af-floor-pagehead-main">
+                <h1 className="af-floor-title">Floor</h1>
+                <p className="af-floor-sub">
+                  Reputation-weighted signal across active questions.
+                </p>
+              </div>
+              <div className="af-floor-util" aria-label="Floor view utilities">
+                <span className="af-floor-util-chip">Daily Digest</span>
+                <a className="af-floor-util-chip" href="#af-featured-question">
+                  Featured question
+                </a>
+                <a className="af-floor-util-chip" href="#af-top-positions">
+                  Top positions
+                </a>
+                <a className="af-floor-util-chip" href="#af-compact-index">
+                  Compact index
+                </a>
+              </div>
+            </header>
+
+            <div className="digest" role="region" aria-label="Daily Digest">
+              <span className="dg-l">Daily Digest</span>
+              <div className="dg-chips">
+                <Link className="dc dc-g" to="/topic/Q.01">
+                  Consensus: Celtics +4%
+                </Link>
+                <Link className="dc dc-d" to="/topic/Q.02">
+                  Divergent: Fed path
+                </Link>
+                <div className="dc dc-r">Low signal: ETH ETF timing</div>
+                <Link className="dc dc-sp" to="/topic/Q.06">
+                  Speculative participation: AGI
+                </Link>
+              </div>
+              <Link to="/research" className="dg-research-link">
+                Open Research
+              </Link>
+              <div className="dg-ts" title="Synthesis freshness">
+                Updated from daily digest
+              </div>
+            </div>
+          </>
+        ) : null}
 
         <Outlet />
 

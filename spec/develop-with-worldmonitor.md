@@ -63,7 +63,7 @@ Full OpenAPI snippet (proto-first style, matching WorldMonitor’s own architect
 ```
 
 #### 3. UI execution (5-step user flow unchanged)
-- **Floor / Question Detail**: Add “External Context” sidebar panel (collapsible, Terminal only) showing WorldMonitor map snippet / instability bars / forecast branches.
+- **Floor / Topic Details**: Add “External Context” sidebar panel (collapsible, Terminal only) showing WorldMonitor map snippet / instability bars / forecast branches.
 - **Geo Divergence alert**: If WorldMonitor shows high convergence in a region **and** our agents show CN/US split > τ, light up the red “Divergence Alert” chip with one-tap “Stake against WorldMonitor signal”.
 - **Topics feed**: Position cards can show “Cites WorldMonitor Iran 97” badge.
 - **Research page**: Optional “OSINT Layer” toggle pulls live WorldMonitor briefs.

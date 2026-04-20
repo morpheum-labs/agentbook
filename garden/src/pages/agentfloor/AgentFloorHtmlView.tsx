@@ -4,8 +4,27 @@ import { floorApi } from "@/lib/api";
 import { getStoredApiToken } from "@/lib/storage-keys";
 import { useAgentFloorToast } from "./agent-floor-toast";
 
-const PATH_QUESTION = "/question/Q.01";
 const PATH_AGENT = "/agent/omega";
+
+/** Resolve floor question id for Topic Details navigation (domain id; URL path is `/topic/...`). */
+function floorTopicQuestionIdFromElement(el: HTMLElement): string {
+  const fromData = el.dataset.topicQuestionId?.trim();
+  if (fromData) return fromData;
+  const carrier = el.closest("[data-topic-question-id]") as HTMLElement | null;
+  const inherited = carrier?.dataset.topicQuestionId?.trim();
+  if (inherited) return inherited;
+  const sb = el.closest(".sb-q");
+  const sbId = sb?.querySelector(".sb-qid")?.textContent?.trim();
+  if (sbId) return sbId;
+  const qRow = el.closest(".q-row");
+  const qrId = qRow?.querySelector(".qr-id")?.textContent?.trim();
+  if (qrId) return qrId;
+  const tr = el.closest("tr");
+  const firstTd = tr?.querySelector("td");
+  const cell = firstTd?.textContent?.trim();
+  if (cell && /^Q\.\d+/.test(cell)) return cell;
+  return "Q.01";
+}
 
 function setOnboardStep(root: HTMLElement, step: number) {
   for (let n = 1; n <= 3; n++) {
@@ -76,9 +95,12 @@ export function AgentFloorHtmlView({
       if (!af || af === "noop") return;
 
       switch (af) {
-        case "go-question":
-          navigate(PATH_QUESTION);
+        case "go-topic-details":
+        case "go-question": {
+          const qid = floorTopicQuestionIdFromElement(el);
+          navigate(`/topic/${encodeURIComponent(qid)}`);
           break;
+        }
         case "go-agent":
           navigate(PATH_AGENT);
           break;
@@ -87,6 +109,19 @@ export function AgentFloorHtmlView({
           break;
         case "go-floor":
           navigate("/");
+          break;
+        case "go-topics":
+          navigate("/topics");
+          break;
+        case "go-research":
+          navigate("/research");
+          break;
+        case "go-topic-digest-history":
+        case "go-question-digest-history":
+          toast("Topic Digest History opens from digest exports (Terminal) or your analyst workspace.");
+          break;
+        case "stake-terminal-only":
+          toast("Stake position is available on Terminal tier only.");
           break;
         case "go-shield":
         case "go-discover":
@@ -182,9 +217,13 @@ export function AgentFloorHtmlView({
           const labels: Record<string, string> = {
             lo: "Long — Celtics win",
             sh: "Short — Thunder win",
-            ne: "Neutral",
           };
-          toast(`Position staked: ${labels[sel]} · logged to accuracy record`);
+          const label = labels[sel] ?? sel;
+          const specCb = root.querySelector(
+            ".q-spec-toggle input[type=checkbox]",
+          ) as HTMLInputElement | null;
+          const spec = specCb?.checked ? " · speculative overlay on" : "";
+          toast(`Position staked: ${label}${spec} · logged to accuracy record`);
           root.querySelectorAll(".vbopt, .qvcv-opt").forEach((n) => n.classList.remove("sel"));
           delete root.dataset.afSelectedVote;
           break;

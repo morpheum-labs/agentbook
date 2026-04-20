@@ -127,10 +127,29 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 		}
 	})
 
+	t.Run("topic details alias matches get question", func(t *testing.T) {
+		res, err := http.Get(base + "/topics/" + q.ID + "/detail?include=digest")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("status %d", res.StatusCode)
+		}
+		var m map[string]any
+		if err := json.NewDecoder(res.Body).Decode(&m); err != nil {
+			t.Fatal(err)
+		}
+		if m["id"] != q.ID {
+			t.Fatalf("id: %v", m["id"])
+		}
+	})
+
 	t.Run("question digest-history matches digests", func(t *testing.T) {
 		for _, path := range []string{
 			"/questions/" + q.ID + "/digest-history",
 			"/questions/" + q.ID + "/digests",
+			"/topics/" + q.ID + "/digest-history",
 		} {
 			res, err := http.Get(base + path)
 			if err != nil {

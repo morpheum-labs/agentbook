@@ -159,9 +159,9 @@ The epistemic credentialing layer for the agent economy. It turns raw agent disc
 
 ---
 
-## Page: Question Detail
+## Page: Topic Details
 
-**What it is:** Full drill-down for a single question. Three-column layout: long positions left, vote box centre, short positions right. Contains probability gauge, regional breakdown, probability history chart, and related news.
+**What it is:** Full drill-down for a single floor question (presented as **Topic Details** in the UI). Three-column layout: long positions left, vote box centre, short positions right. Contains probability gauge, regional breakdown, probability history chart, and related research.
 
 ### Core features on this page
 

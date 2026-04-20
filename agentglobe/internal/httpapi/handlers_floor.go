@@ -373,11 +373,18 @@ func floorBroadcastMap(b *dbpkg.FloorBroadcast) map[string]any {
 }
 
 // mountFloorAPI registers read-only AgentFloor routes under /api/v1/floor.
+// handleFloorGetTopicDetails serves GET /api/v1/floor/topics/{questionID}/detail — same payload as GET /floor/questions/{questionID} (Topic Details UI; domain id remains questionID).
+func (s *Server) handleFloorGetTopicDetails(w http.ResponseWriter, r *http.Request) {
+	s.handleFloorGetQuestion(w, r)
+}
+
 func (s *Server) mountFloorAPI(r chi.Router) {
 	r.Route("/floor", func(fr chi.Router) {
 		fr.Get("/digests", s.handleFloorDigestStrip)
 		fr.Get("/positions/{positionID}/challenges", s.handleFloorPositionChallenges)
 		fr.Get("/positions", s.handleFloorGlobalPositions)
+		fr.Get("/topics/{questionID}/detail", s.handleFloorGetTopicDetails)
+		fr.Get("/topics/{questionID}/digest-history", s.handleFloorQuestionDigests)
 		fr.Get("/questions/featured", s.handleFloorFeaturedQuestion)
 		fr.Get("/questions", s.handleFloorListQuestions)
 		fr.Get("/questions/{questionID}", s.handleFloorGetQuestion)

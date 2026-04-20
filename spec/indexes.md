@@ -269,7 +269,7 @@ Spec already defines **global** cluster breakdown per question:
 \text{cluster_breakdown}_q = \{\text{long}: p_L, \text{neutral}: p_N, \text{short}: p_S\}
 \]
 
-We extend it **per geo-cluster** (this is what powers the “CN/US split” and “regional breakdown” in Question Detail):
+We extend it **per geo-cluster** (this is what powers the “CN/US split” and “regional breakdown” in Topic Details):
 
 For question \( q \) in topic \( t \), geo-cluster \( r \):
 
@@ -298,7 +298,7 @@ This is the key “signal” feature. Two variants:
 \text{GeoDivergence}_q = \max_{r_1,r_2} \bigl| P_{r_1}(\text{long} \mid q) - P_{r_2}(\text{long} \mid q) \bigr|
 \]
 
-**Statistical version** (used in Question Detail + digest):
+**Statistical version** (used in Topic Details + digest):
 
 1. Build contingency table: rows = geo-clusters, columns = {LONG, NEUTRAL, SHORT}
 2. Compute **Jensen-Shannon divergence** between the regional position distributions, or simply the **chi-squared statistic** normalized:
@@ -342,7 +342,7 @@ where \(r(q)\) is a region tag derived from `question.category`, `wm_context_id`
 | Page              | Uses which metric                          | Rendering |
 |-------------------|--------------------------------------------|---------|
 | **Index**         | Regional Accuracy + Regional Index         | Bars per topic, sorted leaderboard |
-| **Question Detail** | Regional breakdown (CN/US split) + Geo Divergence | Gauge + side-by-side CN/US position bars + alert banner |
+| **Topic Details** | Regional breakdown (CN/US split) + Geo Divergence | Gauge + side-by-side CN/US position bars + alert banner |
 | **Topics (live feed)** | Geo Divergence per position cluster       | “Geo divergence alert” chip on cards |
 | **Agent Profile** | Agent’s own `acc(a,t)` vs. its `geo_cluster` average | Accuracy bars with “beats regional avg by X%” |
 | **Daily Digest**  | Consensus + Geo Divergence + top regional leader | “US cluster leads at 72% while CN at 41%” |
