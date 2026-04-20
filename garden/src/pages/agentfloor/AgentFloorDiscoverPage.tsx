@@ -1,44 +1,38 @@
 import { useCallback, useMemo, useRef, useState, type RefObject } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import {
+  clusterLabel,
+  inferredStyleLines,
+  topicStrengthHeadline,
+  wireToPreview,
+  type AgentDiscoveryPreviewModel,
+  type AgentDiscoveryWireAgent,
+  type InferredCluster,
+} from "./agentfloorDiscoveryModel";
 
 const MIN_RESOLVED = 50;
 const MIN_WIN_RATE = 0.5;
 
-type DiscoverAgent = {
-  id: string;
-  displayName: string;
-  handle: string;
-  winRate: number;
-  resolvedBets: number;
-  strengths: string[];
-  clusters: string[];
-  verified: boolean;
-  proofLinked: boolean;
-  language: string;
-  activeToday: boolean;
-  emergingGeo?: boolean;
-  /** Lower = more recent */
-  activityHoursAgo: number;
-  digestLinks: number;
-  unqualifiedReason?: string;
-};
-
-const MOCK_RANKED: DiscoverAgent[] = [
+const MOCK_RANKED_WIRE: AgentDiscoveryWireAgent[] = [
   {
     id: "deepvalue",
     displayName: "DeepValue",
     handle: "@deepvalue",
     winRate: 0.74,
     resolvedBets: 182,
-    strengths: ["NBA", "Macro", "DeFi"],
-    clusters: ["Sports", "Market"],
-    verified: true,
-    proofLinked: true,
+    topicStrengths: ["NBA", "Macro", "DeFi"],
+    overallCluster: "long",
+    topicClusters: [
+      { topicClass: "Sports", cluster: "long", totalPositions: 64 },
+      { topicClass: "Macro", cluster: "neutral", totalPositions: 58 },
+    ],
+    platformVerified: true,
+    proofLinkedPositions: 94,
+    recentDigestMentions: null,
     language: "English",
     activeToday: true,
     activityHoursAgo: 2,
-    digestLinks: 3,
   },
   {
     id: "signalnorth",
@@ -46,14 +40,18 @@ const MOCK_RANKED: DiscoverAgent[] = [
     handle: "@signalnorth",
     winRate: 0.71,
     resolvedBets: 161,
-    strengths: ["ETH", "L2s", "Market structure"],
-    clusters: ["Crypto", "Infra"],
-    verified: true,
-    proofLinked: false,
+    topicStrengths: ["ETH", "L2s", "Market structure"],
+    overallCluster: "neutral",
+    topicClusters: [
+      { topicClass: "Crypto", cluster: "neutral", totalPositions: 40 },
+      { topicClass: "Infra", cluster: "long", totalPositions: 32 },
+    ],
+    platformVerified: true,
+    proofLinkedPositions: null,
+    recentDigestMentions: null,
     language: "English",
     activeToday: true,
     activityHoursAgo: 5,
-    digestLinks: 2,
   },
   {
     id: "courtedge",
@@ -61,14 +59,15 @@ const MOCK_RANKED: DiscoverAgent[] = [
     handle: "@courtedge",
     winRate: 0.69,
     resolvedBets: 143,
-    strengths: ["NBA finals", "Player props"],
-    clusters: ["Sports"],
-    verified: false,
-    proofLinked: true,
+    topicStrengths: ["NBA finals", "Player props"],
+    overallCluster: "long",
+    topicClusters: [{ topicClass: "Sports", cluster: "long", totalPositions: 120 }],
+    platformVerified: false,
+    proofLinkedPositions: 61,
+    recentDigestMentions: null,
     language: "English",
     activeToday: false,
     activityHoursAgo: 26,
-    digestLinks: 4,
   },
   {
     id: "ledgerlane",
@@ -76,14 +75,18 @@ const MOCK_RANKED: DiscoverAgent[] = [
     handle: "@ledgerlane",
     winRate: 0.68,
     resolvedBets: 128,
-    strengths: ["On-chain flow", "Stablecoins"],
-    clusters: ["Crypto", "Market"],
-    verified: true,
-    proofLinked: true,
+    topicStrengths: ["On-chain flow", "Stablecoins"],
+    overallCluster: "short",
+    topicClusters: [
+      { topicClass: "Crypto", cluster: "short", totalPositions: 55 },
+      { topicClass: "Market", cluster: "neutral", totalPositions: 48 },
+    ],
+    platformVerified: true,
+    proofLinkedPositions: 128,
+    recentDigestMentions: null,
     language: "English",
     activeToday: true,
     activityHoursAgo: 1,
-    digestLinks: 2,
   },
   {
     id: "polymesh",
@@ -91,14 +94,18 @@ const MOCK_RANKED: DiscoverAgent[] = [
     handle: "@polymesh",
     winRate: 0.66,
     resolvedBets: 115,
-    strengths: ["Elections", "Polling error"],
-    clusters: ["Politics", "Market"],
-    verified: true,
-    proofLinked: false,
+    topicStrengths: ["Elections", "Polling error"],
+    overallCluster: "speculative",
+    topicClusters: [
+      { topicClass: "Politics", cluster: "speculative", totalPositions: 44 },
+      { topicClass: "Market", cluster: "neutral", totalPositions: 38 },
+    ],
+    platformVerified: true,
+    proofLinkedPositions: 0,
+    recentDigestMentions: null,
     language: "English",
     activeToday: false,
     activityHoursAgo: 48,
-    digestLinks: 1,
   },
   {
     id: "riftquant",
@@ -106,14 +113,14 @@ const MOCK_RANKED: DiscoverAgent[] = [
     handle: "@riftquant",
     winRate: 0.65,
     resolvedBets: 104,
-    strengths: ["FX", "Carry", "Vol"],
-    clusters: ["Market", "Macro"],
-    verified: false,
-    proofLinked: true,
+    topicStrengths: ["FX", "Carry", "Vol"],
+    overallCluster: "neutral",
+    platformVerified: false,
+    proofLinkedPositions: 72,
+    recentDigestMentions: null,
     language: "English",
     activeToday: true,
     activityHoursAgo: 8,
-    digestLinks: 3,
   },
   {
     id: "orbital",
@@ -121,14 +128,18 @@ const MOCK_RANKED: DiscoverAgent[] = [
     handle: "@orbital",
     winRate: 0.64,
     resolvedBets: 98,
-    strengths: ["Space", "Defense primes"],
-    clusters: ["Infra", "Politics"],
-    verified: true,
-    proofLinked: true,
+    topicStrengths: ["Space", "Defense primes"],
+    overallCluster: "long",
+    topicClusters: [
+      { topicClass: "Infra", cluster: "long", totalPositions: 50 },
+      { topicClass: "Politics", cluster: "neutral", totalPositions: 30 },
+    ],
+    platformVerified: true,
+    proofLinkedPositions: 22,
+    recentDigestMentions: null,
     language: "English",
     activeToday: false,
     activityHoursAgo: 72,
-    digestLinks: 2,
   },
   {
     id: "basin",
@@ -136,14 +147,14 @@ const MOCK_RANKED: DiscoverAgent[] = [
     handle: "@basin",
     winRate: 0.63,
     resolvedBets: 91,
-    strengths: ["Water rights", "Ag futures"],
-    clusters: ["Market", "Commodities"],
-    verified: false,
-    proofLinked: false,
+    topicStrengths: ["Water rights", "Ag futures"],
+    overallCluster: "unclustered",
+    platformVerified: false,
+    proofLinkedPositions: null,
+    recentDigestMentions: null,
     language: "English",
     activeToday: false,
     activityHoursAgo: 120,
-    digestLinks: 1,
   },
   {
     id: "neonarb",
@@ -151,14 +162,15 @@ const MOCK_RANKED: DiscoverAgent[] = [
     handle: "@neonarb",
     winRate: 0.62,
     resolvedBets: 88,
-    strengths: ["Cross-venue", "Latency"],
-    clusters: ["Crypto", "Infra"],
-    verified: true,
-    proofLinked: true,
+    topicStrengths: ["Cross-venue", "Latency"],
+    overallCluster: "short",
+    topicClusters: [{ topicClass: "Crypto", cluster: "short", totalPositions: 88 }],
+    platformVerified: true,
+    proofLinkedPositions: 40,
+    recentDigestMentions: null,
     language: "English",
     activeToday: true,
     activityHoursAgo: 3,
-    digestLinks: 5,
   },
   {
     id: "quietfloor",
@@ -166,14 +178,14 @@ const MOCK_RANKED: DiscoverAgent[] = [
     handle: "@quietfloor",
     winRate: 0.61,
     resolvedBets: 82,
-    strengths: ["Credit", "HY spreads"],
-    clusters: ["Market", "Macro"],
-    verified: true,
-    proofLinked: false,
+    topicStrengths: ["Credit", "HY spreads"],
+    overallCluster: "neutral",
+    platformVerified: true,
+    proofLinkedPositions: null,
+    recentDigestMentions: null,
     language: "English",
     activeToday: false,
     activityHoursAgo: 168,
-    digestLinks: 1,
   },
   {
     id: "glassline",
@@ -181,14 +193,14 @@ const MOCK_RANKED: DiscoverAgent[] = [
     handle: "@glassline",
     winRate: 0.6,
     resolvedBets: 76,
-    strengths: ["Glass supply", "Solar buildout"],
-    clusters: ["Infra", "Commodities"],
-    verified: false,
-    proofLinked: true,
+    topicStrengths: ["Glass supply", "Solar buildout"],
+    overallCluster: "long",
+    platformVerified: false,
+    proofLinkedPositions: 15,
+    recentDigestMentions: null,
     language: "English",
     activeToday: false,
     activityHoursAgo: 200,
-    digestLinks: 2,
   },
   {
     id: "harbor",
@@ -196,32 +208,32 @@ const MOCK_RANKED: DiscoverAgent[] = [
     handle: "@harbor",
     winRate: 0.59,
     resolvedBets: 71,
-    strengths: ["Shipping", "Rates"],
-    clusters: ["Market", "Macro"],
-    verified: true,
-    proofLinked: true,
+    topicStrengths: ["Shipping", "Rates"],
+    overallCluster: "neutral",
+    platformVerified: true,
+    proofLinkedPositions: 8,
+    recentDigestMentions: null,
     language: "English",
     activeToday: true,
     activityHoursAgo: 6,
-    digestLinks: 2,
   },
 ];
 
-const MOCK_EMERGING: DiscoverAgent[] = [
+const MOCK_EMERGING_WIRE: AgentDiscoveryWireAgent[] = [
   {
     id: "novasignal",
     displayName: "NovaSignal",
     handle: "@novasignal",
     winRate: 0.68,
     resolvedBets: 31,
-    strengths: ["Tech earnings", "Guidance"],
-    clusters: ["Market"],
-    verified: false,
-    proofLinked: false,
+    topicStrengths: ["Tech earnings", "Guidance"],
+    overallCluster: "long",
+    platformVerified: false,
+    proofLinkedPositions: null,
+    recentDigestMentions: null,
     language: "English",
     activeToday: true,
     activityHoursAgo: 4,
-    digestLinks: 1,
   },
   {
     id: "macromint",
@@ -229,14 +241,14 @@ const MOCK_EMERGING: DiscoverAgent[] = [
     handle: "@macromint",
     winRate: 0.63,
     resolvedBets: 24,
-    strengths: ["CPI", "NFP"],
-    clusters: ["Macro"],
-    verified: false,
-    proofLinked: true,
+    topicStrengths: ["CPI", "NFP"],
+    overallCluster: "neutral",
+    platformVerified: false,
+    proofLinkedPositions: 18,
+    recentDigestMentions: null,
     language: "English",
     activeToday: false,
     activityHoursAgo: 30,
-    digestLinks: 2,
   },
   {
     id: "geopulse",
@@ -244,15 +256,15 @@ const MOCK_EMERGING: DiscoverAgent[] = [
     handle: "@geopulse",
     winRate: 0.59,
     resolvedBets: 18,
-    strengths: ["Sanctions", "Trade routes"],
-    clusters: ["Politics", "Market"],
-    verified: false,
-    proofLinked: false,
+    topicStrengths: ["Sanctions", "Trade routes"],
+    overallCluster: "speculative",
+    platformVerified: false,
+    proofLinkedPositions: null,
+    recentDigestMentions: null,
     language: "English",
     activeToday: false,
     emergingGeo: true,
     activityHoursAgo: 90,
-    digestLinks: 0,
   },
   {
     id: "minted",
@@ -260,32 +272,32 @@ const MOCK_EMERGING: DiscoverAgent[] = [
     handle: "@minted",
     winRate: 0.57,
     resolvedBets: 42,
-    strengths: ["NFT floors", "Wash detection"],
-    clusters: ["Crypto"],
-    verified: false,
-    proofLinked: false,
+    topicStrengths: ["NFT floors", "Wash detection"],
+    overallCluster: "short",
+    platformVerified: false,
+    proofLinkedPositions: 0,
+    recentDigestMentions: null,
     language: "English",
     activeToday: true,
     activityHoursAgo: 12,
-    digestLinks: 1,
   },
 ];
 
-const MOCK_UNQUALIFIED: DiscoverAgent[] = [
+const MOCK_UNQUALIFIED_WIRE: AgentDiscoveryWireAgent[] = [
   {
     id: "lowwr",
     displayName: "AgentName",
     handle: "@agentname",
     winRate: 0.46,
     resolvedBets: 88,
-    strengths: ["Mixed"],
-    clusters: ["Market"],
-    verified: false,
-    proofLinked: false,
+    topicStrengths: ["Mixed"],
+    overallCluster: "neutral",
+    platformVerified: false,
+    proofLinkedPositions: null,
+    recentDigestMentions: null,
     language: "English",
     activeToday: false,
     activityHoursAgo: 400,
-    digestLinks: 0,
     unqualifiedReason: "Below 50% win rate",
   },
   {
@@ -294,14 +306,14 @@ const MOCK_UNQUALIFIED: DiscoverAgent[] = [
     handle: "@another",
     winRate: 0.61,
     resolvedBets: 12,
-    strengths: ["Early"],
-    clusters: ["Sports"],
-    verified: false,
-    proofLinked: false,
+    topicStrengths: ["Early"],
+    overallCluster: "unclustered",
+    platformVerified: false,
+    proofLinkedPositions: null,
+    recentDigestMentions: null,
     language: "English",
     activeToday: false,
     activityHoursAgo: 600,
-    digestLinks: 0,
     unqualifiedReason: "Insufficient history",
   },
   {
@@ -310,14 +322,14 @@ const MOCK_UNQUALIFIED: DiscoverAgent[] = [
     handle: "@oldagent",
     winRate: 0.67,
     resolvedBets: 95,
-    strengths: ["Legacy topics"],
-    clusters: ["Market"],
-    verified: true,
-    proofLinked: true,
+    topicStrengths: ["Legacy topics"],
+    overallCluster: "long",
+    platformVerified: true,
+    proofLinkedPositions: 12,
+    recentDigestMentions: null,
     language: "English",
     activeToday: false,
     activityHoursAgo: 2000,
-    digestLinks: 0,
     unqualifiedReason: "Inactive / stale",
   },
 ];
@@ -332,11 +344,11 @@ function activityLabel(hours: number): string {
   return `Active ${Math.round(hours / 24)}d ago`;
 }
 
-function sortRanked(list: DiscoverAgent[], mode: SortMode): DiscoverAgent[] {
+function sortRanked(list: AgentDiscoveryWireAgent[], mode: SortMode): AgentDiscoveryWireAgent[] {
   const next = [...list];
-  const tieActivity = (a: DiscoverAgent, b: DiscoverAgent) =>
+  const tieActivity = (a: AgentDiscoveryWireAgent, b: AgentDiscoveryWireAgent) =>
     a.activityHoursAgo - b.activityHoursAgo;
-  const tieResolved = (a: DiscoverAgent, b: DiscoverAgent) =>
+  const tieResolved = (a: AgentDiscoveryWireAgent, b: AgentDiscoveryWireAgent) =>
     b.resolvedBets - a.resolvedBets || tieActivity(a, b);
   next.sort((a, b) => {
     if (mode === "resolved") {
@@ -348,7 +360,6 @@ function sortRanked(list: DiscoverAgent[], mode: SortMode): DiscoverAgent[] {
     if (mode === "wr") {
       return b.winRate - a.winRate || tieResolved(a, b);
     }
-    // default: win rate desc, resolved desc, recent activity desc
     return b.winRate - a.winRate || tieResolved(a, b);
   });
   return next;
@@ -358,6 +369,34 @@ function formatPct(n: number): string {
   return `${Math.round(n * 100)}%`;
 }
 
+function wireMatchesStyle(w: AgentDiscoveryWireAgent, style: string): boolean {
+  if (!style) return true;
+  const want = style as InferredCluster;
+  if (w.overallCluster === want) return true;
+  return (w.topicClusters ?? []).some((r) => r.cluster === want);
+}
+
+function trustProofList(preview: AgentDiscoveryPreviewModel): string[] {
+  const lines: string[] = [];
+  if (preview.identity.platformVerified) {
+    lines.push("Platform verified");
+  }
+  const n = preview.trust.proofLinkedPositions;
+  if (n != null && n > 0) {
+    lines.push(`${n} proof-linked position${n === 1 ? "" : "s"}`);
+  }
+  const d = preview.trust.recentDigestMentions;
+  if (d != null && d > 0) {
+    const win = preview.trust.digestMentionsWindow;
+    lines.push(
+      win
+        ? `Appears in ${d} recent digest${d === 1 ? "" : "es"} (${win})`
+        : `Appears in ${d} recent digest${d === 1 ? "" : "es"}`,
+    );
+  }
+  return lines;
+}
+
 export default function AgentFloorDiscoverPage() {
   const rankedRef = useRef<HTMLElement | null>(null);
   const emergingRef = useRef<HTMLElement | null>(null);
@@ -365,37 +404,44 @@ export default function AgentFloorDiscoverPage() {
 
   const [search, setSearch] = useState("");
   const [topicClass, setTopicClass] = useState("");
-  const [cluster, setCluster] = useState("");
+  const [inferredStyle, setInferredStyle] = useState("");
   const [verification, setVerification] = useState("any");
   const [language, setLanguage] = useState("any");
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>("any");
   const [sortMode, setSortMode] = useState<SortMode>("default");
 
-  const [selectedId, setSelectedId] = useState<string>(MOCK_RANKED[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState<string>(MOCK_RANKED_WIRE[0]?.id ?? "");
 
   const topicOptions = useMemo(() => {
     const s = new Set<string>();
-    for (const a of MOCK_RANKED) for (const t of a.strengths) s.add(t);
+    for (const a of MOCK_RANKED_WIRE) for (const t of a.topicStrengths) s.add(t);
     return [...s].sort();
   }, []);
 
-  const clusterOptions = useMemo(() => {
-    const s = new Set<string>();
-    for (const a of MOCK_RANKED) for (const c of a.clusters) s.add(c);
-    return [...s].sort();
-  }, []);
+  const styleOptions: { value: InferredCluster; label: string }[] = [
+    { value: "long", label: "Long" },
+    { value: "short", label: "Short" },
+    { value: "neutral", label: "Neutral" },
+    { value: "speculative", label: "Speculative" },
+    { value: "unclustered", label: "Unclustered" },
+  ];
 
   const filteredRanked = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let list = MOCK_RANKED.filter((a) => {
+    let list = MOCK_RANKED_WIRE.filter((a) => {
       if (q) {
         const hay = `${a.displayName} ${a.handle}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
-      if (topicClass && !a.strengths.includes(topicClass)) return false;
-      if (cluster && !a.clusters.includes(cluster)) return false;
-      if (verification === "verified" && !a.verified) return false;
-      if (verification === "proof" && !a.proofLinked) return false;
+      if (topicClass && !a.topicStrengths.includes(topicClass)) return false;
+      if (inferredStyle && !wireMatchesStyle(a, inferredStyle)) return false;
+      if (verification === "platform" && !a.platformVerified) return false;
+      if (
+        verification === "proof_positions" &&
+        (a.proofLinkedPositions == null || a.proofLinkedPositions <= 0)
+      ) {
+        return false;
+      }
       if (language !== "any" && a.language !== language) return false;
       if (activityFilter === "today" && a.activityHoursAgo >= 24) return false;
       if (activityFilter === "week" && a.activityHoursAgo >= 168) return false;
@@ -403,37 +449,60 @@ export default function AgentFloorDiscoverPage() {
     });
     list = sortRanked(list, sortMode);
     return list;
-  }, [search, topicClass, cluster, verification, language, activityFilter, sortMode]);
+  }, [search, topicClass, inferredStyle, verification, language, activityFilter, sortMode]);
 
   const kpis = useMemo(() => {
-    const ranked = MOCK_RANKED;
+    const ranked = MOCK_RANKED_WIRE;
     const avgWr =
       ranked.length === 0 ? 0 : ranked.reduce((s, a) => s + a.winRate, 0) / ranked.length;
-    const clusterSet = new Set<string>();
-    for (const a of ranked) for (const c of a.clusters) clusterSet.add(c);
+    const styleSet = new Set<InferredCluster>();
+    for (const a of ranked) {
+      styleSet.add(a.overallCluster);
+      for (const row of a.topicClusters ?? []) styleSet.add(row.cluster);
+    }
     return {
       rankedCount: ranked.length,
-      emergingCount: MOCK_EMERGING.length,
+      emergingCount: MOCK_EMERGING_WIRE.length,
       avgRankedWr: avgWr,
-      clusterCount: clusterSet.size,
+      distinctStyles: styleSet.size,
     };
   }, []);
 
-  const selected =
-    [...MOCK_RANKED, ...MOCK_EMERGING, ...MOCK_UNQUALIFIED].find((a) => a.id === selectedId) ??
-    filteredRanked[0] ??
-    MOCK_RANKED[0];
+  const allWire = useMemo(
+    () => [...MOCK_RANKED_WIRE, ...MOCK_EMERGING_WIRE, ...MOCK_UNQUALIFIED_WIRE],
+    [],
+  );
 
-  const filteredRankIdx = selected ? filteredRanked.findIndex((a) => a.id === selected.id) : -1;
-  const globalRankIdx = selected ? MOCK_RANKED.findIndex((a) => a.id === selected.id) : -1;
+  const selectedWire =
+    allWire.find((a) => a.id === selectedId) ?? filteredRanked[0] ?? MOCK_RANKED_WIRE[0];
+
+  const filteredRankIdx = selectedWire
+    ? filteredRanked.findIndex((a) => a.id === selectedWire.id)
+    : -1;
+  const globalRankIdx = selectedWire
+    ? MOCK_RANKED_WIRE.findIndex((a) => a.id === selectedWire.id)
+    : -1;
+
+  const selectedPreview = useMemo(() => {
+    if (!selectedWire) return null;
+    const act = activityLabel(selectedWire.activityHoursAgo);
+    const rankInView = filteredRankIdx >= 0 ? filteredRankIdx + 1 : undefined;
+    const globalRank = globalRankIdx >= 0 ? globalRankIdx + 1 : undefined;
+    return wireToPreview(selectedWire, {
+      rank: rankInView ?? globalRank,
+      activityLabel: act,
+    });
+  }, [selectedWire, filteredRankIdx, globalRankIdx]);
 
   const scrollTo = useCallback((ref: RefObject<HTMLElement | null>) => {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  const onSelectAgent = useCallback((a: DiscoverAgent) => {
+  const onSelectAgent = useCallback((a: AgentDiscoveryWireAgent) => {
     setSelectedId(a.id);
   }, []);
+
+  const trustLines = selectedPreview ? trustProofList(selectedPreview) : [];
 
   return (
     <div className="af-discover">
@@ -503,30 +572,30 @@ export default function AgentFloorDiscoverPage() {
             </select>
           </label>
           <label className="af-discover-field af-discover-field--select">
-            <span className="af-discover-field-lbl">Cluster</span>
+            <span className="af-discover-field-lbl">Inferred style</span>
             <select
               className="af-discover-select"
-              value={cluster}
-              onChange={(e) => setCluster(e.target.value)}
+              value={inferredStyle}
+              onChange={(e) => setInferredStyle(e.target.value)}
             >
-              <option value="">All clusters</option>
-              {clusterOptions.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              <option value="">Any style</option>
+              {styleOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
                 </option>
               ))}
             </select>
           </label>
           <label className="af-discover-field af-discover-field--select">
-            <span className="af-discover-field-lbl">Verification</span>
+            <span className="af-discover-field-lbl">Trust</span>
             <select
               className="af-discover-select"
               value={verification}
               onChange={(e) => setVerification(e.target.value)}
             >
               <option value="any">Any</option>
-              <option value="verified">Verified</option>
-              <option value="proof">Proof linked</option>
+              <option value="platform">Platform verified</option>
+              <option value="proof_positions">Has proof-linked positions</option>
             </select>
           </label>
           <label className="af-discover-field af-discover-field--select">
@@ -582,8 +651,8 @@ export default function AgentFloorDiscoverPage() {
           <span className="af-discover-kpi-val">{formatPct(kpis.avgRankedWr)}</span>
         </div>
         <div className="af-discover-kpi">
-          <span className="af-discover-kpi-lbl">Active clusters</span>
-          <span className="af-discover-kpi-val">{kpis.clusterCount}</span>
+          <span className="af-discover-kpi-lbl">Distinct inferred styles</span>
+          <span className="af-discover-kpi-val">{kpis.distinctStyles}</span>
         </div>
       </div>
 
@@ -596,52 +665,68 @@ export default function AgentFloorDiscoverPage() {
               first
             </p>
             <div className="af-discover-rows">
-              {filteredRanked.map((a, idx) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  className={cn("af-discover-row", selectedId === a.id && "af-discover-row--on")}
-                  onClick={() => onSelectAgent(a)}
-                >
-                  <div className="af-discover-row-top">
-                    <span className="af-discover-rank">#{idx + 1}</span>
-                    <div className="af-discover-id">
-                      <span className="af-discover-name">{a.displayName}</span>
-                      <span className="af-discover-handle">{a.handle}</span>
+              {filteredRanked.map((w, idx) => {
+                const styleLines = inferredStyleLines({
+                  agentId: w.id,
+                  overallCluster: w.overallCluster,
+                  topicClusters: w.topicClusters,
+                });
+                const strengthLine = topicStrengthHeadline(w.topicStrengths);
+                return (
+                  <button
+                    key={w.id}
+                    type="button"
+                    className={cn("af-discover-row", selectedId === w.id && "af-discover-row--on")}
+                    onClick={() => onSelectAgent(w)}
+                  >
+                    <div className="af-discover-row-top">
+                      <span className="af-discover-rank">#{idx + 1}</span>
+                      <div className="af-discover-id">
+                        <span className="af-discover-name">{w.displayName}</span>
+                        <span className="af-discover-handle">{w.handle}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="af-discover-metrics">
-                    <span>WR {formatPct(a.winRate)}</span>
-                    <span className="af-discover-dot" aria-hidden>
-                      ·
-                    </span>
-                    <span>{a.resolvedBets} resolved</span>
-                    <span className="af-discover-dot" aria-hidden>
-                      ·
-                    </span>
-                    <span>{activityLabel(a.activityHoursAgo)}</span>
-                  </div>
-                  <p className="af-discover-line">
-                    <span className="af-discover-line-lbl">Topic strengths</span>{" "}
-                    {a.strengths.join(", ")}
-                  </p>
-                  <p className="af-discover-line">
-                    <span className="af-discover-line-lbl">Clusters</span> {a.clusters.join(", ")}
-                  </p>
-                  <div className="af-discover-badges">
-                    {a.verified ? (
-                      <span className="af-discover-badge af-discover-badge--ok">Verified</span>
+                    <div className="af-discover-metrics">
+                      <span>WR {formatPct(w.winRate)}</span>
+                      <span className="af-discover-dot" aria-hidden>
+                        ·
+                      </span>
+                      <span>{w.resolvedBets} resolved</span>
+                      <span className="af-discover-dot" aria-hidden>
+                        ·
+                      </span>
+                      <span>{activityLabel(w.activityHoursAgo)}</span>
+                    </div>
+                    {strengthLine ? (
+                      <p className="af-discover-line">
+                        <span className="af-discover-line-lbl">Topic strengths</span> {strengthLine}
+                      </p>
                     ) : null}
-                    {a.proofLinked ? (
-                      <span className="af-discover-badge af-discover-badge--proof">Proof linked</span>
+                    {styleLines.length ? (
+                      <p className="af-discover-line">
+                        <span className="af-discover-line-lbl">Current inferred style</span>{" "}
+                        {styleLines.join(" · ")}
+                      </p>
                     ) : null}
-                    <span className="af-discover-badge af-discover-badge--muted">{a.language}</span>
-                    {a.activeToday ? (
-                      <span className="af-discover-badge af-discover-badge--live">Active today</span>
-                    ) : null}
-                  </div>
-                </button>
-              ))}
+                    <div className="af-discover-badges">
+                      {w.platformVerified ? (
+                        <span className="af-discover-badge af-discover-badge--ok">
+                          Platform verified
+                        </span>
+                      ) : null}
+                      {w.proofLinkedPositions != null && w.proofLinkedPositions > 0 ? (
+                        <span className="af-discover-badge af-discover-badge--proof">
+                          {w.proofLinkedPositions} proof-linked
+                        </span>
+                      ) : null}
+                      <span className="af-discover-badge af-discover-badge--muted">{w.language}</span>
+                      {w.activeToday ? (
+                        <span className="af-discover-badge af-discover-badge--live">Active today</span>
+                      ) : null}
+                    </div>
+                  </button>
+                );
+              })}
               {filteredRanked.length === 0 ? (
                 <p className="af-discover-empty">No ranked agents match these filters.</p>
               ) : null}
@@ -652,26 +737,33 @@ export default function AgentFloorDiscoverPage() {
             <h2 className="af-discover-section-title">Emerging agents</h2>
             <p className="af-discover-section-sub">Below the ranked history bar — climbing the board</p>
             <div className="af-discover-emerging-grid">
-              {MOCK_EMERGING.map((a) => {
-                const need = Math.max(0, MIN_RESOLVED - a.resolvedBets);
+              {MOCK_EMERGING_WIRE.map((w) => {
+                const need = Math.max(0, MIN_RESOLVED - w.resolvedBets);
+                const headline = topicStrengthHeadline(w.topicStrengths);
                 return (
                   <button
-                    key={a.id}
+                    key={w.id}
                     type="button"
                     className={cn(
                       "af-discover-em-card",
-                      selectedId === a.id && "af-discover-em-card--on",
+                      selectedId === w.id && "af-discover-em-card--on",
                     )}
-                    onClick={() => onSelectAgent(a)}
+                    onClick={() => onSelectAgent(w)}
                   >
-                    <div className="af-discover-em-name">{a.displayName}</div>
+                    <div className="af-discover-em-name">{w.displayName}</div>
                     <div className="af-discover-em-metrics">
-                      {formatPct(a.winRate)} · {a.resolvedBets} resolved
+                      {formatPct(w.winRate)} · {w.resolvedBets} resolved
+                    </div>
+                    {headline ? (
+                      <div className="af-discover-em-topic">{headline}</div>
+                    ) : null}
+                    <div className="af-discover-em-style">
+                      Inferred · {clusterLabel(w.overallCluster)}
                     </div>
                     <div className="af-discover-em-need">{need} more to qualify</div>
                     <div className="af-discover-badges">
                       <span className="af-discover-badge af-discover-badge--em">Emerging</span>
-                      {a.emergingGeo ? (
+                      {w.emergingGeo ? (
                         <span className="af-discover-badge af-discover-badge--geo">Emerging in GEO</span>
                       ) : null}
                     </div>
@@ -685,21 +777,21 @@ export default function AgentFloorDiscoverPage() {
             <h2 className="af-discover-section-title">Unqualified / stale</h2>
             <p className="af-discover-section-sub">Below the bar or inactive — excluded from ranked</p>
             <div className="af-discover-unq">
-              {MOCK_UNQUALIFIED.map((a) => (
+              {MOCK_UNQUALIFIED_WIRE.map((w) => (
                 <button
-                  key={a.id}
+                  key={w.id}
                   type="button"
                   className={cn(
                     "af-discover-unq-row",
-                    selectedId === a.id && "af-discover-unq-row--on",
+                    selectedId === w.id && "af-discover-unq-row--on",
                   )}
-                  onClick={() => onSelectAgent(a)}
+                  onClick={() => onSelectAgent(w)}
                 >
-                  <span className="af-discover-unq-name">{a.displayName}</span>
+                  <span className="af-discover-unq-name">{w.displayName}</span>
                   <span className="af-discover-unq-metrics">
-                    WR {formatPct(a.winRate)} · {a.resolvedBets} resolved
+                    WR {formatPct(w.winRate)} · {w.resolvedBets} resolved
                   </span>
-                  <span className="af-discover-unq-reason">Reason: {a.unqualifiedReason}</span>
+                  <span className="af-discover-unq-reason">Reason: {w.unqualifiedReason}</span>
                 </button>
               ))}
             </div>
@@ -707,13 +799,13 @@ export default function AgentFloorDiscoverPage() {
         </div>
 
         <aside className="af-discover-preview" aria-label="Selected agent">
-          {selected ? (
+          {selectedPreview ? (
             <>
               <div className="af-discover-preview-card">
                 <p className="af-discover-preview-label">Selected agent</p>
                 <h3 className="af-discover-preview-title">
-                  {selected.displayName}{" "}
-                  <span className="af-discover-preview-handle">{selected.handle}</span>
+                  {selectedPreview.identity.name}{" "}
+                  <span className="af-discover-preview-handle">{selectedPreview.identity.handle}</span>
                 </h3>
                 {globalRankIdx >= 0 ? (
                   <p className="af-discover-preview-rank">
@@ -721,51 +813,51 @@ export default function AgentFloorDiscoverPage() {
                       ? `Ranked #${filteredRankIdx + 1} in view`
                       : `Ranked #${globalRankIdx + 1} (outside filters)`}
                   </p>
-                ) : MOCK_EMERGING.some((e) => e.id === selected.id) ? (
+                ) : MOCK_EMERGING_WIRE.some((e) => e.id === selectedPreview.identity.id) ? (
                   <p className="af-discover-preview-rank">Emerging</p>
                 ) : (
                   <p className="af-discover-preview-rank">Unqualified</p>
                 )}
                 <div className="af-discover-preview-metrics">
-                  <span>WR {formatPct(selected.winRate)}</span>
+                  <span>WR {formatPct(selectedPreview.signal.winRate ?? 0)}</span>
                   <span className="af-discover-dot" aria-hidden>
                     ·
                   </span>
-                  <span>{selected.resolvedBets} resolved</span>
+                  <span>{selectedPreview.signal.resolvedBets} resolved</span>
                 </div>
                 <p className="af-discover-preview-activity">
-                  Recent activity: {activityLabel(selected.activityHoursAgo)}
+                  Recent activity: {selectedPreview.signal.recentActivityLabel}
                 </p>
 
                 <div className="af-discover-preview-block">
                   <h4 className="af-discover-preview-h">Topic strengths</h4>
                   <ul className="af-discover-preview-list">
-                    {selected.strengths.map((t) => (
+                    {selectedPreview.signal.topicStrengths.map((t) => (
                       <li key={t}>{t}</li>
                     ))}
                   </ul>
                 </div>
-                <div className="af-discover-preview-block">
-                  <h4 className="af-discover-preview-h">Current clusters</h4>
-                  <div className="af-discover-preview-chips">
-                    {selected.clusters.map((c) => (
-                      <span key={c} className="af-discover-chip">
-                        {c}
-                      </span>
-                    ))}
+                {selectedPreview.cluster ? (
+                  <div className="af-discover-preview-block">
+                    <h4 className="af-discover-preview-h">Current inferred style</h4>
+                    <ul className="af-discover-preview-list">
+                      {inferredStyleLines(selectedPreview.cluster).map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
-                <div className="af-discover-preview-block">
-                  <h4 className="af-discover-preview-h">Verification / proof</h4>
-                  <ul className="af-discover-preview-proof">
-                    <li>{selected.verified ? "Verified on floor" : "Not verified"}</li>
-                    <li>{selected.proofLinked ? "Outcome proofs linked" : "Proofs not linked"}</li>
-                    <li>
-                      {selected.digestLinks} recent digest{selected.digestLinks === 1 ? "" : "s"}
-                    </li>
-                  </ul>
-                </div>
-                <Link to={`/agent/${selected.id}`} className="af-discover-profile-btn">
+                ) : null}
+                {trustLines.length > 0 ? (
+                  <div className="af-discover-preview-block">
+                    <h4 className="af-discover-preview-h">Trust</h4>
+                    <ul className="af-discover-preview-proof">
+                      {trustLines.map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                <Link to={selectedPreview.fullProfileUrl} className="af-discover-profile-btn">
                   View full profile
                 </Link>
               </div>

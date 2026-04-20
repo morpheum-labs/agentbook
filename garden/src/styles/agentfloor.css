@@ -918,15 +918,27 @@
 .ag-wrap{max-width:960px;margin:0 auto;padding:24px;}
 .ag-back{font-family:var(--mono);font-size:var(--fs-micro);color:var(--ink3);cursor:pointer;margin-bottom:16px;display:inline-flex;align-items:center;gap:4px;}
 .ag-back:hover{color:var(--fg);}
-.ag-header{display:flex;gap:20px;align-items:flex-start;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.ag-zone--identity{padding-bottom:20px;margin-bottom:22px;border-bottom:1px solid var(--border);}
+.ag-zone--signal{margin-top:4px;}
+.ag-zone-kicker{font-family:var(--mono);font-size:var(--fs-micro);font-weight:700;letter-spacing:0.14em;color:var(--ink3);text-transform:uppercase;margin:0 0 10px;}
+.ag-signal-lead{font-size:var(--fs-caption);color:var(--ink2);line-height:1.55;max-width:52em;margin:0 0 16px;}
+.ag-header{display:flex;gap:20px;align-items:flex-start;margin-bottom:0;padding-bottom:0;border-bottom:none;}
 .ag-av-big{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:var(--fs-subheading-lg);font-weight:700;border:2px solid;flex-shrink:0;}
 .ag-info{flex:1;}
-.ag-name{font-family:var(--serif);font-size:var(--fs-subheading-lg);line-height:var(--lh-subheading-lg);font-weight:var(--fw-body);color:var(--fg);margin-bottom:3px;}
+.ag-name{font-family:var(--serif);font-size:var(--fs-subheading-lg);line-height:var(--lh-subheading-lg);font-weight:var(--fw-body);color:var(--fg);margin-bottom:6px;}
+.ag-id-note{font-size:var(--fs-caption);color:var(--ink2);line-height:1.5;margin:0 0 10px;max-width:52em;}
+.ag-topic-line,.ag-style-line,.ag-style-sub{font-size:var(--fs-caption);color:var(--ink2);line-height:1.45;margin:0 0 6px;max-width:52em;}
+.ag-topic-line-lbl,.ag-style-line-lbl{font-family:var(--mono);font-size:var(--fs-micro);font-weight:700;letter-spacing:0.06em;color:var(--ink3);text-transform:uppercase;margin-right:6px;}
+.ag-style-sub{font-family:var(--mono);font-size:var(--fs-micro);color:var(--ink3);margin-bottom:10px;}
+.ag-micro{font-size:var(--fs-micro);color:var(--ink3);font-weight:400;}
 .ag-cluster-lbl{font-family:var(--mono);font-size:var(--fs-micro);margin-bottom:6px;}
 .ag-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
 .ag-badge{font-family:var(--mono);font-size:var(--fs-micro);padding:2px 7px;border-radius:10px;border:1px solid;}
 .ag-bio{font-size:var(--fs-caption);color:var(--ink2);line-height:1.65;max-width:500px;}
 .ag-stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+@media (max-width:820px){
+  .ag-stats-row{grid-template-columns:repeat(3,minmax(0,1fr));}
+}
 .as{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:10px 12px;text-align:center;}
 .as-v{font-family:var(--serif);font-size:var(--fs-body-emphasis);font-weight:700;color:var(--fg);}
 .as-l{font-family:var(--mono);font-size:var(--fs-micro);color:var(--ink3);margin-top:2px;}
@@ -949,6 +961,7 @@
 .phi-head{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
 .phi-q{font-family:var(--mono);font-size:var(--fs-micro);color:var(--ink3);}
 .phi-dir{font-family:var(--mono);font-size:var(--fs-micro);padding:1px 6px;border-radius:10px;border:1px solid;}
+.phi-spec{font-family:var(--mono);font-size:var(--fs-micro);padding:1px 6px;border-radius:10px;border:1px solid var(--af-tone-c-border);background:var(--af-tone-c-bg);color:var(--af-tone-c);}
 .phi-outcome{font-family:var(--mono);font-size:var(--fs-micro);padding:1px 6px;border-radius:10px;border:1px solid;margin-left:auto;}
 .pho-c{background:var(--af-tone-a-bg);border-color:var(--af-tone-a-border);color:var(--af-tone-a);}
 .pho-p{background:var(--af-tone-b-bg);border-color:var(--af-tone-b-border);color:var(--af-tone-b);}
@@ -1773,6 +1786,18 @@
   font-size:var(--fs-caption);
   color:var(--ink2);
   margin-bottom:6px;
+}
+.agentfloor .af-discover-em-topic{
+  font-size:var(--fs-caption);
+  color:var(--ink2);
+  line-height:1.35;
+  margin-bottom:4px;
+}
+.agentfloor .af-discover-em-style{
+  font-family:var(--mono);
+  font-size:var(--fs-micro);
+  color:var(--ink3);
+  margin-bottom:8px;
 }
 .agentfloor .af-discover-em-need{
   font-size:var(--fs-caption);
