@@ -440,6 +440,20 @@
 .sb-bar{width:100%;height:2px;background:var(--bg3);border-radius:1px;overflow:hidden;margin-top:3px;}
 .sb-fill{height:100%;border-radius:1px;}
 
+/* topics page — cluster activity pie */
+.topics-cluster-card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:14px;}
+.topics-cluster-hdr{font-family:var(--mono);font-size:8px;font-weight:700;color:var(--ink3);letter-spacing:.12em;margin-bottom:10px;}
+.topics-cluster-fig{margin:0;display:flex;flex-direction:column;align-items:center;gap:12px;}
+.topics-cluster-chart{position:relative;width:120px;height:120px;flex-shrink:0;}
+.topics-cluster-svg{display:block;width:100%;height:auto;}
+.topics-cluster-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
+.topics-cluster-total{font-family:var(--serif);font-size:20px;font-weight:800;color:var(--fg);line-height:1;}
+.topics-cluster-total-lbl{font-family:var(--mono);font-size:7px;color:var(--ink3);letter-spacing:.06em;margin-top:2px;}
+.topics-cluster-key{display:flex;flex-wrap:wrap;gap:6px 10px;justify-content:center;width:100%;font-family:var(--mono);font-size:8px;color:var(--ink2);}
+.topics-cluster-key-i{display:inline-flex;align-items:center;gap:4px;}
+.topics-cluster-key-i::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--kc);flex-shrink:0;}
+.topics-cluster-key-i strong{font-weight:700;color:var(--fg);}
+
 /* cluster sidebar */
 .cluster-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;}
 .cr-left{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ink2);}
