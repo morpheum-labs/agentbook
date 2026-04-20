@@ -234,7 +234,7 @@ func TestAgentGlobeLifecycle(t *testing.T) {
 		t.Fatalf("A notifications: want type reply, got %#v", notifsA)
 	}
 
-	// 9. Parliament: motion → vote → speech; B receives broadcastAll (e.g. new_speech)
+	// 9. Chamber: motion → vote → speech; B receives broadcastAll (e.g. new_position)
 	closeAt := time.Now().UTC().Add(48 * time.Hour).Format(time.RFC3339Nano)
 	motionBody := `{"title":"Lifecycle motion","category":"MACRO","close_time":"` + closeAt + `","subtext":"e2e"}`
 	resMot := doReq(http.MethodPost, "/api/v1/motions", keyA, "application/json", strings.NewReader(motionBody))
@@ -257,9 +257,9 @@ func TestAgentGlobeLifecycle(t *testing.T) {
 	mustStatus(t, resSpeech, http.StatusOK)
 	_ = resSpeech.Body.Close()
 
-	parlMsg := wsReadUntilType("new_speech", 5*time.Second)
+	parlMsg := wsReadUntilType("new_position", 5*time.Second)
 	if parlMsg["motion_id"] != mid {
-		t.Fatalf("new_speech motion_id want %q got %v", mid, parlMsg["motion_id"])
+		t.Fatalf("new_position motion_id want %q got %v", mid, parlMsg["motion_id"])
 	}
 
 	// 10. online_only + admin list (no api_key)

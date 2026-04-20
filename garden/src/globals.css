@@ -3,83 +3,88 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* spec/preview.html + design-md/superhuman: 8px / 16px radii only */
   --radius: 0.5rem;
 }
 
 /* Tailwind v4 theme - defines utility classes */
 @theme inline {
-  /* Light theme (default) */
+  /* Super Sans VF fallbacks (design-md/superhuman) — same stack as spec/preview.html */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+    "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+
+  /* Light: spec/preview.html */
   --color-background: #ffffff;
-  --color-foreground: #171717;
+  --color-foreground: #292827;
   --color-card: #ffffff;
-  --color-card-foreground: #171717;
+  --color-card-foreground: #292827;
   --color-popover: #ffffff;
-  --color-popover-foreground: #171717;
-  --color-primary: #dc2626;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f5f5f5;
-  --color-secondary-foreground: #171717;
-  --color-muted: #f5f5f5;
-  --color-muted-foreground: #737373;
-  --color-accent: #f5f5f5;
-  --color-accent-foreground: #171717;
-  --color-destructive: #dc2626;
+  --color-popover-foreground: #292827;
+  --color-primary: #e9e5dd;
+  --color-primary-foreground: #292827;
+  --color-secondary: #f5f3ef;
+  --color-secondary-foreground: #292827;
+  --color-muted: #f5f3ef;
+  --color-muted-foreground: #6b6660;
+  --color-accent: #ebe4f7;
+  --color-accent-foreground: #292827;
+  --color-destructive: #b42318;
   --color-destructive-foreground: #ffffff;
-  --color-border: #e5e5e5;
-  --color-input: #e5e5e5;
-  --color-ring: #dc2626;
-  --color-chart-1: #dc2626;
-  --color-chart-2: #16a34a;
-  --color-chart-3: #2563eb;
-  --color-chart-4: #ca8a04;
-  --color-chart-5: #9333ea;
-  --color-sidebar: #fafafa;
-  --color-sidebar-foreground: #171717;
-  --color-sidebar-primary: #dc2626;
-  --color-sidebar-primary-foreground: #ffffff;
-  --color-sidebar-accent: #f5f5f5;
-  --color-sidebar-accent-foreground: #171717;
-  --color-sidebar-border: #e5e5e5;
-  --color-sidebar-ring: #dc2626;
+  --color-border: #dcd7d3;
+  --color-input: #dcd7d3;
+  --color-ring: #714cb6;
+  --color-chart-1: #714cb6;
+  --color-chart-2: #5b8a6a;
+  --color-chart-3: #5a6b8f;
+  --color-chart-4: #9a7a4a;
+  --color-chart-5: #cbb7fb;
+  --color-sidebar: #faf9f7;
+  --color-sidebar-foreground: #292827;
+  --color-sidebar-primary: #e9e5dd;
+  --color-sidebar-primary-foreground: #292827;
+  --color-sidebar-accent: #ebe4f7;
+  --color-sidebar-accent-foreground: #292827;
+  --color-sidebar-border: #dcd7d3;
+  --color-sidebar-ring: #714cb6;
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 }
 
-/* Dark theme overrides */
+/* Dark: spec/preview-dark.html surfaces */
 .dark {
-  --color-background: #0a0a0a;
-  --color-foreground: #fafafa;
-  --color-card: #171717;
-  --color-card-foreground: #fafafa;
-  --color-popover: #171717;
-  --color-popover-foreground: #fafafa;
-  --color-primary: #ef4444;
-  --color-primary-foreground: #fafafa;
-  --color-secondary: #262626;
-  --color-secondary-foreground: #fafafa;
-  --color-muted: #262626;
-  --color-muted-foreground: #a3a3a3;
-  --color-accent: #262626;
-  --color-accent-foreground: #fafafa;
-  --color-destructive: #dc2626;
+  --color-background: #121111;
+  --color-foreground: #ebeae9;
+  --color-card: #1c1b1a;
+  --color-card-foreground: #ebeae9;
+  --color-popover: #252423;
+  --color-popover-foreground: #ebeae9;
+  --color-primary: #e9e5dd;
+  --color-primary-foreground: #292827;
+  --color-secondary: #252423;
+  --color-secondary-foreground: #ebeae9;
+  --color-muted: #252423;
+  --color-muted-foreground: #a39f9b;
+  --color-accent: #2f2840;
+  --color-accent-foreground: #ebeae9;
+  --color-destructive: #c42c24;
   --color-destructive-foreground: #fafafa;
-  --color-border: #262626;
-  --color-input: #262626;
-  --color-ring: #ef4444;
-  --color-chart-1: #ef4444;
-  --color-chart-2: #22c55e;
-  --color-chart-3: #3b82f6;
-  --color-chart-4: #eab308;
-  --color-chart-5: #a855f7;
-  --color-sidebar: #0a0a0a;
-  --color-sidebar-foreground: #fafafa;
-  --color-sidebar-primary: #ef4444;
-  --color-sidebar-primary-foreground: #fafafa;
-  --color-sidebar-accent: #262626;
-  --color-sidebar-accent-foreground: #fafafa;
-  --color-sidebar-border: #262626;
-  --color-sidebar-ring: #ef4444;
+  --color-border: #3a3938;
+  --color-input: #3a3938;
+  --color-ring: #cbb7fb;
+  --color-chart-1: #cbb7fb;
+  --color-chart-2: #6bc48a;
+  --color-chart-3: #8aa4e8;
+  --color-chart-4: #d4b56a;
+  --color-chart-5: #a78bdb;
+  --color-sidebar: #121111;
+  --color-sidebar-foreground: #ebeae9;
+  --color-sidebar-primary: #e9e5dd;
+  --color-sidebar-primary-foreground: #292827;
+  --color-sidebar-accent: #252423;
+  --color-sidebar-accent-foreground: #ebeae9;
+  --color-sidebar-border: #3a3938;
+  --color-sidebar-ring: #cbb7fb;
 }
 
 @keyframes accordion-down {
@@ -105,7 +110,13 @@
 }
 
 body {
-  font-family: "Inter Variable", Inter, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+    "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  font-size: 16px;
+  font-weight: 460;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom tab colors */

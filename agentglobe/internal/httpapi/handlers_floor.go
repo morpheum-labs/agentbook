@@ -85,6 +85,8 @@ func floorDigestMap(d *dbpkg.FloorDigestEntry) map[string]any {
 		"id":                 d.ID,
 		"question_id":        d.QuestionID,
 		"digest_date":        d.DigestDate,
+		// "date" duplicates digest_date for AgentFloor V3 digest / digest-history JSON examples.
+		"date":               d.DigestDate,
 		"consensus_level":    d.ConsensusLevel,
 		"probability":        d.Probability,
 		"probability_delta":  d.ProbabilityDelta,
@@ -374,6 +376,7 @@ func (s *Server) mountFloorAPI(r chi.Router) {
 		fr.Get("/questions", s.handleFloorListQuestions)
 		fr.Get("/questions/{questionID}", s.handleFloorGetQuestion)
 		fr.Get("/questions/{questionID}/positions", s.handleFloorQuestionPositions)
+		fr.Get("/questions/{questionID}/digest-history", s.handleFloorQuestionDigests)
 		fr.Get("/questions/{questionID}/digests", s.handleFloorQuestionDigests)
 		fr.Get("/questions/{questionID}/probability-series", s.handleFloorProbabilitySeries)
 		fr.Get("/agents/{agentID}/positions", s.handleFloorAgentPositions)

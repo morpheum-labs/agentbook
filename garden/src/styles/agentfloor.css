@@ -1,20 +1,34 @@
 .agentfloor,.agentfloor *{box-sizing:border-box;}.agentfloor{margin:0;padding:0;}.agentfloor *{margin:0;padding:0;}
 .agentfloor{
-  --bg:#fafaf8;--bg2:#f4f2ee;--bg3:#eeecea;--bg4:#e8e6e0;
-  --ink:#1a1814;--ink2:#4a4640;--ink3:#8a8680;
-  --fg:#1a1814;--on-bright:#1a1814;--fill:#1a1814;--on-fill:#fff;--fill-hover:#2a2820;
-  --strip:#1a1814;--strip-line:#2a2820;--on-strip:#fff;--surface:#fff;
+  /* spec/preview.html light surfaces */
+  --bg:#ffffff;--bg2:#f7f6f4;--bg3:#f0eeeb;--bg4:#e9e5dd;
+  --ink:#292827;--ink2:#5c5650;--ink3:#8a8580;
+  --fg:#292827;--on-bright:#ffffff;--fill:#292827;--on-fill:#ffffff;--fill-hover:#3d3835;
+  --strip:#1b1938;--strip-line:rgba(255,255,255,0.15);--on-strip:rgba(255,255,255,0.95);--surface:#ffffff;
   --paid-muted:#6a6a7a;--paid-faint:#8a8a9a;--term-strip-muted:#4a4860;
-  --gold:#b8920a;--goldbg:#fdf8e8;--goldborder:#e8d878;
+  --gold:#714cb6;--goldbg:#f0eaf8;--goldborder:#d4c4ec;
   --red:#c42020;--redbg:#fff0f0;--redborder:#f0c8c8;
   --green:#1a7a3a;--greenbg:#f0faf4;--greenborder:#b8e0c8;
   --blue:#1848a8;--bluebg:#f0f4fc;--blueborder:#c8d8f8;
   --teal:#1a7868;--tealbg:#f0faf8;--tealborder:#b8e0d8;
-  --border:#e0dcd4;--border2:#ccc8c0;
-  --font:'DM Sans',sans-serif;--mono:'Space Mono',monospace;--serif:'Fraunces',serif;
-  --paid:#0a1428;--paid-gold:#c8a850;
+  --border:#dcd7d3;--border2:#cfc8c2;
+  /* design-md/superhuman: Super Sans VF fallbacks; mono for dense UI */
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",sans-serif;
+  --mono:'Space Mono',ui-monospace,monospace;
+  --serif:system-ui,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",sans-serif;
+  --paid:#1b1938;--paid-gold:#cbb7fb;
 }
-.agentfloor{min-height:100%;background:var(--bg);color:var(--fg);font-family:var(--font);}
+.agentfloor{
+  min-height:100%;
+  background:var(--bg);
+  color:var(--fg);
+  font-family:var(--font);
+  font-size:16px;
+  font-weight:460;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
 
 /* ── TICKER ── */
 .ticker{background:var(--strip);height:26px;display:flex;align-items:center;overflow:hidden;position:relative;}
@@ -658,6 +672,7 @@
 
 /* ── COLOR MODE (see spec/preview-dark.html surfaces only) ── */
 .agentfloor--dark{
+  /* spec/preview-dark.html */
   --bg:#121111;
   --bg2:#1c1b1a;
   --bg3:#252423;
@@ -672,7 +687,7 @@
   --strip:#121111;
   --strip-line:rgba(255,255,255,0.12);
   --on-strip:rgba(255,255,255,0.92);
-  --surface:#252423;
+  --surface:#1c1b1a;
   --paid-muted:rgba(255,255,255,0.55);
   --paid-faint:rgba(255,255,255,0.42);
   --term-strip-muted:rgba(255,255,255,0.5);

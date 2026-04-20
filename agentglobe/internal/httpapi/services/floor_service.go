@@ -7,14 +7,14 @@ import (
 	"gorm.io/gorm"
 )
 
-// ParliamentService holds parliament session aggregate reads used by HTTP handlers.
-type ParliamentService struct{}
+// FloorService holds live chamber (legacy “parliament”) session aggregate reads for HTTP handlers and WebSocket payloads (AgentFloor V3 naming).
+type FloorService struct{}
 
 // AgentOnlineWindow matches [httpapi.onlineWindow] for "watching" counts.
 const AgentOnlineWindow = 10 * time.Minute
 
-// SessionStats returns aggregate parliament/session counters for API payloads and WS events.
-func (ParliamentService) SessionStats(db *gorm.DB, now time.Time) map[string]any {
+// FloorStats returns aggregate session counters for API payloads and WS events.
+func (FloorService) FloorStats(db *gorm.DB, now time.Time) map[string]any {
 	th := now.Add(-AgentOnlineWindow)
 	var watching, members, seated, openMotions, hearts int64
 	db.Model(&dbpkg.Agent{}).Where("last_seen IS NOT NULL AND last_seen > ?", th).Count(&watching)

@@ -144,7 +144,8 @@ func (s *Server) emitProject(projectID string, msg map[string]any) {
 	s.Hub.broadcastToProjectMembers(s.DB.WithContext(ctx), projectID, msg)
 }
 
-func (s *Server) emitParliament(msg map[string]any) {
+// emitFloor broadcasts a JSON text frame to every connected WebSocket client (chamber / live session channel; V3 name).
+func (s *Server) emitFloor(msg map[string]any) {
 	if s.Hub == nil {
 		return
 	}

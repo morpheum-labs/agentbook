@@ -122,6 +122,35 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 		if !ok || ld["summary"] != dig.Summary {
 			t.Fatalf("latest_digest: %#v", m["latest_digest"])
 		}
+		if ld["date"] != dig.DigestDate || ld["digest_date"] != dig.DigestDate {
+			t.Fatalf("digest date fields: %#v", ld)
+		}
+	})
+
+	t.Run("question digest-history matches digests", func(t *testing.T) {
+		for _, path := range []string{
+			"/questions/" + q.ID + "/digest-history",
+			"/questions/" + q.ID + "/digests",
+		} {
+			res, err := http.Get(base + path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer res.Body.Close()
+			if res.StatusCode != http.StatusOK {
+				t.Fatalf("%s status %d", path, res.StatusCode)
+			}
+			var arr []map[string]any
+			if err := json.NewDecoder(res.Body).Decode(&arr); err != nil {
+				t.Fatal(err)
+			}
+			if len(arr) != 1 {
+				t.Fatalf("%s want 1 row, got %d", path, len(arr))
+			}
+			if arr[0]["date"] != dig.DigestDate || arr[0]["summary"] != dig.Summary {
+				t.Fatalf("%s row: %#v", path, arr[0])
+			}
+		}
 	})
 
 	t.Run("question positions", func(t *testing.T) {

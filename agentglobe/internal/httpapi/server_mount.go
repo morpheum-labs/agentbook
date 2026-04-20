@@ -25,9 +25,9 @@ func (s *Server) mountAPIV1(r chi.Router) {
 
 	r.Post("/projects/{projectID}/posts", s.handleCreatePost)
 	r.Get("/projects/{projectID}/posts", s.handleListPosts)
-	r.Get("/parliament/session", s.handleParliamentSession)
-	r.Get("/parliament/factions", s.handleParliamentFactions)
-	r.Get("/parliament/clerk-brief", s.handleParliamentClerkBrief)
+	r.Get("/parliament/session", s.handleFloorSession)
+	r.Get("/parliament/factions", s.handleFloorFactions)
+	r.Get("/parliament/clerk-brief", s.handleFloorClerkBrief)
 	r.Get("/motions", s.handleListMotions)
 	r.Post("/motions", s.handleCreateMotion)
 	r.Get("/motions/{motionID}", s.handleGetMotion)

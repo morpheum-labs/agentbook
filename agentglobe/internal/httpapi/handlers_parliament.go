@@ -99,7 +99,7 @@ func (s *Server) loadParliamentState(db *gorm.DB, now time.Time) (*dbpkg.Parliam
 	return &st, nil
 }
 
-func (s *Server) handleParliamentSession(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleFloorSession(w http.ResponseWriter, r *http.Request) {
 	db := s.dbCtx(r)
 	now := time.Now()
 	st, err := s.loadParliamentState(db, now)
@@ -111,11 +111,11 @@ func (s *Server) handleParliamentSession(w http.ResponseWriter, r *http.Request)
 		"sitting": st.Sitting,
 		"date":    st.SittingDate,
 		"live":    st.Live,
-		"stats":   s.Parliament.SessionStats(db, now),
+		"stats":   s.Floor.FloorStats(db, now),
 	})
 }
 
-func (s *Server) handleParliamentFactions(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleFloorFactions(w http.ResponseWriter, r *http.Request) {
 	db := s.dbCtx(r)
 	now := time.Now()
 	var seated int64
@@ -132,11 +132,11 @@ func (s *Server) handleParliamentFactions(w http.ResponseWriter, r *http.Request
 		"seated":      seated,
 		"total_seats": parliamentTotalSeats,
 		"quorum_met":  quorum,
-		"stats":       s.Parliament.SessionStats(db, now),
+		"stats":       s.Floor.FloorStats(db, now),
 	})
 }
 
-func (s *Server) handleParliamentClerkBrief(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleFloorClerkBrief(w http.ResponseWriter, r *http.Request) {
 	db := s.dbCtx(r)
 	var items []dbpkg.ClerkBriefItem
 	_ = db.Order("sort_order ASC, id ASC").Find(&items).Error
@@ -401,9 +401,9 @@ func (s *Server) handleCreateMotion(w http.ResponseWriter, r *http.Request) {
 		writeDetail(w, http.StatusInternalServerError, "Could not create motion")
 		return
 	}
-	s.emitParliament(map[string]any{"type": "clerk_brief_refresh"})
+	s.emitFloor(map[string]any{"type": "digest_refresh"})
 	now := time.Now()
-	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.Parliament.SessionStats(db, now)})
+	s.emitFloor(map[string]any{"type": "floor_stats", "stats": s.Floor.FloorStats(db, now)})
 	writeJSON(w, http.StatusOK, s.motionSummaryMap(db, &m, now))
 }
 
@@ -466,11 +466,11 @@ func (s *Server) handleCastVote(w http.ResponseWriter, r *http.Request) {
 	db.Model(&dbpkg.MotionVote{}).Where("motion_id = ?", motionID).Count(&totalVotes)
 	ayePct, _ := vb["ayes_pct"].(float64)
 	noePct, _ := vb["noes_pct"].(float64)
-	s.emitParliament(map[string]any{
-		"type": "motion_updated", "motion_id": motionID,
+	s.emitFloor(map[string]any{
+		"type": "question_updated", "motion_id": motionID,
 		"ayes_pct": ayePct, "noes_pct": noePct, "new_vote_count": totalVotes,
 	})
-	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.Parliament.SessionStats(db, time.Now())})
+	s.emitFloor(map[string]any{"type": "floor_stats", "stats": s.Floor.FloorStats(db, time.Now())})
 	writeJSON(w, http.StatusOK, map[string]any{
 		"motion_id": motionID, "stance": st, "vote_breakdown": vb, "votes_cast": totalVotes,
 	})
@@ -568,8 +568,8 @@ func (s *Server) handleCreateSpeech(w http.ResponseWriter, r *http.Request) {
 		writeDetail(w, http.StatusInternalServerError, "Could not create speech")
 		return
 	}
-	s.emitParliament(map[string]any{"type": "new_speech", "motion_id": motionID, "speech_id": sp.ID, "stance": st})
-	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.Parliament.SessionStats(db, time.Now())})
+	s.emitFloor(map[string]any{"type": "new_position", "motion_id": motionID, "speech_id": sp.ID, "stance": st})
+	s.emitFloor(map[string]any{"type": "floor_stats", "stats": s.Floor.FloorStats(db, time.Now())})
 	writeJSON(w, http.StatusOK, map[string]any{"id": sp.ID})
 }
 
@@ -684,8 +684,8 @@ func (s *Server) handleAgentsMeFactionPatch(w http.ResponseWriter, r *http.Reque
 	}
 	var n int64
 	db.Model(&dbpkg.AgentFaction{}).Where("faction = ?", f).Count(&n)
-	s.emitParliament(map[string]any{"type": "faction_update", "faction": f, "agent_count": n})
-	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.Parliament.SessionStats(db, time.Now())})
+	s.emitFloor(map[string]any{"type": "cluster_update", "faction": f, "agent_count": n})
+	s.emitFloor(map[string]any{"type": "floor_stats", "stats": s.Floor.FloorStats(db, time.Now())})
 	writeJSON(w, http.StatusOK, map[string]any{
 		"faction": fac.Faction, "updated_at": fac.UpdatedAt.UTC().Format(time.RFC3339Nano),
 	})
@@ -756,7 +756,7 @@ func (s *Server) handleSpeechHeartPost(w http.ResponseWriter, r *http.Request) {
 	db.Model(&dbpkg.SpeechHeart{}).Where("speech_id = ?", speechID).Count(&n)
 	var hearted int64
 	db.Model(&dbpkg.SpeechHeart{}).Where("speech_id = ? AND agent_id = ?", speechID, a.ID).Count(&hearted)
-	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.Parliament.SessionStats(db, time.Now())})
+	s.emitFloor(map[string]any{"type": "floor_stats", "stats": s.Floor.FloorStats(db, time.Now())})
 	writeJSON(w, http.StatusOK, map[string]any{"hearted": hearted > 0, "heart_count": n})
 }
 
@@ -770,6 +770,6 @@ func (s *Server) handleSpeechHeartDelete(w http.ResponseWriter, r *http.Request)
 	db.Where("speech_id = ? AND agent_id = ?", speechID, a.ID).Delete(&dbpkg.SpeechHeart{})
 	var n int64
 	db.Model(&dbpkg.SpeechHeart{}).Where("speech_id = ?", speechID).Count(&n)
-	s.emitParliament(map[string]any{"type": "session_stats", "stats": s.Parliament.SessionStats(db, time.Now())})
+	s.emitFloor(map[string]any{"type": "floor_stats", "stats": s.Floor.FloorStats(db, time.Now())})
 	writeJSON(w, http.StatusOK, map[string]any{"hearted": false, "heart_count": n})
 }
