@@ -217,44 +217,44 @@ export default function AdminProjectPage() {
   const suggestedRoles = ["Lead", "Developer", "Reviewer", "Security", "DevOps", "Tester", "Observer"];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950">
+    <div className="min-h-screen bg-background">
       <SiteHeader
         rightSlot={
-          <Badge variant="outline" className="border-red-500/50 text-red-400">
+          <Badge variant="outline" className="border-chart-5/40 text-foreground">
             Admin Mode
           </Badge>
         }
       />
 
-      <div className="border-b border-neutral-200 dark:border-neutral-800 px-6 py-3">
+      <div className="border-b border-border px-6 py-3">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center gap-2 text-sm">
-            <Link to="/admin" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50">
+            <Link to="/admin" className="text-muted-foreground hover:text-foreground">
               Admin
             </Link>
-            <span className="text-neutral-500 dark:text-neutral-400">/</span>
-            <span className="text-neutral-900 dark:text-neutral-50">{project?.name || "..."}</span>
+            <span className="text-muted-foreground">/</span>
+            <span className="text-foreground">{project?.name || "..."}</span>
           </div>
         </div>
       </div>
 
-      <div className="border-b border-neutral-200 dark:border-neutral-800 px-6 py-6">
+      <div className="border-b border-border px-6 py-6">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">{project?.name || "Loading..."}</h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">{project?.description || "No description"}</p>
+          <h1 className="text-lead font-medium text-foreground">{project?.name || "Loading..."}</h1>
+          <p className="text-muted-foreground mt-1">{project?.description || "No description"}</p>
         </div>
       </div>
 
       <main className="max-w-5xl mx-auto px-6 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">📋 Grand Plan</h2>
+            <h2 className="text-lg font-semibold text-foreground">📋 Grand Plan</h2>
             {!editingPlan && (
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setEditingPlan(true)}
-                className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50"
+                className="text-muted-foreground hover:text-foreground"
               >
                 {plan ? "Edit" : "Create"}
               </Button>
@@ -262,20 +262,20 @@ export default function AdminProjectPage() {
           </div>
 
           {editingPlan ? (
-            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+            <Card className="bg-card border-border">
               <CardContent className="p-4 space-y-4">
                 <Input
                   value={planTitle}
                   onChange={(e) => setPlanTitle(e.target.value)}
                   placeholder="Plan title"
-                  className="bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700"
+                  className="bg-muted border-border"
                 />
                 <Textarea
                   value={planContent}
                   onChange={(e) => setPlanContent(e.target.value)}
                   placeholder="Roadmap, goals, priorities..."
                   rows={8}
-                  className="bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 font-mono text-sm"
+                  className="bg-muted border-border font-mono text-sm"
                 />
                 <div className="flex gap-2">
                   <Button
@@ -286,29 +286,29 @@ export default function AdminProjectPage() {
                       setPlanTitle(plan?.title || "");
                       setPlanContent(plan?.content || "");
                     }}
-                    className="text-neutral-500 dark:text-neutral-400"
+                    className="text-muted-foreground"
                   >
                     Cancel
                   </Button>
-                  <Button size="sm" onClick={savePlan} disabled={savingPlan} className="bg-red-500 hover:bg-red-600">
+                  <Button size="sm" variant="default" onClick={savePlan} disabled={savingPlan}>
                     {savingPlan ? "Saving..." : "Save Plan"}
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ) : plan ? (
-            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+            <Card className="bg-card border-border">
               <CardHeader className="pb-2">
-                <CardTitle className="text-neutral-900 dark:text-neutral-50 text-base">{plan.title}</CardTitle>
+                <CardTitle className="text-foreground text-base">{plan.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <pre className="text-sm text-neutral-900 dark:text-neutral-50 whitespace-pre-wrap font-mono">{plan.content}</pre>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-4">Updated: {formatDateTime(plan.updated_at)}</p>
+                <pre className="text-sm text-foreground whitespace-pre-wrap font-mono">{plan.content}</pre>
+                <p className="text-xs text-muted-foreground mt-4">Updated: {formatDateTime(plan.updated_at)}</p>
               </CardContent>
             </Card>
           ) : (
-            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 border-dashed">
-              <CardContent className="py-8 text-center text-neutral-500 dark:text-neutral-400">
+            <Card className="bg-card border-border border-dashed">
+              <CardContent className="py-8 text-center text-muted-foreground">
                 No Grand Plan yet. Click &quot;Create&quot; to add one.
               </CardContent>
             </Card>
@@ -316,38 +316,40 @@ export default function AdminProjectPage() {
         </div>
 
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Members ({members.length})</h2>
+          <h2 className="text-lg font-semibold text-foreground">Members ({members.length})</h2>
         </div>
 
         {loading ? (
-          <div className="text-neutral-500 dark:text-neutral-400">Loading...</div>
+          <div className="text-muted-foreground">Loading...</div>
         ) : members.length === 0 ? (
-          <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-            <CardContent className="py-8 text-center text-neutral-500 dark:text-neutral-400">No members yet.</CardContent>
+          <Card className="bg-card border-border">
+            <CardContent className="py-8 text-center text-muted-foreground">No members yet.</CardContent>
           </Card>
         ) : (
-          <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+          <Card className="bg-card border-border">
             <CardContent className="p-0">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-neutral-200 dark:border-neutral-800">
-                    <th className="text-left p-4 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">Agent</th>
-                    <th className="text-left p-4 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">Role</th>
-                    <th className="text-left p-4 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">Status</th>
-                    <th className="text-left p-4 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">Joined</th>
-                    <th className="text-right p-4 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">Actions</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-4 text-xs font-medium text-muted-foreground uppercase">Agent</th>
+                    <th className="text-left p-4 text-xs font-medium text-muted-foreground uppercase">Role</th>
+                    <th className="text-left p-4 text-xs font-medium text-muted-foreground uppercase">Status</th>
+                    <th className="text-left p-4 text-xs font-medium text-muted-foreground uppercase">Joined</th>
+                    <th className="text-right p-4 text-xs font-medium text-muted-foreground uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {members.map((member) => {
                     const isPrimaryLead = project?.primary_lead_agent_id === member.agent_id;
                     return (
-                      <tr key={member.agent_id} className="border-b border-neutral-200 dark:border-neutral-800 last:border-0">
+                      <tr key={member.agent_id} className="border-b border-border last:border-0">
                         <td className="p-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-red-400 font-medium">@{member.agent_name}</span>
+                            <span className="font-medium text-foreground">@{member.agent_name}</span>
                             {isPrimaryLead && (
-                              <Badge className="bg-yellow-500/20 text-yellow-400 border-0 text-xs">👑 Lead</Badge>
+                              <Badge variant="outline" className="border-chart-5/50 text-xs">
+                                👑 Lead
+                              </Badge>
                             )}
                           </div>
                         </td>
@@ -357,7 +359,7 @@ export default function AdminProjectPage() {
                               <Input
                                 value={editRole}
                                 onChange={(e) => setEditRole(e.target.value)}
-                                className="h-8 w-32 bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700"
+                                className="h-8 w-32 bg-muted border-border"
                                 placeholder="Role"
                               />
                               <div className="flex gap-1">
@@ -366,7 +368,7 @@ export default function AdminProjectPage() {
                                     key={r}
                                     type="button"
                                     onClick={() => setEditRole(r)}
-                                    className="text-xs px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50"
+                                    className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:text-foreground"
                                   >
                                     {r}
                                   </button>
@@ -374,19 +376,21 @@ export default function AdminProjectPage() {
                               </div>
                             </div>
                           ) : (
-                            <Badge variant="secondary" className="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50">
+                            <Badge variant="secondary" className="bg-muted text-foreground">
                               {member.role}
                             </Badge>
                           )}
                         </td>
                         <td className="p-4">
                           {member.online ? (
-                            <Badge className="bg-green-500/20 text-green-400 border-0">Online</Badge>
+                            <Badge variant="secondary" className="border-0">
+                              Online
+                            </Badge>
                           ) : (
-                            <span className="text-neutral-500 dark:text-neutral-400 text-sm">Offline</span>
+                            <span className="text-muted-foreground text-sm">Offline</span>
                           )}
                         </td>
-                        <td className="p-4 text-sm text-neutral-500 dark:text-neutral-400">{formatDate(member.joined_at)}</td>
+                        <td className="p-4 text-sm text-muted-foreground">{formatDate(member.joined_at)}</td>
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             {editingMember === member.agent_id ? (
@@ -395,16 +399,11 @@ export default function AdminProjectPage() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => setEditingMember(null)}
-                                  className="text-neutral-500 dark:text-neutral-400"
+                                  className="text-muted-foreground"
                                 >
                                   Cancel
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => saveRole(member.agent_id)}
-                                  disabled={saving}
-                                  className="bg-red-500 hover:bg-red-600"
-                                >
+                                <Button size="sm" variant="default" onClick={() => saveRole(member.agent_id)} disabled={saving}>
                                   {saving ? "..." : "Save"}
                                 </Button>
                               </>
@@ -417,7 +416,7 @@ export default function AdminProjectPage() {
                                     setEditingMember(member.agent_id);
                                     setEditRole(member.role);
                                   }}
-                                  className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50"
+                                  className="text-muted-foreground hover:text-foreground"
                                 >
                                   Edit
                                 </Button>
@@ -427,7 +426,7 @@ export default function AdminProjectPage() {
                                     variant="ghost"
                                     onClick={() => setPrimaryLead(member.agent_id)}
                                     disabled={settingLead}
-                                    className="text-yellow-400 hover:text-yellow-300"
+                                    className="text-chart-5 hover:opacity-80"
                                   >
                                     👑
                                   </Button>
@@ -437,7 +436,7 @@ export default function AdminProjectPage() {
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => removeMember(member.agent_id, member.agent_name)}
-                                    className="text-neutral-500 dark:text-neutral-400 hover:text-red-400"
+                                    className="text-muted-foreground hover:text-destructive"
                                   >
                                     ✕
                                   </Button>
@@ -457,13 +456,13 @@ export default function AdminProjectPage() {
 
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">📖 Role Definitions</h2>
+            <h2 className="text-lg font-semibold text-foreground">📖 Role Definitions</h2>
             {!editingRoles && (
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setEditingRoles(true)}
-                className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50"
+                className="text-muted-foreground hover:text-foreground"
               >
                 Edit
               </Button>
@@ -471,18 +470,18 @@ export default function AdminProjectPage() {
           </div>
 
           {editingRoles ? (
-            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+            <Card className="bg-card border-border">
               <CardContent className="p-4 space-y-3">
                 {suggestedRoles.map((role) => (
                   <div key={role} className="flex items-start gap-3">
-                    <Badge variant="secondary" className="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 mt-1 min-w-[100px] justify-center">
+                    <Badge variant="secondary" className="bg-muted text-foreground mt-1 min-w-[100px] justify-center">
                       {role}
                     </Badge>
                     <Input
                       value={roleDescsEdit[role] || ""}
                       onChange={(e) => setRoleDescsEdit({ ...roleDescsEdit, [role]: e.target.value })}
                       placeholder={`What does ${role} do?`}
-                      className="bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 flex-1"
+                      className="bg-muted border-border flex-1"
                     />
                   </div>
                 ))}
@@ -494,34 +493,34 @@ export default function AdminProjectPage() {
                       setEditingRoles(false);
                       setRoleDescsEdit(roleDescs);
                     }}
-                    className="text-neutral-500 dark:text-neutral-400"
+                    className="text-muted-foreground"
                   >
                     Cancel
                   </Button>
-                  <Button size="sm" onClick={saveRoleDescs} disabled={savingRoles} className="bg-red-500 hover:bg-red-600">
+                  <Button size="sm" variant="default" onClick={saveRoleDescs} disabled={savingRoles}>
                     {savingRoles ? "Saving..." : "Save"}
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ) : Object.keys(roleDescs).length > 0 ? (
-            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+            <Card className="bg-card border-border">
               <CardContent className="p-4">
                 <div className="space-y-2">
                   {Object.entries(roleDescs).map(([role, desc]) => (
                     <div key={role} className="flex items-start gap-3">
-                      <Badge variant="secondary" className="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50 min-w-[100px] justify-center">
+                      <Badge variant="secondary" className="bg-muted text-foreground min-w-[100px] justify-center">
                         {role}
                       </Badge>
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">{desc}</span>
+                      <span className="text-sm text-muted-foreground">{desc}</span>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
           ) : (
-            <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 border-dashed">
-              <CardContent className="py-6 text-center text-neutral-500 dark:text-neutral-400">
+            <Card className="bg-card border-border border-dashed">
+              <CardContent className="py-6 text-center text-muted-foreground">
                 No role definitions yet. Click &quot;Edit&quot; to describe what each role means.
               </CardContent>
             </Card>

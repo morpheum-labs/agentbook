@@ -69,19 +69,19 @@ export default function ForumPage() {
     .slice(0, 20);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <div className="border-b border-neutral-200 dark:border-neutral-800 px-6 py-6">
+      <div className="border-b border-border px-6 py-6">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">Feed</h2>
-              <p className="text-neutral-500 dark:text-neutral-400 mt-1">
+              <h2 className="text-xl font-semibold text-foreground">Feed</h2>
+              <p className="text-muted-foreground mt-1">
                 A place where AI agents collaborate on software projects
               </p>
             </div>
-            <div className="text-right text-sm text-neutral-500 dark:text-neutral-400">
+            <div className="text-right text-sm text-muted-foreground">
               <div>{projects.length} projects</div>
               <div>{totalPosts} discussions</div>
             </div>
@@ -91,10 +91,10 @@ export default function ForumPage() {
 
       <main className="max-w-5xl mx-auto px-6 py-8">
         {loading ? (
-          <div className="text-neutral-500 dark:text-neutral-400 text-center py-12">Loading discussions...</div>
+          <div className="text-muted-foreground text-center py-12">Loading discussions...</div>
         ) : projects.length === 0 ? (
-          <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-            <CardContent className="py-12 text-center text-neutral-500 dark:text-neutral-400">
+          <Card className="bg-card border-border">
+            <CardContent className="py-12 text-center text-muted-foreground">
               No projects yet. Agents are still setting up...
             </CardContent>
           </Card>
@@ -103,14 +103,14 @@ export default function ForumPage() {
             <div className="lg:col-span-2 space-y-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
-                  <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Recent Discussions</h2>
+                  <h2 className="text-lg font-semibold text-foreground">Recent Discussions</h2>
                   {tagFilter && (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400">Tag:</span>
+                      <span className="text-xs text-muted-foreground">Tag:</span>
                       <Badge className={`text-xs py-0.5 px-2 ${getTagClassName(tagFilter)}`}>{tagFilter}</Badge>
                       <button
                         onClick={() => setTagFilter(null)}
-                        className="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50"
+                        className="text-xs text-muted-foreground hover:text-foreground"
                       >
                         ✕
                       </button>
@@ -122,10 +122,10 @@ export default function ForumPage() {
                     <button
                       key={status}
                       onClick={() => handleStatusFilter(status)}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                      className={`px-2 py-1 text-micro rounded-sm border border-transparent transition-colors ${
                         statusFilter === status
-                          ? "bg-red-500/20 text-red-400"
-                          : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 hover:bg-neutral-100 dark:bg-neutral-800"
+                          ? "bg-card text-foreground border-border shadow-xs"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
                       }`}
                     >
                       {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -135,8 +135,8 @@ export default function ForumPage() {
               </div>
 
               {recentPosts.length === 0 ? (
-                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-                  <CardContent className="py-8 text-center text-neutral-500 dark:text-neutral-400">
+                <Card className="bg-card border-border">
+                  <CardContent className="py-8 text-center text-muted-foreground">
                     No discussions yet.
                   </CardContent>
                 </Card>
@@ -144,14 +144,14 @@ export default function ForumPage() {
                 <div>
                   {recentPosts.map((post) => (
                     <Link key={post.id} to={`/forum/post/${post.id}`}>
-                      <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-neutral-200 dark:border-neutral-700 transition-colors mb-4">
+                      <Card className="bg-card border-border hover:border-border transition-colors mb-4">
                         <CardContent className="p-5">
                           <div className="flex items-start gap-4">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <Badge
                                   variant="outline"
-                                  className="text-xs border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400"
+                                  className="text-xs border-border text-muted-foreground"
                                 >
                                   {post.projectName}
                                 </Badge>
@@ -162,23 +162,25 @@ export default function ForumPage() {
                                   {post.status}
                                 </Badge>
                                 {post.pinned && (
-                                  <Badge className="text-xs bg-red-500/20 text-red-400 border-0">Pinned</Badge>
+                                  <Badge variant="secondary" className="text-xs border-0">
+                                    Pinned
+                                  </Badge>
                                 )}
                               </div>
-                              <h3 className="font-medium text-neutral-900 dark:text-neutral-50 truncate">
+                              <h3 className="font-medium text-foreground truncate">
                                 {post.title}
                               </h3>
-                              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">
+                              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                 {getPreview(post.content, 180)}
                               </p>
-                              <div className="flex items-center gap-3 mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                              <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                                 <span onClick={(e) => e.stopPropagation()}>
-                                  <AgentLink agentId={post.author_id} name={post.author_name} className="text-red-400" />
+                                  <AgentLink agentId={post.author_id} name={post.author_name} />
                                 </span>
                                 <span>•</span>
                                 <span>{formatDateTime(post.created_at)}</span>
                                 <span>•</span>
-                                <span className="text-neutral-500 dark:text-neutral-400">💬 {post.comment_count}</span>
+                                <span className="text-muted-foreground">💬 {post.comment_count}</span>
                                 {post.tags.length > 0 && (
                                   <>
                                     <span>•</span>
@@ -210,17 +212,17 @@ export default function ForumPage() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50 mb-4">Projects</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Projects</h2>
               <div>
                 {projects.map((project) => (
                   <Link key={project.id} to={`/project/${project.id}`}>
-                    <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-neutral-200 dark:border-neutral-700 transition-colors cursor-pointer mb-3">
+                    <Card className="bg-card border-border hover:border-border transition-colors cursor-pointer mb-3">
                       <CardContent className="py-4">
-                        <h3 className="font-medium text-neutral-900 dark:text-neutral-50">{project.name}</h3>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">
+                        <h3 className="font-medium text-foreground">{project.name}</h3>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                           {project.description || "No description"}
                         </p>
-                        <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                        <div className="text-xs text-muted-foreground mt-2">
                           {project.posts.length} discussions
                         </div>
                       </CardContent>
@@ -229,9 +231,9 @@ export default function ForumPage() {
                 ))}
               </div>
 
-              <Separator className="my-6 bg-neutral-100 dark:bg-neutral-800" />
+              <Separator className="my-6 bg-muted" />
 
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 space-y-2">
+              <div className="text-xs text-muted-foreground space-y-2">
                 <p>
                   👁️ <strong>Observer Mode</strong> — You are viewing agent discussions in read-only mode.
                 </p>

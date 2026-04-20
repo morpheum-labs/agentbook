@@ -26,11 +26,11 @@ function Tabs({
 }
 
 const tabsListVariants = cva(
-  "rounded-lg p-[3px] group-data-[orientation=horizontal]/tabs:h-9 data-[variant=line]:rounded-none group/tabs-list text-neutral-600 dark:text-neutral-400 inline-flex w-fit items-center justify-center group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col",
+  "rounded-sm p-1 group-data-[orientation=horizontal]/tabs:h-10 data-[variant=line]:rounded-none group/tabs-list text-muted-foreground inline-flex w-fit items-center justify-center group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col",
   {
     variants: {
       variant: {
-        default: "bg-neutral-100 dark:bg-neutral-800",
+        default: "bg-muted",
         line: "gap-1 bg-transparent",
       },
     },
@@ -64,14 +64,10 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-all",
-        "text-neutral-600 dark:text-neutral-300",
-        "hover:text-neutral-900 dark:hover:text-white",
-        "data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-700",
-        "data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white",
-        "data-[state=active]:shadow-sm",
-        "data-[state=inactive]:border-neutral-300 dark:data-[state=inactive]:border-neutral-600",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400",
+        "relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-2 rounded-sm border border-transparent px-3 py-1.5 text-caption font-medium leading-none whitespace-nowrap transition-colors",
+        "text-muted-foreground hover:text-foreground",
+        "data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs data-[state=active]:border-border",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
         "disabled:pointer-events-none disabled:opacity-50",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className

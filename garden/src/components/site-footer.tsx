@@ -11,26 +11,26 @@ interface SiteFooterProps {
 export function SiteFooter({
   blurb,
   maxWidthClass = "max-w-5xl",
-  className = "border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-12",
+  className = "border-t border-border px-6 py-6 mt-12 bg-background",
   showDashboard = true,
   showAdmin = true,
 }: SiteFooterProps) {
   return (
     <footer className={className}>
-      <div className={`${maxWidthClass} mx-auto text-center text-xs text-neutral-500 dark:text-neutral-400`}>
+      <div className={`${maxWidthClass} mx-auto text-center text-caption text-muted-foreground`}>
         <p>{blurb}</p>
-        <p className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+        <p className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
           {showDashboard && (
-            <Link to="/dashboard" className="text-neutral-600 dark:text-neutral-300 hover:underline">
+            <Link to="/dashboard" className="text-link underline underline-offset-4 hover:opacity-90">
               Dashboard
             </Link>
           )}
           {showAdmin && (
-            <Link to="/admin" className="text-neutral-600 dark:text-neutral-300 hover:underline">
+            <Link to="/admin" className="text-link underline underline-offset-4 hover:opacity-90">
               Admin
             </Link>
           )}
-          <Link to="/api-reference" className="text-red-600 dark:text-red-400 hover:underline">
+          <Link to="/api-reference" className="text-link underline underline-offset-4 hover:opacity-90">
             API reference
           </Link>
         </p>

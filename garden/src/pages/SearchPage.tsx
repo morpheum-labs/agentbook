@@ -78,14 +78,14 @@ function SearchResultsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <div className="border-b border-neutral-200 dark:border-neutral-800 px-6 py-6">
+      <div className="border-b border-border px-6 py-6">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">Search Results</h1>
+          <h1 className="text-2xl font-bold text-foreground">Search Results</h1>
           {query && (
-            <p className="text-neutral-500 dark:text-neutral-400 mt-1">
+            <p className="text-muted-foreground mt-1">
               {loading ? "Searching..." : `${results.length} results for "${query}"`}
             </p>
           )}
@@ -94,24 +94,24 @@ function SearchResultsContent() {
 
       <main className="max-w-5xl mx-auto px-6 py-8">
         {!query ? (
-          <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-            <CardContent className="py-12 text-center text-neutral-500 dark:text-neutral-400">
+          <Card className="bg-card border-border">
+            <CardContent className="py-12 text-center text-muted-foreground">
               Enter a search query to find posts
             </CardContent>
           </Card>
         ) : loading ? (
-          <div className="text-neutral-500 dark:text-neutral-400 text-center py-12">Searching...</div>
+          <div className="text-muted-foreground text-center py-12">Searching...</div>
         ) : error ? (
-          <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-            <CardContent className="py-12 text-center text-red-400">{error}</CardContent>
+          <Card className="bg-card border-border">
+            <CardContent className="py-12 text-center text-destructive">{error}</CardContent>
           </Card>
         ) : results.length === 0 ? (
-          <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-            <CardContent className="py-12 text-center text-neutral-500 dark:text-neutral-400">
+          <Card className="bg-card border-border">
+            <CardContent className="py-12 text-center text-muted-foreground">
               {page > 1 ? (
                 <>
                   No more results.
-                  <Button variant="link" className="text-red-400 px-1" onClick={() => goToPage(1)}>
+                  <Button variant="link" className="px-1" onClick={() => goToPage(1)}>
                     Back to first page
                   </Button>
                 </>
@@ -124,7 +124,7 @@ function SearchResultsContent() {
           <div className="space-y-4">
             {results.map((post) => (
               <Link key={post.id} to={`/forum/post/${post.id}`}>
-                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-neutral-200 dark:border-neutral-700 transition-colors mb-4">
+                <Card className="bg-card border-border hover:border-border transition-colors mb-4">
                   <CardContent className="p-5">
                     <div className="flex items-start gap-4">
                       <div className="flex-1 min-w-0">
@@ -136,21 +136,23 @@ function SearchResultsContent() {
                             {post.status}
                           </Badge>
                           {post.pinned && (
-                            <Badge className="text-xs bg-red-500/20 text-red-400 border-0">Pinned</Badge>
+                            <Badge variant="secondary" className="text-xs border-0">
+                              Pinned
+                            </Badge>
                           )}
                         </div>
-                        <h3 className="font-medium text-neutral-900 dark:text-neutral-50">{post.title}</h3>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">
+                        <h3 className="font-medium text-foreground">{post.title}</h3>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                           {getPreview(post.content, 180)}
                         </p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                           <span onClick={(e) => e.stopPropagation()}>
-                            <AgentLink agentId={post.author_id} name={post.author_name} className="text-red-400" />
+                            <AgentLink agentId={post.author_id} name={post.author_name} />
                           </span>
                           <span>•</span>
                           <span>{formatDateTime(post.created_at)}</span>
                           <span>•</span>
-                          <span className="text-neutral-500 dark:text-neutral-400">💬 {post.comment_count}</span>
+                          <span className="text-muted-foreground">💬 {post.comment_count}</span>
                           {post.tags.length > 0 && (
                             <>
                               <span>•</span>
@@ -177,18 +179,18 @@ function SearchResultsContent() {
                 size="sm"
                 onClick={() => goToPage(page - 1)}
                 disabled={page <= 1}
-                className="border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-50 hover:bg-neutral-100 dark:bg-neutral-800 disabled:opacity-50"
+                className="border-border text-foreground hover:bg-muted disabled:opacity-50"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Previous
               </Button>
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">Page {page}</span>
+              <span className="text-sm text-muted-foreground">Page {page}</span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => goToPage(page + 1)}
                 disabled={!hasMore}
-                className="border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-50 hover:bg-neutral-100 dark:bg-neutral-800 disabled:opacity-50"
+                className="border-border text-foreground hover:bg-muted disabled:opacity-50"
               >
                 Next
                 <ChevronRight className="h-4 w-4 ml-1" />
@@ -207,8 +209,8 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center">
-          <div className="text-neutral-500 dark:text-neutral-400">Loading...</div>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-muted-foreground">Loading...</div>
         </div>
       }
     >

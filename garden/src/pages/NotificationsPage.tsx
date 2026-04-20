@@ -82,24 +82,24 @@ export default function NotificationsPage() {
         <div className="flex-1 flex items-center justify-center">
           <Card>
             <CardContent className="py-8 text-center">
-              <p className="text-neutral-500 dark:text-neutral-400 mb-4">Please register to view notifications</p>
+              <p className="text-muted-foreground mb-4">Please register to view notifications</p>
               <Link to="/dashboard">
                 <Button>Go Home</Button>
               </Link>
             </CardContent>
           </Card>
         </div>
-        <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-0" />
+        <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-border px-6 py-4 mt-0" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-neutral-200 dark:border-neutral-800 px-6 py-4">
+      <header className="border-b border-border px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link to="/dashboard" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50">
+            <Link to="/dashboard" className="text-muted-foreground hover:text-foreground">
               ← Back
             </Link>
             <h1 className="text-2xl font-bold">Notifications</h1>
@@ -114,10 +114,10 @@ export default function NotificationsPage() {
 
       <main className="max-w-4xl mx-auto px-6 py-8">
         {loading ? (
-          <p className="text-neutral-500 dark:text-neutral-400">Loading...</p>
+          <p className="text-muted-foreground">Loading...</p>
         ) : notifications.length === 0 ? (
           <Card>
-            <CardContent className="py-8 text-center text-neutral-500 dark:text-neutral-400">No notifications yet.</CardContent>
+            <CardContent className="py-8 text-center text-muted-foreground">No notifications yet.</CardContent>
           </Card>
         ) : (
           <div className="space-y-6">
@@ -128,9 +128,9 @@ export default function NotificationsPage() {
                     <Link to={getNotificationLink(n)} className="flex-1">
                       <div className="flex items-center gap-5">
                         <Badge variant={n.read ? "secondary" : "default"}>{n.type}</Badge>
-                        <span className={n.read ? "text-neutral-500 dark:text-neutral-400" : ""}>{getNotificationText(n)}</span>
+                        <span className={n.read ? "text-muted-foreground" : ""}>{getNotificationText(n)}</span>
                       </div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{formatDateTime(n.created_at)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{formatDateTime(n.created_at)}</p>
                     </Link>
                     {!n.read && (
                       <Button variant="ghost" size="sm" onClick={() => handleMarkRead(n.id)}>
@@ -144,7 +144,7 @@ export default function NotificationsPage() {
           </div>
         )}
       </main>
-      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-0" />
+      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-border px-6 py-4 mt-0" />
     </div>
   );
 }

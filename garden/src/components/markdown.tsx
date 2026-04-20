@@ -5,18 +5,15 @@ import ReactMarkdown from "react-markdown";
 interface MarkdownProps {
   content: string;
   className?: string;
-  mentions?: string[];  // Valid mentions to highlight
+  mentions?: string[]; // Valid mentions to highlight
 }
 
 function processMentions(content: string, mentions: string[] = []): string {
   if (!mentions.length) return content;
-  
-  // Only highlight @mentions that are in the valid mentions list
-  // Replace @validName with a styled span (using markdown link syntax)
+
   let processed = content;
   for (const name of mentions) {
-    // Use a special marker that won't be escaped by markdown
-    const regex = new RegExp(`@${name}\\b`, 'g');
+    const regex = new RegExp(`@${name}\\b`, "g");
     processed = processed.replace(regex, `**[@${name}](/u/${name})**`);
   }
   return processed;
@@ -24,51 +21,81 @@ function processMentions(content: string, mentions: string[] = []): string {
 
 export function Markdown({ content, className = "", mentions = [] }: MarkdownProps) {
   const processedContent = processMentions(content, mentions);
-  
+
   return (
-    <div className={`prose prose-invert prose-sm max-w-none ${className}`}>
+    <div className={`max-w-none text-body text-foreground ${className}`}>
       <ReactMarkdown
         components={{
-          // Style overrides for dark theme
-          h1: ({ children }) => <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-50 mt-4 mb-2">{children}</h1>,
-          h2: ({ children }) => <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50 mt-3 mb-2">{children}</h2>,
-          h3: ({ children }) => <h3 className="text-base font-medium text-neutral-900 dark:text-neutral-50 mt-2 mb-1">{children}</h3>,
-          p: ({ children }) => <p className="text-neutral-900 dark:text-neutral-50 mb-3 leading-relaxed">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc list-inside text-neutral-900 dark:text-neutral-50 mb-3 space-y-1">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal list-inside text-neutral-900 dark:text-neutral-50 mb-3 space-y-1">{children}</ol>,
-          li: ({ children }) => <li className="text-neutral-900 dark:text-neutral-50">{children}</li>,
+          h1: ({ children }) => (
+            <h1 className="text-lead font-medium text-foreground mt-6 mb-3 first:mt-0">{children}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="text-lead font-medium text-foreground mt-5 mb-2">{children}</h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="text-card-title text-foreground mt-4 mb-2">{children}</h3>
+          ),
+          p: ({ children }) => <p className="text-foreground mb-4 leading-[var(--lh-body)]">{children}</p>,
+          ul: ({ children }) => (
+            <ul className="list-disc list-inside text-foreground mb-4 space-y-2">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="list-decimal list-inside text-foreground mb-4 space-y-2">{children}</ol>
+          ),
+          li: ({ children }) => <li className="text-foreground leading-[var(--lh-body)]">{children}</li>,
           a: ({ href, children }) => (
-            <a href={href} className="text-red-400 hover:underline" target="_blank" rel="noopener noreferrer">
+            <a
+              href={href}
+              className="text-link underline underline-offset-4 hover:opacity-90"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {children}
             </a>
           ),
           code: ({ className, children }) => {
             const isInline = !className;
             if (isInline) {
-              return <code className="bg-neutral-100 dark:bg-neutral-800 text-red-300 px-1.5 py-0.5 rounded text-sm">{children}</code>;
+              return (
+                <code className="bg-muted text-foreground px-1.5 py-0.5 rounded-sm text-caption-body">
+                  {children}
+                </code>
+              );
             }
             return (
-              <code className="block bg-neutral-100 dark:bg-neutral-800 p-3 rounded-lg overflow-x-auto text-sm text-neutral-900 dark:text-neutral-50">
+              <code className="block bg-muted text-foreground p-4 rounded-lg border border-border overflow-x-auto text-caption-body leading-[var(--lh-body)]">
                 {children}
               </code>
             );
           },
-          pre: ({ children }) => <pre className="bg-neutral-100 dark:bg-neutral-800 p-3 rounded-lg overflow-x-auto mb-3">{children}</pre>,
+          pre: ({ children }) => (
+            <pre className="bg-muted text-foreground p-4 rounded-lg border border-border overflow-x-auto mb-4 text-caption-body">
+              {children}
+            </pre>
+          ),
           blockquote: ({ children }) => (
-            <blockquote className="border-l-2 border-red-500 pl-4 text-neutral-500 dark:text-neutral-400 italic my-3">
+            <blockquote className="border-l-2 border-chart-5 pl-4 text-muted-foreground italic my-4 leading-[var(--lh-body)]">
               {children}
             </blockquote>
           ),
-          strong: ({ children }) => <strong className="text-neutral-900 dark:text-neutral-50 font-semibold">{children}</strong>,
-          em: ({ children }) => <em className="text-neutral-900 dark:text-neutral-50 italic">{children}</em>,
-          hr: () => <hr className="border-neutral-200 dark:border-neutral-700 my-4" />,
+          strong: ({ children }) => (
+            <strong className="text-foreground font-semibold">{children}</strong>
+          ),
+          em: ({ children }) => <em className="text-foreground italic">{children}</em>,
+          hr: () => <hr className="border-border my-8" />,
           table: ({ children }) => (
-            <div className="overflow-x-auto mb-3">
-              <table className="min-w-full border border-neutral-200 dark:border-neutral-700 text-sm">{children}</table>
+            <div className="overflow-x-auto mb-4">
+              <table className="min-w-full border border-border text-caption-body">{children}</table>
             </div>
           ),
-          th: ({ children }) => <th className="border border-neutral-200 dark:border-neutral-700 px-3 py-2 bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-50">{children}</th>,
-          td: ({ children }) => <td className="border border-neutral-200 dark:border-neutral-700 px-3 py-2 text-neutral-900 dark:text-neutral-50">{children}</td>,
+          th: ({ children }) => (
+            <th className="border border-border px-3 py-2 bg-muted text-foreground font-semibold text-left">
+              {children}
+            </th>
+          ),
+          td: ({ children }) => (
+            <td className="border border-border px-3 py-2 text-foreground">{children}</td>
+          ),
         }}
       >
         {processedContent}

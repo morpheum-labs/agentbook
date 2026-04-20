@@ -133,11 +133,11 @@ export default function PostPage() {
     const href = apiUrl(att.download_path);
     const mine = agentId != null && att.author_id === agentId;
     return (
-      <div key={att.id} className="flex flex-wrap items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
-        <a href={href} className="underline hover:text-neutral-900 dark:hover:text-neutral-100" target="_blank" rel="noreferrer">
+      <div key={att.id} className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        <a href={href} className="underline hover:text-foreground" target="_blank" rel="noreferrer">
           {att.filename}
         </a>
-        <span className="text-xs text-neutral-500 dark:text-neutral-500">({att.content_type})</span>
+        <span className="text-xs text-muted-foreground">({att.content_type})</span>
         {mine && token && (
           <Button variant="ghost" size="sm" className="h-7 text-xs" type="button" onClick={() => void handleDeleteAttachment(att)}>
             Remove
@@ -153,14 +153,14 @@ export default function PostPage() {
   function CommentItem({ comment, depth = 0 }: { comment: Comment; depth?: number }) {
     const replies = getReplies(comment.id);
     return (
-      <div className={depth > 0 ? "ml-8 border-l border-neutral-200 dark:border-neutral-800 pl-4" : ""}>
+      <div className={depth > 0 ? "ml-8 border-l border-border pl-4" : ""}>
         <div className="py-4">
           <div className="flex items-center gap-2 mb-2">
             <Avatar className="h-6 w-6">
               <AvatarFallback className="text-xs">{comment.author_name[0]}</AvatarFallback>
             </Avatar>
             <span className="font-medium text-sm">@{comment.author_name}</span>
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">{formatDateTime(comment.created_at)}</span>
+            <span className="text-xs text-muted-foreground">{formatDateTime(comment.created_at)}</span>
           </div>
           <Markdown content={comment.content} className="text-sm" mentions={comment.mentions} />
           {(comment.attachments?.length ?? 0) > 0 && (
@@ -171,7 +171,7 @@ export default function PostPage() {
               <Button variant="ghost" size="sm" className="text-xs" onClick={() => setReplyTo(comment.id)}>
                 Reply
               </Button>
-              <label className="text-xs text-neutral-500 dark:text-neutral-400 cursor-pointer hover:text-neutral-800 dark:hover:text-neutral-200">
+              <label className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
                 <input
                   type="file"
                   className="hidden"
@@ -190,18 +190,18 @@ export default function PostPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-neutral-500 dark:text-neutral-400">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
   }
 
   if (!post) {
-    return <div className="min-h-screen flex items-center justify-center text-neutral-500 dark:text-neutral-400">Post not found</div>;
+    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Post not found</div>;
   }
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-neutral-200 dark:border-neutral-800 px-6 py-4">
+      <header className="border-b border-border px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link to={`/project/${post.project_id}`} className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50">
+          <Link to={`/project/${post.project_id}`} className="text-muted-foreground hover:text-foreground">
             ← Back to Project
           </Link>
         </div>
@@ -216,7 +216,7 @@ export default function PostPage() {
               <Badge variant={post.status === "open" ? "secondary" : "default"}>{post.status}</Badge>
             </div>
             <CardTitle className="text-2xl">{post.title}</CardTitle>
-            <div className="flex items-center gap-6 text-sm text-neutral-500 dark:text-neutral-400">
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Avatar className="h-5 w-5">
                   <AvatarFallback className="text-xs">{post.author_name[0]}</AvatarFallback>
@@ -231,14 +231,14 @@ export default function PostPage() {
 
             {(post.attachments?.length ?? 0) > 0 && (
               <div className="mt-4 space-y-1">
-                <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Attachments</div>
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Attachments</div>
                 {post.attachments!.map((a) => attachmentRow(a))}
               </div>
             )}
 
             {token && (
               <div className="mt-4">
-                <label className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300 cursor-pointer">
+                <label className="inline-flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
                   <input type="file" className="text-sm" onChange={(ev) => void handlePostAttachmentPick(ev)} />
                 </label>
               </div>
@@ -255,7 +255,7 @@ export default function PostPage() {
             )}
 
             {post.mentions.length > 0 && (
-              <div className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">Mentions: {post.mentions.map((m) => `@${m}`).join(", ")}</div>
+              <div className="mt-4 text-sm text-muted-foreground">Mentions: {post.mentions.map((m) => `@${m}`).join(", ")}</div>
             )}
 
             {token && (
@@ -286,7 +286,7 @@ export default function PostPage() {
             <Card className="mb-6">
               <CardContent className="pt-4">
                 {replyTo && (
-                  <div className="flex items-center justify-between mb-2 text-sm text-neutral-500 dark:text-neutral-400">
+                  <div className="flex items-center justify-between mb-2 text-sm text-muted-foreground">
                     <span>Replying to comment...</span>
                     <Button variant="ghost" size="sm" onClick={() => setReplyTo(null)}>
                       Cancel
@@ -307,7 +307,7 @@ export default function PostPage() {
           )}
 
           {rootComments.length === 0 ? (
-            <p className="text-neutral-500 dark:text-neutral-400 text-center py-8">No comments yet.</p>
+            <p className="text-muted-foreground text-center py-8">No comments yet.</p>
           ) : (
             <div className="divide-y divide-border">
               {rootComments.map((comment) => (

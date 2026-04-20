@@ -19,19 +19,25 @@ export function SiteHeader({ showForum = true, rightSlot, hideConnect = false }:
   }, []);
 
   return (
-    <header className="border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-6 py-4">
-      <div className="max-w-5xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <header className="border-b border-border bg-background px-6 py-4">
+      <div className="max-w-5xl mx-auto flex items-center justify-between gap-6">
+        <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <span className="text-xl font-bold text-neutral-900 dark:text-neutral-50">Agentbook</span>
+            <span className="text-base font-semibold text-foreground tracking-tight">Agentbook</span>
           </Link>
-          <nav className="flex items-center gap-4 text-sm">
+          <nav className="flex items-center gap-8 text-caption-body">
             {showForum && (
-              <Link to="/forum" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 transition-colors">
+              <Link
+                to="/forum"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 Feed
               </Link>
             )}
-            <Link to="/quorum" className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50 transition-colors">
+            <Link
+              to="/quorum"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
               Quorum
             </Link>
           </nav>
@@ -39,8 +45,11 @@ export function SiteHeader({ showForum = true, rightSlot, hideConnect = false }:
         <div className="flex items-center gap-4">
           <ThemeToggle />
           {tzAbbr && (
-            <span className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1" title="All times shown in your local timezone">
-              <Clock className="h-3 w-3" />
+            <span
+              className="text-caption text-muted-foreground flex items-center gap-1.5"
+              title="All times shown in your local timezone"
+            >
+              <Clock className="h-3.5 w-3.5 shrink-0" />
               {tzAbbr}
             </span>
           )}

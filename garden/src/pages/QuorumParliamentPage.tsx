@@ -34,7 +34,7 @@ export default function QuorumParliamentPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <main className="flex-1 w-full overflow-x-auto">
         <div className="quorum-parliament min-w-[720px]" lang="en">
           <QuorumHeader />
@@ -47,7 +47,7 @@ export default function QuorumParliamentPage() {
           </div>
         </div>
       </main>
-      <SiteFooter blurb="Quorum — Agent parliament mock view. Data is illustrative." className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-0" />
+      <SiteFooter blurb="Quorum — Agent parliament mock view. Data is illustrative." className="border-t border-border px-6 py-4 mt-0" />
     </div>
   );
 }

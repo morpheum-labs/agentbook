@@ -41,25 +41,25 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950">
+    <div className="min-h-screen bg-background">
       <SiteHeader
         rightSlot={
-          <Badge variant="outline" className="border-red-500/50 text-red-400">
+          <Badge variant="outline" className="border-chart-5/40 text-foreground">
             Admin Mode
           </Badge>
         }
       />
 
-      <div className="border-b border-neutral-200 dark:border-neutral-800 px-6 py-6">
+      <div className="border-b border-border px-6 py-6">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">Admin Dashboard</h1>
-              <p className="text-neutral-500 dark:text-neutral-400 mt-1">
+              <h1 className="text-lead font-medium text-foreground">Admin Dashboard</h1>
+              <p className="text-muted-foreground mt-1">
                 Human God Mode — Manage agent roles and project governance
               </p>
             </div>
-            <div className="text-right text-xs text-neutral-500 dark:text-neutral-400 space-y-1">
+            <div className="text-right text-xs text-muted-foreground space-y-1">
               {version && (
                 <>
                   <div>v{version.version}</div>
@@ -80,27 +80,27 @@ export default function AdminPage() {
       </div>
 
       <main className="max-w-5xl mx-auto px-6 py-8">
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50 mb-4">Projects</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Projects</h2>
 
         {loading ? (
-          <div className="text-neutral-500 dark:text-neutral-400">Loading...</div>
+          <div className="text-muted-foreground">Loading...</div>
         ) : projects.length === 0 ? (
-          <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
-            <CardContent className="py-8 text-center text-neutral-500 dark:text-neutral-400">No projects yet.</CardContent>
+          <Card className="bg-card border-border">
+            <CardContent className="py-8 text-center text-muted-foreground">No projects yet.</CardContent>
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {projects.map((project) => (
               <Link key={project.id} to={`/admin/projects/${project.id}`}>
-                <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-red-500/50 transition-colors cursor-pointer">
+                <Card className="bg-card border-border hover:border-ring/40 transition-colors cursor-pointer">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-neutral-900 dark:text-neutral-50">{project.name}</CardTitle>
-                    <CardDescription className="text-neutral-500 dark:text-neutral-400">
+                    <CardTitle className="text-foreground">{project.name}</CardTitle>
+                    <CardDescription className="text-muted-foreground">
                       {project.description || "No description"}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Created {formatDate(project.created_at)}</p>
+                    <p className="text-xs text-muted-foreground">Created {formatDate(project.created_at)}</p>
                   </CardContent>
                 </Card>
               </Link>

@@ -63,10 +63,10 @@ export default function AgentProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-neutral-950">
+      <div className="min-h-screen bg-background">
         <SiteHeader />
         <main className="max-w-4xl mx-auto px-6 py-8">
-          <p className="text-neutral-500 dark:text-neutral-400">Loading...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </main>
         <SiteFooter blurb="Agentbook — Built for agents, observable by humans" />
       </div>
@@ -75,10 +75,10 @@ export default function AgentProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-white dark:bg-neutral-950">
+      <div className="min-h-screen bg-background">
         <SiteHeader />
         <main className="max-w-4xl mx-auto px-6 py-8">
-          <p className="text-red-400">{error || "Profile not found"}</p>
+          <p className="text-destructive">{error || "Profile not found"}</p>
         </main>
         <SiteFooter blurb="Agentbook — Built for agents, observable by humans" />
       </div>
@@ -88,32 +88,35 @@ export default function AgentProfilePage() {
   const { agent, memberships, recent_posts, recent_comments } = profile;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
       <main className="max-w-4xl mx-auto px-6 py-8">
         <div className="mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">🤖</div>
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-2xl">🤖</div>
             <div>
-              <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">{agent.name}</h1>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 max-w-xl">
+              <h1 className="text-lead font-medium text-foreground">{agent.name}</h1>
+              <p className="text-caption-body text-muted-foreground mt-2 max-w-xl leading-[var(--lh-body)]">
                 This page is the <strong>Agentbook</strong> profile (projects and forum activity). It is not the{" "}
                 <strong>AgentFloor signal profile</strong> (topic accuracy and staked signal).{" "}
-                <Link to={`/agent/${encodeURIComponent(agentId)}`} className="text-blue-500 hover:underline">
+                <Link
+                  to={`/agent/${encodeURIComponent(agentId)}`}
+                  className="text-link underline underline-offset-4 hover:opacity-90"
+                >
                   Open AgentFloor signal view
                 </Link>{" "}
                 for the same agent id.
               </p>
               <div className="flex items-center gap-2 mt-1">
                 {agent.online ? (
-                  <Badge variant="default" className="bg-green-600">
+                  <Badge variant="secondary" className="border-border">
                     ● Online
                   </Badge>
                 ) : (
                   <Badge variant="secondary">○ Offline</Badge>
                 )}
                 {agent.last_seen && (
-                  <span className="text-sm text-neutral-500 dark:text-neutral-400">Last seen: {formatDateTime(agent.last_seen)}</span>
+                  <span className="text-sm text-muted-foreground">Last seen: {formatDateTime(agent.last_seen)}</span>
                 )}
               </div>
             </div>
@@ -121,23 +124,30 @@ export default function AgentProfilePage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+          <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-lg">Project Memberships</CardTitle>
             </CardHeader>
             <CardContent>
               {memberships.length === 0 ? (
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm">No project memberships</p>
+                <p className="text-muted-foreground text-sm">No project memberships</p>
               ) : (
                 <ul className="space-y-2">
                   {memberships.map((m) => (
                     <li key={m.project_id} className="flex items-center justify-between">
-                      <Link to={`/project/${m.project_id}`} className="text-blue-400 hover:underline">
+                      <Link
+                        to={`/project/${m.project_id}`}
+                        className="text-link underline underline-offset-4 hover:opacity-90"
+                      >
                         {m.project_name}
                       </Link>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">{m.role}</Badge>
-                        {m.is_primary_lead && <Badge className="bg-yellow-600">👑 Lead</Badge>}
+                        {m.is_primary_lead && (
+                          <Badge variant="outline" className="border-chart-5/50 text-foreground">
+                            👑 Lead
+                          </Badge>
+                        )}
                       </div>
                     </li>
                   ))}
@@ -146,21 +156,24 @@ export default function AgentProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+          <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="text-lg">Recent Posts</CardTitle>
             </CardHeader>
             <CardContent>
               {recent_posts.length === 0 ? (
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm">No posts yet</p>
+                <p className="text-muted-foreground text-sm">No posts yet</p>
               ) : (
                 <ul className="space-y-2">
                   {recent_posts.map((p) => (
                     <li key={p.id}>
-                      <Link to={`/forum/post/${p.id}`} className="text-blue-400 hover:underline text-sm">
+                      <Link
+                        to={`/forum/post/${p.id}`}
+                        className="text-link text-caption-body underline underline-offset-4 hover:opacity-90"
+                      >
                         {p.title}
                       </Link>
-                      <span className="text-neutral-500 dark:text-neutral-400 text-xs ml-2">{formatDate(p.created_at)}</span>
+                      <span className="text-muted-foreground text-xs ml-2">{formatDate(p.created_at)}</span>
                     </li>
                   ))}
                 </ul>
@@ -168,22 +181,25 @@ export default function AgentProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 md:col-span-2">
+          <Card className="bg-card border-border md:col-span-2">
             <CardHeader>
               <CardTitle className="text-lg">Recent Comments</CardTitle>
             </CardHeader>
             <CardContent>
               {recent_comments.length === 0 ? (
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm">No comments yet</p>
+                <p className="text-muted-foreground text-sm">No comments yet</p>
               ) : (
                 <ul className="space-y-3">
                   {recent_comments.map((c) => (
-                    <li key={c.id} className="border-b border-neutral-200 dark:border-neutral-800 pb-2">
-                      <Link to={`/forum/post/${c.post_id}`} className="text-blue-400 hover:underline text-sm">
+                    <li key={c.id} className="border-b border-border pb-2">
+                      <Link
+                        to={`/forum/post/${c.post_id}`}
+                        className="text-link text-caption-body underline underline-offset-4 hover:opacity-90"
+                      >
                         {c.post_title}
                       </Link>
-                      <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">{c.content_preview}</p>
-                      <span className="text-neutral-500 dark:text-neutral-400 text-xs">{formatDateTime(c.created_at)}</span>
+                      <p className="text-muted-foreground text-sm mt-1">{c.content_preview}</p>
+                      <span className="text-muted-foreground text-xs">{formatDateTime(c.created_at)}</span>
                     </li>
                   ))}
                 </ul>

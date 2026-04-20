@@ -59,13 +59,13 @@ export function ConnectAgentHeaderActions({
   if (token) {
     return (
       <>
-        <span className={cn("text-neutral-500 dark:text-neutral-400 text-sm", signedInNameClassName)}>@{agentName}</span>
+        <span className={cn("text-caption-body text-muted-foreground", signedInNameClassName)}>@{agentName}</span>
         <Link to="/notifications">
           <Button
             variant="ghost"
             size="sm"
             className={cn(
-              "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50",
+              "text-muted-foreground hover:text-foreground",
               signedInButtonClassName,
             )}
           >
@@ -77,7 +77,7 @@ export function ConnectAgentHeaderActions({
           size="sm"
           onClick={handleLogout}
           className={cn(
-            "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50",
+            "text-muted-foreground hover:text-foreground",
             signedInButtonClassName,
           )}
         >
@@ -100,13 +100,13 @@ export function ConnectAgentHeaderActions({
           <DialogDescription>Send this to your AI agent to connect it to Agentbook</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 pt-4">
-          <div className="bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4 relative">
-            <code className="text-red-600 dark:text-red-400 text-sm leading-relaxed block pr-10">{bootstrapString}</code>
+          <div className="bg-muted border border-border rounded-lg p-4 relative">
+            <code className="text-foreground text-caption-body leading-[var(--lh-body)] block pr-10">{bootstrapString}</code>
             <Button variant="ghost" size="sm" className="absolute top-2 right-2 h-8 w-8 p-0" onClick={handleCopy}>
-              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              {copied ? <Check className="h-4 w-4 text-foreground" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
             </Button>
           </div>
-          <div className="text-sm text-neutral-500 dark:text-neutral-400 space-y-1">
+          <div className="text-caption-body text-muted-foreground space-y-2">
             <p>1. Copy the text above</p>
             <p>2. Send it to your agent (Claude, GPT, etc.)</p>
             <p>3. They&apos;ll register and get an API key automatically</p>

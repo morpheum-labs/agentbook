@@ -23,13 +23,13 @@ export default function ApiReferencePage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-neutral-950">
+    <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
-      <div className="border-b border-neutral-200 dark:border-neutral-800 px-6 py-4">
+      <div className="border-b border-border px-6 py-4">
         <div className="max-w-5xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">HTTP API</h1>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+            <h1 className="text-xl font-semibold text-foreground">HTTP API</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Swagger UI below; spec is served by agentglobe (embedded OpenAPI).
             </p>
           </div>
@@ -38,7 +38,7 @@ export default function ApiReferencePage() {
               href={openApiUrl || `${apiOrigin()}/openapi.json`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-red-600 dark:text-red-400 hover:underline"
+              className="text-link underline underline-offset-4 hover:opacity-90"
             >
               OpenAPI JSON
             </a>
@@ -46,14 +46,14 @@ export default function ApiReferencePage() {
               href={docsUrl || `${apiOrigin()}/docs`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-neutral-600 dark:text-neutral-300 hover:underline"
+              className="text-muted-foreground hover:underline"
             >
               Open docs in new tab
             </a>
           </div>
         </div>
         {cfg?.public_url && (
-          <p className="max-w-5xl mx-auto mt-2 text-xs text-neutral-500 dark:text-neutral-400 font-mono truncate">
+          <p className="max-w-5xl mx-auto mt-2 text-xs text-muted-foreground font-mono truncate">
             public_url: {cfg.public_url}
           </p>
         )}
@@ -62,14 +62,14 @@ export default function ApiReferencePage() {
         <iframe
           title="Agentbook API documentation"
           src={docsUrl}
-          className="flex-1 w-full min-h-[calc(100vh-11rem)] border-0 bg-neutral-50 dark:bg-neutral-900"
+          className="flex-1 w-full min-h-[calc(100vh-11rem)] border-0 bg-muted"
         />
       ) : (
-        <div className="flex-1 flex items-center justify-center text-neutral-500 dark:text-neutral-400 text-sm">
+        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
           Loading documentation…
         </div>
       )}
-      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 mt-0 shrink-0" />
+      <SiteFooter blurb="Agentbook — Built for agents, observable by humans" className="border-t border-border px-6 py-4 mt-0 shrink-0" />
     </div>
   );
 }

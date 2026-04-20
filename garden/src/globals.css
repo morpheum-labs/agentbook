@@ -2,18 +2,96 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * design-md/superhuman + spec/preview(.html|-dark.html)
+ * Typography scale is shared across light/dark; only color roles swap in .dark.
+ */
 :root {
-  /* spec/preview.html + design-md/superhuman: 8px / 16px radii only */
-  --radius: 0.5rem;
+  --radius: 0.5rem; /* 8px — buttons, inputs, small controls */
+  --radius-card: 1rem; /* 16px — cards, dialogs, large containers */
+
+  /* Typography (px-based tracking from DESIGN.md; sizes in rem) */
+  --fw-body: 460;
+  --fw-display: 540;
+  --fw-ui-semi: 600;
+  --fw-ui-bold: 700;
+  --fw-caption-em: 500;
+
+  --fs-micro: 0.75rem; /* 12px */
+  --fs-caption: 0.875rem; /* 14px */
+  --fs-body: 1rem; /* 16px */
+  --fs-body-heading: 1.25rem; /* 20px */
+  --fs-card-heading: 1.375rem; /* 22px */
+  --fs-feature: 1.75rem; /* 28px */
+  --fs-section: 3rem; /* 48px */
+  --fs-hero: 4rem; /* 64px */
+
+  --lh-body: 1.5;
+  --lh-button: 1;
+  --lh-caption: 1.2;
+  --lh-display: 0.96;
+  --lh-feature: 1.14;
+  --lh-card-heading: 0.76;
+  --lh-body-heading: 1.2;
+  --lh-body-heading-relaxed: 1.25;
+
+  --ls-section: -0.0825rem; /* -1.32px @ 48px equivalent */
+  --ls-feature: -0.039375rem; /* -0.63px @ 28px */
+  --ls-card-heading: -0.0196875rem; /* -0.315px @ 22px */
+  --ls-caption: -0.0196875rem;
+
+  /* Layout (8px base; section rhythm from DESIGN.md §5) */
+  --page-gutter: 2.5rem; /* 40px */
+  --section-y: 5rem; /* 80px */
+  --container-max: 75rem; /* ~1200px */
 }
 
-/* Tailwind v4 theme - defines utility classes */
+@media (max-width: 767px) {
+  :root {
+    --page-gutter: 1.5rem;
+    --section-y: 3rem;
+    --fs-hero: 2.25rem; /* ~36px mobile */
+    --fs-section: 2rem; /* tighter sections on small screens */
+  }
+}
+
+/* Tailwind v4 theme — color utilities + design structure */
 @theme inline {
-  /* Super Sans VF fallbacks (design-md/superhuman) — same stack as spec/preview.html */
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
     "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
 
-  /* Light: spec/preview.html */
+  /* Superhuman weight axis: 460 default body */
+  --font-weight-normal: 460;
+  --font-weight-medium: 540;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Radii: only 8px + 16px */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1rem;
+
+  /* Spacing scale (DESIGN.md): 2–56px */
+  --spacing-0\.5: 0.125rem;
+  --spacing-1: 0.25rem;
+  --spacing-1\.5: 0.375rem;
+  --spacing-2: 0.5rem;
+  --spacing-2\.5: 0.625rem;
+  --spacing-3: 0.75rem;
+  --spacing-3\.5: 0.875rem;
+  --spacing-4: 1rem;
+  --spacing-4\.5: 1.125rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-7: 1.75rem;
+  --spacing-8: 2rem;
+  --spacing-9: 2.25rem;
+  --spacing-10: 2.5rem;
+  --spacing-11: 2.75rem;
+  --spacing-12: 3rem;
+  --spacing-14: 3.5rem;
+
   --color-background: #ffffff;
   --color-foreground: #292827;
   --color-card: #ffffff;
@@ -33,6 +111,8 @@
   --color-border: #dcd7d3;
   --color-input: #dcd7d3;
   --color-ring: #714cb6;
+  /* Amethyst — in-content links (DESIGN.md §2) */
+  --color-link: #714cb6;
   --color-chart-1: #714cb6;
   --color-chart-2: #5b8a6a;
   --color-chart-3: #5a6b8f;
@@ -47,11 +127,56 @@
   --color-sidebar-border: #dcd7d3;
   --color-sidebar-ring: #714cb6;
 
+  /* Named type steps → utilities: text-display / text-section / … */
+  --text-display: var(--fs-hero);
+  --text-display--line-height: var(--lh-display);
+  --text-display--font-weight: var(--fw-display);
+  --text-display--letter-spacing: 0;
+
+  --text-section: var(--fs-section);
+  --text-section--line-height: var(--lh-display);
+  --text-section--font-weight: var(--fw-body);
+  --text-section--letter-spacing: var(--ls-section);
+
+  --text-feature: var(--fs-feature);
+  --text-feature--line-height: var(--lh-feature);
+  --text-feature--font-weight: var(--fw-display);
+  --text-feature--letter-spacing: var(--ls-feature);
+
+  --text-card-title: var(--fs-card-heading);
+  --text-card-title--line-height: var(--lh-card-heading);
+  --text-card-title--font-weight: var(--fw-body);
+  --text-card-title--letter-spacing: var(--ls-card-heading);
+
+  --text-lead: var(--fs-body-heading);
+  --text-lead--line-height: var(--lh-body-heading-relaxed);
+  --text-lead--font-weight: var(--fw-body);
+  --text-lead--letter-spacing: 0;
+
+  --text-body: var(--fs-body);
+  --text-body--line-height: var(--lh-body);
+  --text-body--font-weight: var(--fw-body);
+  --text-body--letter-spacing: 0;
+
+  --text-caption: var(--fs-caption);
+  --text-caption--line-height: var(--lh-caption);
+  --text-caption--font-weight: var(--fw-caption-em);
+  --text-caption--letter-spacing: var(--ls-caption);
+
+  --text-caption-body: var(--fs-caption);
+  --text-caption-body--line-height: var(--lh-body);
+  --text-caption-body--font-weight: var(--fw-body);
+  --text-caption-body--letter-spacing: 0;
+
+  --text-micro: var(--fs-micro);
+  --text-micro--line-height: var(--lh-body);
+  --text-micro--font-weight: var(--fw-ui-bold);
+  --text-micro--letter-spacing: 0;
+
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 }
 
-/* Dark: spec/preview-dark.html surfaces */
 .dark {
   --color-background: #121111;
   --color-foreground: #ebeae9;
@@ -72,6 +197,7 @@
   --color-border: #3a3938;
   --color-input: #3a3938;
   --color-ring: #cbb7fb;
+  --color-link: #cbb7fb;
   --color-chart-1: #cbb7fb;
   --color-chart-2: #6bc48a;
   --color-chart-3: #8aa4e8;
@@ -110,37 +236,24 @@
 }
 
 body {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
-    "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-  font-size: 16px;
-  font-weight: 460;
-  line-height: 1.5;
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-body);
+  line-height: var(--lh-body);
+  letter-spacing: 0;
+  background: var(--color-background);
+  color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom tab colors */
-.tab-all[data-state="active"] {
-  background: rgb(63 63 70 / 0.2) !important;
-  color: rgb(63 63 70 / 1) !important;
+@utility container-app {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
 }
-.dark .tab-all[data-state="active"] {
-  background: rgb(63 63 70 / 1) !important;
-  color: white !important;
-}
-.tab-open[data-state="active"] {
-  background: rgb(16 185 129 / 0.2) !important;
-  color: rgb(16 185 129 / 1) !important;
-}
-.tab-resolved[data-state="active"] {
-  background: rgb(59 130 246 / 0.2) !important;
-  color: rgb(59 130 246 / 1) !important;
-}
-.tab-discussion[data-state="active"] {
-  background: rgb(168 85 247 / 0.2) !important;
-  color: rgb(168 85 247 / 1) !important;
-}
-.tab-review[data-state="active"] {
-  background: rgb(249 115 22 / 0.2) !important;
-  color: rgb(249 115 22 / 1) !important;
+
+@utility section-y {
+  padding-block: var(--section-y);
 }

@@ -106,7 +106,7 @@ export default function ProjectPage() {
     return (
       <div
         className={`min-h-screen flex items-center justify-center ${
-          isObserver ? "bg-white dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400" : "text-neutral-500 dark:text-neutral-400"
+          isObserver ? "bg-background text-muted-foreground" : "text-muted-foreground"
         }`}
       >
         Loading...
@@ -118,7 +118,7 @@ export default function ProjectPage() {
     return (
       <div
         className={`min-h-screen flex items-center justify-center ${
-          isObserver ? "bg-white dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400" : "text-neutral-500 dark:text-neutral-400"
+          isObserver ? "bg-background text-muted-foreground" : "text-muted-foreground"
         }`}
       >
         Project not found
@@ -127,15 +127,15 @@ export default function ProjectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <div className="border-b border-neutral-200 dark:border-neutral-800 px-6 py-3">
+      <div className="border-b border-border px-6 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-50">{project.name}</h1>
+            <h1 className="text-xl font-bold text-foreground">{project.name}</h1>
             {isObserver && (
-              <Badge variant="outline" className="border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400">
+              <Badge variant="outline" className="border-border text-muted-foreground">
                 Observer Mode
               </Badge>
             )}
@@ -187,7 +187,7 @@ export default function ProjectPage() {
                       />
                       <div className="flex gap-4">
                         <select
-                          className="flex h-9 w-full rounded-md border border-neutral-200 dark:border-neutral-700 bg-transparent px-3 py-1 text-sm"
+                          className="flex h-9 w-full rounded-md border border-border bg-transparent px-3 py-1 text-sm"
                           value={newPost.type}
                           onChange={(e) => setNewPost({ ...newPost, type: e.target.value })}
                         >
@@ -217,20 +217,20 @@ export default function ProjectPage() {
       <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid gap-8 lg:grid-cols-4">
           <div className="lg:col-span-1 space-y-6">
-            <Card className={isObserver ? "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800" : ""}>
+            <Card className={isObserver ? "bg-card border-border" : ""}>
               <CardHeader>
-                <CardTitle className={`text-sm ${isObserver ? "text-neutral-900 dark:text-neutral-50" : ""}`}>About</CardTitle>
+                <CardTitle className={`text-sm ${isObserver ? "text-foreground" : ""}`}>About</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className={`text-sm ${isObserver ? "text-neutral-500 dark:text-neutral-400" : "text-neutral-500 dark:text-neutral-400"}`}>
+                <p className={`text-sm ${isObserver ? "text-muted-foreground" : "text-muted-foreground"}`}>
                   {project.description || "No description"}
                 </p>
               </CardContent>
             </Card>
 
-            <Card className={isObserver ? "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800" : ""}>
+            <Card className={isObserver ? "bg-card border-border" : ""}>
               <CardHeader>
-                <CardTitle className={`text-sm ${isObserver ? "text-neutral-900 dark:text-neutral-50" : ""}`}>
+                <CardTitle className={`text-sm ${isObserver ? "text-foreground" : ""}`}>
                   Members ({members.length})
                 </CardTitle>
               </CardHeader>
@@ -238,11 +238,11 @@ export default function ProjectPage() {
                 {members.map((m) => (
                   <div key={m.agent_id} className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarFallback className={`text-xs ${isObserver ? "bg-neutral-100 dark:bg-neutral-800" : ""}`}>
+                      <AvatarFallback className={`text-xs ${isObserver ? "bg-muted" : ""}`}>
                         {m.agent_name[0]}
                       </AvatarFallback>
                     </Avatar>
-                    <span className={`text-sm ${isObserver ? "text-neutral-900 dark:text-neutral-50" : ""}`}>{m.agent_name}</span>
+                    <span className={`text-sm ${isObserver ? "text-foreground" : ""}`}>{m.agent_name}</span>
                     <Badge variant="secondary" className="text-xs">
                       {m.role}
                     </Badge>
@@ -252,13 +252,13 @@ export default function ProjectPage() {
             </Card>
 
             {isObserver && (
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 p-4">
+              <div className="text-xs text-muted-foreground p-4">
                 <p>
                   👁️ <strong>Observer Mode</strong>
                 </p>
                 <p className="mt-2">You are viewing this project in read-only mode.</p>
                 <p className="mt-4">
-                  <Link to="/dashboard" className="text-red-400 hover:underline">
+                  <Link to="/dashboard" className="text-link underline underline-offset-4 hover:opacity-90">
                     → Switch to Agent Dashboard
                   </Link>
                 </p>
@@ -269,7 +269,7 @@ export default function ProjectPage() {
           <div className="lg:col-span-3">
             <Tabs value={filter} onValueChange={handleFilterChange}>
               <div className="flex items-center gap-4 flex-wrap">
-                <TabsList className="bg-white dark:!bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-1.5 gap-2">
+                <TabsList className="bg-card border border-border p-1.5 gap-2">
                   <TabsTrigger value="all" className="tab-all">
                     All
                   </TabsTrigger>
@@ -288,7 +288,7 @@ export default function ProjectPage() {
                 </TabsList>
                 {tagFilter && (
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs ${isObserver ? "text-neutral-500 dark:text-neutral-400" : "text-neutral-500 dark:text-neutral-400"}`}>
+                    <span className={`text-xs ${isObserver ? "text-muted-foreground" : "text-muted-foreground"}`}>
                       Tag:
                     </span>
                     <Badge className={`text-xs py-0.5 px-2 ${getTagClassName(tagFilter)}`}>{tagFilter}</Badge>
@@ -297,8 +297,8 @@ export default function ProjectPage() {
                       onClick={() => setTagFilter(null)}
                       className={`text-xs ${
                         isObserver
-                          ? "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50"
-                          : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:text-neutral-50"
+                          ? "text-muted-foreground hover:text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       ✕
@@ -308,10 +308,10 @@ export default function ProjectPage() {
               </div>
               <TabsContent value={filter} className="mt-6">
                 {filteredPosts.length === 0 ? (
-                  <Card className={isObserver ? "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800" : ""}>
+                  <Card className={isObserver ? "bg-card border-border" : ""}>
                     <CardContent
                       className={`py-8 text-center ${
-                        isObserver ? "text-neutral-500 dark:text-neutral-400" : "text-neutral-500 dark:text-neutral-400"
+                        isObserver ? "text-muted-foreground" : "text-muted-foreground"
                       }`}
                     >
                       No posts yet.
@@ -323,7 +323,7 @@ export default function ProjectPage() {
                       <Card
                         className={`transition-colors cursor-pointer mb-4 ${
                           isObserver
-                            ? "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-neutral-200 dark:border-neutral-700"
+                            ? "bg-card border-border hover:border-border"
                             : "hover:border-primary/50"
                         }`}
                       >
@@ -332,33 +332,40 @@ export default function ProjectPage() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
                                 {post.pinned && (
-                                  <Badge className={isObserver ? "bg-red-500/20 text-red-400 border-0 text-xs" : ""}>Pinned</Badge>
+                                  <Badge
+                                    variant="secondary"
+                                    className={isObserver ? "border-0 text-xs" : ""}
+                                  >
+                                    Pinned
+                                  </Badge>
                                 )}
-                                <Badge variant="outline" className={isObserver ? "border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs" : ""}>
+                                <Badge variant="outline" className={isObserver ? "border-border text-muted-foreground text-xs" : ""}>
                                   {post.type}
                                 </Badge>
                                 <Badge variant={post.status === "open" ? "secondary" : "default"} className="text-xs">
                                   {post.status}
                                 </Badge>
                               </div>
-                              <h3 className={`font-semibold truncate ${isObserver ? "text-neutral-900 dark:text-neutral-50" : ""}`}>{post.title}</h3>
+                              <h3 className={`font-semibold truncate ${isObserver ? "text-foreground" : ""}`}>{post.title}</h3>
                               <p
                                 className={`text-sm mt-1 line-clamp-2 ${
-                                  isObserver ? "text-neutral-500 dark:text-neutral-400" : "text-neutral-500 dark:text-neutral-400"
+                                  isObserver ? "text-muted-foreground" : "text-muted-foreground"
                                 }`}
                               >
                                 {getPreview(post.content, 180)}
                               </p>
                               <div
                                 className={`flex items-center gap-3 mt-3 text-xs ${
-                                  isObserver ? "text-neutral-500 dark:text-neutral-400" : "text-neutral-500 dark:text-neutral-400"
+                                  isObserver ? "text-muted-foreground" : "text-muted-foreground"
                                 }`}
                               >
-                                <span className={isObserver ? "text-red-400" : ""}>@{post.author_name}</span>
+                                <span className={isObserver ? "font-medium text-foreground" : ""}>
+                                  @{post.author_name}
+                                </span>
                                 <span>•</span>
                                 <span>{formatDateTime(post.created_at)}</span>
                                 <span>•</span>
-                                <span className={isObserver ? "text-neutral-500 dark:text-neutral-400" : ""}>💬 {post.comment_count}</span>
+                                <span className={isObserver ? "text-muted-foreground" : ""}>💬 {post.comment_count}</span>
                                 {post.tags.length > 0 && (
                                   <>
                                     <span>•</span>
