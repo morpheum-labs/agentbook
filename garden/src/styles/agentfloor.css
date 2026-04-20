@@ -40,8 +40,8 @@
   --red:var(--af-risk);
   --redbg:var(--af-risk-bg);
   --redborder:var(--af-risk-border);
-  /* Modal scrim — DESIGN.md §1 Charcoal Ink */
-  --af-connect-backdrop:color-mix(in srgb,var(--charcoal-ink) 44%,transparent);
+  /* Connect modal scrim — lavender veil (theme token) */
+  --af-connect-backdrop:color-mix(in srgb,var(--lavender-glow) 38%,transparent);
   --border:var(--parchment-border);
   --border2:color-mix(in srgb,var(--parchment-border) 65%,var(--charcoal-ink));
   --font:system-ui,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",sans-serif;
@@ -82,33 +82,64 @@
 .nv.a{color:var(--fg);border-bottom-color:var(--fg);}
 .mast-r{display:flex;align-items:center;gap:8px;margin-left:14px;border-left:1px solid var(--border);padding-left:14px;}
 .btn-free{font-family:var(--mono);font-size:9px;color:var(--ink3);padding:5px 10px;border:1px solid var(--border);border-radius:2px;cursor:pointer;background:transparent;}
+/* Mast “Connect” — neutral filled control aligned with connect-modal CTAs */
+.agentfloor .af-connect-trigger{
+  font-family:var(--mono);
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.06em;
+  color:var(--fg);
+  padding:6px 14px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  cursor:pointer;
+  background:var(--bg3);
+  transition:background .12s,border-color .12s,color .12s;
+}
+.agentfloor .af-connect-trigger:hover{background:var(--bg4);border-color:var(--border2);color:var(--fg);}
+.agentfloor .af-connect-trigger:focus-visible{outline:2px solid var(--af-tone-a);outline-offset:2px;}
 .af-theme-toggle{display:inline-flex;align-items:center;justify-content:center;padding:5px 8px;min-width:30px;}
 .af-theme-toggle-icon{width:14px;height:14px;stroke-width:2px;}
 .btn-paid{font-family:var(--mono);font-size:9px;font-weight:700;color:var(--on-fill);padding:5px 14px;background:var(--fill);border:none;border-radius:2px;cursor:pointer;letter-spacing:.06em;}
 .btn-paid:hover{background:var(--fill-hover);}
 
 /* ── CONNECT MODAL (DESIGN.md §4 typography, §5 spacing, §6 radii, §7 elevation; §1–§2 surfaces) ── */
-.agentfloor .af-connect-backdrop{position:fixed;inset:0;z-index:50;background:var(--af-connect-backdrop);}
+.agentfloor .af-connect-backdrop{
+  position:fixed;inset:0;z-index:50;
+  background:var(--af-connect-backdrop);
+  backdrop-filter:saturate(1.05);
+}
 .agentfloor .af-connect-card{
   position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
   z-index:51;
-  width:min(24rem,calc(100vw - var(--page-gutter) * 2));
+  width:min(32rem,min(48vw,calc(100vw - var(--page-gutter) * 2)));
   max-height:min(90dvh,100%);
   overflow:auto;
   box-sizing:border-box;
-  border-radius:var(--radius-card);
+  border-radius:4px;
   border:1px solid var(--border);
   background:var(--surface);
   color:var(--fg);
-  box-shadow:0 4px 24px color-mix(in srgb,var(--fg) 7%,transparent);
+  box-shadow:0 12px 48px color-mix(in srgb,var(--charcoal-ink) 12%,transparent),0 2px 8px color-mix(in srgb,var(--charcoal-ink) 6%,transparent);
   font-family:var(--font);
+  display:flex;flex-direction:column;
 }
 .agentfloor .af-connect-head{
   display:flex;align-items:center;justify-content:space-between;
   gap:var(--spacing-4);
-  padding:var(--spacing-6) var(--spacing-6) var(--spacing-4);
-  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+  padding:var(--spacing-6) var(--spacing-6) var(--spacing-5);
+  border-bottom:none;
 }
+.agentfloor .af-connect-brand{
+  font-family:var(--serif);
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:-.02em;
+  color:var(--fg);
+  line-height:1;
+}
+.agentfloor .af-connect-brand em{font-style:normal;color:var(--af-tone-b);}
 .agentfloor .af-connect-head-main{
   display:flex;align-items:center;gap:var(--spacing-2);
   min-width:0;flex:1;
@@ -123,15 +154,6 @@
 .agentfloor .af-connect-back:hover{color:var(--fg);background:var(--bg2);}
 .agentfloor .af-connect-back:focus-visible{outline:2px solid var(--af-tone-a);outline-offset:2px;}
 .agentfloor .af-connect-back-icon{width:var(--spacing-5);height:var(--spacing-5);}
-.agentfloor .af-connect-title{
-  font-family:var(--serif);
-  font-size:var(--fs-card-heading);
-  line-height:var(--lh-card-heading);
-  letter-spacing:var(--ls-card-heading);
-  font-weight:var(--fw-body);
-  color:var(--fg);
-  margin:0;
-}
 .agentfloor .af-connect-close{
   display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
   width:var(--spacing-10);height:var(--spacing-10);
@@ -143,8 +165,16 @@
 .agentfloor .af-connect-close:focus-visible{outline:2px solid var(--af-tone-a);outline-offset:2px;}
 .agentfloor .af-connect-close-icon{width:var(--spacing-5);height:var(--spacing-5);}
 .agentfloor .af-connect-body{
-  padding:var(--spacing-6);
+  padding:0 var(--spacing-6) var(--spacing-8);
   display:flex;flex-direction:column;gap:var(--spacing-5);
+  flex:1;min-height:0;
+}
+.agentfloor .af-connect-title{
+  text-align:center;
+  font-weight:700;
+  font-size:clamp(1.125rem,2.8vw,1.35rem);
+  line-height:1.25;
+  padding-top:var(--spacing-2);
 }
 .agentfloor .af-connect-support{
   font-size:var(--fs-caption);
@@ -153,6 +183,8 @@
   color:var(--ink2);
   letter-spacing:0;
   margin:0;
+  text-align:center;
+  max-width:28em;margin-left:auto;margin-right:auto;
 }
 .agentfloor .af-connect-reinforce{
   font-size:var(--fs-caption);
@@ -161,6 +193,7 @@
   color:var(--ink3);
   letter-spacing:0;
   margin:calc(var(--spacing-2) * -1) 0 0;
+  text-align:center;
 }
 .agentfloor .af-connect-docs{
   align-self:center;
@@ -178,7 +211,7 @@
 .agentfloor .af-connect-actions{display:flex;flex-direction:column;gap:var(--spacing-3);}
 .agentfloor .af-connect-btn{
   width:100%;
-  border-radius:var(--radius);
+  border-radius:6px;
   padding:var(--spacing-3) var(--spacing-5);
   font-family:var(--mono);
   font-size:var(--fs-body);
@@ -194,20 +227,32 @@
 .agentfloor .af-connect-btn--fill:hover{background:var(--fill-hover);border-color:var(--fill-hover);}
 .agentfloor .af-connect-btn--line{background:transparent;color:var(--ink2);border-color:var(--border);}
 .agentfloor .af-connect-btn--line:hover{color:var(--fg);border-color:var(--border2);}
+.agentfloor .af-connect-card .af-connect-btn--fill{
+  background:var(--bg3);
+  color:var(--fg);
+  border-color:var(--border);
+}
+.agentfloor .af-connect-card .af-connect-btn--fill:hover{
+  background:var(--bg4);
+  border-color:var(--border2);
+}
 
-.agentfloor .af-connect-tabs-root{display:flex;flex-direction:column;min-height:0;}
+.agentfloor .af-connect-tabs-root{display:flex;flex-direction:column;min-height:0;flex:1;}
 .agentfloor .af-connect-tabs-bar{
-  padding:0 var(--spacing-6);
-  border-bottom:1px solid var(--border);
+  padding:0;
+  margin-top:var(--spacing-1);
+  border-top:1px solid var(--border);
+  padding-top:var(--spacing-5);
 }
 .agentfloor .af-connect-tabs-list{
-  display:flex;gap:0;
+  display:flex;gap:var(--spacing-2);
+  justify-content:center;
   width:100%;
   margin:0;padding:0;
   list-style:none;
 }
 .agentfloor .af-connect-tab{
-  flex:1;
+  flex:0 1 11rem;
   margin:0;padding:var(--spacing-3) var(--spacing-4);
   font-family:var(--mono);
   font-size:var(--fs-caption);
@@ -216,16 +261,17 @@
   text-transform:uppercase;
   color:var(--ink3);
   background:transparent;
-  border:none;border-bottom:2px solid transparent;
-  margin-bottom:-1px;
+  border:1px solid transparent;
+  border-radius:6px;
   cursor:pointer;
   transition:color .12s,border-color .12s,background .12s;
 }
-.agentfloor .af-connect-tab:hover{color:var(--ink2);background:color-mix(in srgb,var(--fg) 4%,transparent);}
-.agentfloor .af-connect-tab:focus-visible{outline:2px solid var(--af-tone-a);outline-offset:-2px;}
+.agentfloor .af-connect-tab:hover{color:var(--ink2);background:var(--bg2);border-color:var(--border);}
+.agentfloor .af-connect-tab:focus-visible{outline:2px solid var(--af-tone-a);outline-offset:2px;}
 .agentfloor .af-connect-tab[data-state="active"]{
   color:var(--fg);
-  border-bottom-color:var(--fill);
+  background:var(--bg3);
+  border-color:var(--border);
 }
 .agentfloor .af-connect-tab-panel{padding-top:0;}
 .agentfloor .af-connect-tab-panel:focus-visible{outline:none;}
@@ -233,11 +279,12 @@
   display:flex;flex-direction:column;gap:var(--spacing-3);
 }
 .agentfloor .af-connect-provider-btn{
-  display:flex;align-items:center;justify-content:flex-start;gap:var(--spacing-4);
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
   width:100%;
   box-sizing:border-box;
-  padding:var(--spacing-3) var(--spacing-4);
-  border-radius:var(--radius);
+  padding:var(--spacing-3) calc(var(--spacing-4) + 28px) var(--spacing-3) calc(var(--spacing-4) + 28px);
+  border-radius:6px;
   border:1px solid var(--border);
   background:var(--surface);
   color:var(--fg);
@@ -247,9 +294,10 @@
   font-weight:var(--fw-ui-bold);
   letter-spacing:0;
   cursor:pointer;
-  text-align:left;
+  text-align:center;
   transition:background .12s,border-color .12s,color .12s,opacity .12s;
 }
+.agentfloor .af-connect-provider-btn span{flex:1;text-align:center;}
 .agentfloor .af-connect-provider-btn:hover:not(:disabled){
   border-color:var(--border2);
   background:var(--bg2);
@@ -264,6 +312,10 @@
   cursor:not-allowed;
 }
 .agentfloor .af-connect-provider-icon{
+  position:absolute;
+  left:var(--spacing-4);
+  top:50%;
+  transform:translateY(-50%);
   flex-shrink:0;
   width:20px;height:20px;
   color:var(--fg);
@@ -1001,7 +1053,7 @@
   --red:var(--af-risk);
   --redbg:var(--af-risk-bg);
   --redborder:var(--af-risk-border);
-  --af-connect-backdrop:color-mix(in srgb,var(--dark-bg) 82%,transparent);
+  --af-connect-backdrop:color-mix(in srgb,var(--lavender-glow) 26%,var(--dark-bg) 74%);
 }
 .agentfloor--dark .ti-l{color:var(--dark-text-tertiary);}
 .agentfloor--dark .ti-v{color:var(--dark-text-secondary);}

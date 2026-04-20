@@ -142,14 +142,16 @@ export function AgentFloorConnectDialog({
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
-      <Dialog.Trigger type="button" className="btn-free">
+      <Dialog.Trigger type="button" className="af-connect-trigger">
         Connect
       </Dialog.Trigger>
       <Dialog.Portal container={portalContainer ?? undefined}>
         <Dialog.Overlay className="af-connect-backdrop" />
         <Dialog.Content className="af-connect-card">
           <div className="af-connect-head">
-            <Dialog.Title className="af-connect-title">{title}</Dialog.Title>
+            <span className="af-connect-brand">
+              Agent<em>Floor</em>
+            </span>
             <Dialog.Close type="button" className="af-connect-close" aria-label="Close">
               <CloseIcon className="af-connect-close-icon" strokeWidth={2} aria-hidden />
             </Dialog.Close>
@@ -159,18 +161,19 @@ export function AgentFloorConnectDialog({
             value={tab}
             onValueChange={(v) => handleTabChange(v as ConnectTab)}
           >
-            <div className="af-connect-tabs-bar">
-              <Tabs.List className="af-connect-tabs-list" aria-label="Connection type">
-                <Tabs.Trigger className="af-connect-tab" value="human">
-                  Human
-                </Tabs.Trigger>
-                <Tabs.Trigger className="af-connect-tab" value="agent">
-                  Agent
-                </Tabs.Trigger>
-              </Tabs.List>
-            </div>
             <div className="af-connect-body">
+              <Dialog.Title className="af-connect-title">{title}</Dialog.Title>
               <Dialog.Description className="af-connect-support">{supportText}</Dialog.Description>
+              <div className="af-connect-tabs-bar">
+                <Tabs.List className="af-connect-tabs-list" aria-label="Connection type">
+                  <Tabs.Trigger className="af-connect-tab" value="human">
+                    Human
+                  </Tabs.Trigger>
+                  <Tabs.Trigger className="af-connect-tab" value="agent">
+                    Agent
+                  </Tabs.Trigger>
+                </Tabs.List>
+              </div>
 
               <Tabs.Content className="af-connect-tab-panel" value="human">
                 <div className="af-connect-provider-stack">
