@@ -1,6 +1,8 @@
 package db
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -33,6 +35,27 @@ func (t *DebateThread) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+func (t *DebateThread) BeforeSave(tx *gorm.DB) error {
+	_ = tx
+	t.Status = normalizeDebateEnum(t.Status, []string{"open", "locked", "archived"}, "open")
+	t.Title = SanitizeDebatePlain(t.Title, DebateMaxTitleRunes)
+	if t.Title == "" {
+		return fmt.Errorf("debate: thread title empty after sanitization")
+	}
+	if t.Body != nil {
+		v := SanitizeDebatePlain(*t.Body, DebateMaxThreadBodyRunes)
+		if v == "" {
+			t.Body = nil
+		} else {
+			t.Body = &v
+		}
+	}
+	if t.MetadataJSON == "" {
+		t.MetadataJSON = "{}"
+	}
+	return nil
+}
+
 // DebatePost is a thread message or nested reply (parent_id). Stance is informational:
 // neutral | exploratory | speculative | long | short. visibility: visible | hidden | removed.
 type DebatePost struct {
@@ -54,6 +77,25 @@ type DebatePost struct {
 
 func (DebatePost) TableName() string { return "debate_posts" }
 
+func (p *DebatePost) BeforeSave(tx *gorm.DB) error {
+	_ = tx
+	p.Stance = normalizeDebateEnum(p.Stance, []string{"neutral", "exploratory", "speculative", "long", "short"}, "neutral")
+	p.Visibility = normalizeDebateEnum(p.Visibility, []string{"visible", "hidden", "removed"}, "visible")
+	p.Content = SanitizeDebatePlain(p.Content, DebateMaxPostRunes)
+	if strings.TrimSpace(p.Content) == "" {
+		return fmt.Errorf("debate: post content empty after sanitization")
+	}
+	if p.ModerationNotes != nil {
+		v := SanitizeDebatePlain(*p.ModerationNotes, DebateMaxModerationNotesRunes)
+		if v == "" {
+			p.ModerationNotes = nil
+		} else {
+			p.ModerationNotes = &v
+		}
+	}
+	return nil
+}
+
 // DebatePostReport is the gatekeeper queue: agents flag spam, ads, misinformation, harassment, etc.
 type DebatePostReport struct {
 	ID              string     `gorm:"primaryKey;type:text"`
@@ -70,6 +112,32 @@ type DebatePostReport struct {
 }
 
 func (DebatePostReport) TableName() string { return "debate_post_reports" }
+
+func (r *DebatePostReport) BeforeSave(tx *gorm.DB) error {
+	_ = tx
+	r.ReasonCode = SanitizeDebateToken(r.ReasonCode, DebateMaxReasonCodeRunes)
+	if r.ReasonCode == "" {
+		r.ReasonCode = "other"
+	}
+	r.Status = normalizeDebateEnum(r.Status, []string{"open", "dismissed", "actioned"}, "open")
+	if r.Detail != nil {
+		v := SanitizeDebatePlain(*r.Detail, DebateMaxReportDetailRunes)
+		if v == "" {
+			r.Detail = nil
+		} else {
+			r.Detail = &v
+		}
+	}
+	if r.ReviewedBy != nil {
+		v := SanitizeDebatePlain(*r.ReviewedBy, DebateMaxImposedByRunes)
+		if v == "" {
+			r.ReviewedBy = nil
+		} else {
+			r.ReviewedBy = &v
+		}
+	}
+	return nil
+}
 
 // AgentSanction records progressive discipline. Typical action values:
 // warning, strike, debate_mute_24h, debate_ban_7d, debate_ban_perm, floor_readonly, rate_limit_strict.
@@ -102,6 +170,35 @@ func (s *AgentSanction) BeforeCreate(tx *gorm.DB) error {
 	}
 	if s.StartsAt.IsZero() {
 		s.StartsAt = time.Now().UTC()
+	}
+	return nil
+}
+
+func (s *AgentSanction) BeforeSave(tx *gorm.DB) error {
+	_ = tx
+	s.Scope = normalizeDebateEnum(s.Scope, []string{"debates", "floor", "global"}, "debates")
+	s.Action = SanitizeDebateToken(s.Action, 80)
+	if s.Action == "" {
+		s.Action = "warning"
+	}
+	s.ReasonCategory = SanitizeDebateToken(s.ReasonCategory, 80)
+	if s.ReasonCategory == "" {
+		s.ReasonCategory = "other"
+	}
+	if s.ReasonPublic != nil {
+		v := SanitizeDebatePlain(*s.ReasonPublic, DebateMaxReasonPublicRunes)
+		if v == "" {
+			s.ReasonPublic = nil
+		} else {
+			s.ReasonPublic = &v
+		}
+	}
+	s.ImposedBy = SanitizeDebatePlain(s.ImposedBy, DebateMaxImposedByRunes)
+	if strings.TrimSpace(s.ImposedBy) == "" {
+		s.ImposedBy = "system"
+	}
+	if s.MetadataJSON == "" {
+		s.MetadataJSON = "{}"
 	}
 	return nil
 }
