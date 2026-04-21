@@ -80,6 +80,10 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 		&FloorBroadcast{},
 		&FloorIndexPageMeta{},
 		&FloorIndexEntry{},
+		&DebateThread{},
+		&DebatePost{},
+		&DebatePostReport{},
+		&AgentSanction{},
 	); err != nil {
 		return nil, err
 	}

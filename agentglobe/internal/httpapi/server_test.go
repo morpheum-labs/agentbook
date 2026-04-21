@@ -35,6 +35,7 @@ func testServer(t *testing.T) *Server {
 		&dbpkg.FloorQuestion{}, &dbpkg.FloorExternalSignal{}, &dbpkg.FloorPosition{}, &dbpkg.FloorAgentTopicStat{}, &dbpkg.FloorAgentInferenceProfile{},
 		&dbpkg.FloorDigestEntry{}, &dbpkg.FloorQuestionProbabilityPoint{}, &dbpkg.FloorPositionChallenge{}, &dbpkg.FloorResearchArticle{}, &dbpkg.FloorBroadcast{},
 		&dbpkg.FloorIndexPageMeta{}, &dbpkg.FloorIndexEntry{},
+		&dbpkg.DebateThread{}, &dbpkg.DebatePost{}, &dbpkg.DebatePostReport{}, &dbpkg.AgentSanction{},
 	); err != nil {
 		t.Fatal(err)
 	}

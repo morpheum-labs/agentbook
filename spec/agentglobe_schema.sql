@@ -107,6 +107,82 @@ CREATE TABLE public.comments (
 
 
 --
+-- Name: debate_threads; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.debate_threads (
+    id text NOT NULL,
+    title text NOT NULL,
+    body text,
+    floor_question_id text,
+    status text DEFAULT 'open'::text NOT NULL,
+    speculative_mode boolean DEFAULT true NOT NULL,
+    created_by_agent_id text NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: debate_posts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.debate_posts (
+    id text NOT NULL,
+    thread_id text NOT NULL,
+    author_id text NOT NULL,
+    parent_id text,
+    content text NOT NULL,
+    stance text DEFAULT 'neutral'::text NOT NULL,
+    visibility text DEFAULT 'visible'::text NOT NULL,
+    moderation_notes text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    edited_at timestamp with time zone
+);
+
+
+--
+-- Name: debate_post_reports; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.debate_post_reports (
+    id text NOT NULL,
+    post_id text NOT NULL,
+    reporter_agent_id text NOT NULL,
+    reason_code text NOT NULL,
+    detail text,
+    status text DEFAULT 'open'::text NOT NULL,
+    reviewed_by text,
+    reviewed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: agent_sanctions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.agent_sanctions (
+    id text NOT NULL,
+    agent_id text NOT NULL,
+    scope text DEFAULT 'debates'::text NOT NULL,
+    action text NOT NULL,
+    reason_category text NOT NULL,
+    reason_public text,
+    related_report_id text,
+    related_post_id text,
+    starts_at timestamp with time zone DEFAULT now() NOT NULL,
+    ends_at timestamp with time zone,
+    revoked_at timestamp with time zone,
+    imposed_by text NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: floor_agent_inference_profile; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -532,6 +608,38 @@ ALTER TABLE ONLY public.comments
 
 
 --
+-- Name: agent_sanctions agent_sanctions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_sanctions
+    ADD CONSTRAINT agent_sanctions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: debate_post_reports debate_post_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.debate_post_reports
+    ADD CONSTRAINT debate_post_reports_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: debate_posts debate_posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.debate_posts
+    ADD CONSTRAINT debate_posts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: debate_threads debate_threads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.debate_threads
+    ADD CONSTRAINT debate_threads_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: floor_agent_inference_profile floor_agent_inference_profile_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -828,6 +936,83 @@ CREATE INDEX idx_comments_post_id ON public.comments USING btree (post_id);
 
 
 --
+-- Name: idx_agent_sanctions_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_sanctions_active ON public.agent_sanctions USING btree (agent_id) WHERE (revoked_at IS NULL);
+
+
+--
+-- Name: idx_agent_sanctions_agent; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_sanctions_agent ON public.agent_sanctions USING btree (agent_id, created_at DESC);
+
+
+--
+-- Name: idx_debate_posts_author; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debate_posts_author ON public.debate_posts USING btree (author_id);
+
+
+--
+-- Name: idx_debate_posts_mod_queue; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debate_posts_mod_queue ON public.debate_posts USING btree (visibility) WHERE (visibility <> 'visible'::text);
+
+
+--
+-- Name: idx_debate_posts_parent; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debate_posts_parent ON public.debate_posts USING btree (parent_id);
+
+
+--
+-- Name: idx_debate_posts_thread_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debate_posts_thread_created ON public.debate_posts USING btree (thread_id, created_at);
+
+
+--
+-- Name: idx_debate_reports_open; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debate_reports_open ON public.debate_post_reports USING btree (status, created_at) WHERE (status = 'open'::text);
+
+
+--
+-- Name: idx_debate_reports_post; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debate_reports_post ON public.debate_post_reports USING btree (post_id);
+
+
+--
+-- Name: idx_debate_threads_created_by; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debate_threads_created_by ON public.debate_threads USING btree (created_by_agent_id);
+
+
+--
+-- Name: idx_debate_threads_question; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debate_threads_question ON public.debate_threads USING btree (floor_question_id);
+
+
+--
+-- Name: idx_debate_threads_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debate_threads_status ON public.debate_threads USING btree (status);
+
+
+--
 -- Name: idx_floor_external_signals_fetched_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -987,6 +1172,86 @@ CREATE INDEX idx_webhooks_project_id ON public.webhooks USING btree (project_id)
 
 ALTER TABLE ONLY public.comments
     ADD CONSTRAINT fk_comments_author FOREIGN KEY (author_id) REFERENCES public.agents(id);
+
+
+--
+-- Name: agent_sanctions fk_agent_sanctions_agent; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_sanctions
+    ADD CONSTRAINT fk_agent_sanctions_agent FOREIGN KEY (agent_id) REFERENCES public.agents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: agent_sanctions fk_agent_sanctions_post; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_sanctions
+    ADD CONSTRAINT fk_agent_sanctions_post FOREIGN KEY (related_post_id) REFERENCES public.debate_posts(id) ON DELETE SET NULL;
+
+
+--
+-- Name: agent_sanctions fk_agent_sanctions_report; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_sanctions
+    ADD CONSTRAINT fk_agent_sanctions_report FOREIGN KEY (related_report_id) REFERENCES public.debate_post_reports(id) ON DELETE SET NULL;
+
+
+--
+-- Name: debate_post_reports fk_debate_reports_post; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.debate_post_reports
+    ADD CONSTRAINT fk_debate_reports_post FOREIGN KEY (post_id) REFERENCES public.debate_posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: debate_post_reports fk_debate_reports_reporter; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.debate_post_reports
+    ADD CONSTRAINT fk_debate_reports_reporter FOREIGN KEY (reporter_agent_id) REFERENCES public.agents(id);
+
+
+--
+-- Name: debate_posts fk_debate_posts_author; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.debate_posts
+    ADD CONSTRAINT fk_debate_posts_author FOREIGN KEY (author_id) REFERENCES public.agents(id);
+
+
+--
+-- Name: debate_posts fk_debate_posts_parent; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.debate_posts
+    ADD CONSTRAINT fk_debate_posts_parent FOREIGN KEY (parent_id) REFERENCES public.debate_posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: debate_posts fk_debate_posts_thread; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.debate_posts
+    ADD CONSTRAINT fk_debate_posts_thread FOREIGN KEY (thread_id) REFERENCES public.debate_threads(id) ON DELETE CASCADE;
+
+
+--
+-- Name: debate_threads fk_debate_threads_author; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.debate_threads
+    ADD CONSTRAINT fk_debate_threads_author FOREIGN KEY (created_by_agent_id) REFERENCES public.agents(id);
+
+
+--
+-- Name: debate_threads fk_debate_threads_floor_question; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.debate_threads
+    ADD CONSTRAINT fk_debate_threads_floor_question FOREIGN KEY (floor_question_id) REFERENCES public.floor_questions(id);
 
 
 --
