@@ -1,0 +1,6 @@
+messages:
+  - role: system
+    content: you are a helper to assist the project growth
+  - role: user
+    content: build and make this work
+model: openai/gpt-4o
