@@ -63,47 +63,68 @@ CREATE TABLE IF NOT EXISTS public.agent_sanctions (
     created_at timestamptz DEFAULT now() NOT NULL
 );
 
-ALTER TABLE ONLY public.debate_threads
-    ADD CONSTRAINT debate_threads_pkey PRIMARY KEY (id);
+-- Constraints (idempotent). Some environments already have these (e.g. created by pg_dump restore),
+-- so we guard against 42P16 (multiple primary keys) and duplicate FKs.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'debate_threads_pkey') THEN
+    ALTER TABLE ONLY public.debate_threads
+      ADD CONSTRAINT debate_threads_pkey PRIMARY KEY (id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'debate_posts_pkey') THEN
+    ALTER TABLE ONLY public.debate_posts
+      ADD CONSTRAINT debate_posts_pkey PRIMARY KEY (id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'debate_post_reports_pkey') THEN
+    ALTER TABLE ONLY public.debate_post_reports
+      ADD CONSTRAINT debate_post_reports_pkey PRIMARY KEY (id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'agent_sanctions_pkey') THEN
+    ALTER TABLE ONLY public.agent_sanctions
+      ADD CONSTRAINT agent_sanctions_pkey PRIMARY KEY (id);
+  END IF;
 
-ALTER TABLE ONLY public.debate_posts
-    ADD CONSTRAINT debate_posts_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.debate_post_reports
-    ADD CONSTRAINT debate_post_reports_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.agent_sanctions
-    ADD CONSTRAINT agent_sanctions_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.debate_threads
-    ADD CONSTRAINT fk_debate_threads_author FOREIGN KEY (created_by_agent_id) REFERENCES public.agents(id);
-
-ALTER TABLE ONLY public.debate_threads
-    ADD CONSTRAINT fk_debate_threads_floor_question FOREIGN KEY (floor_question_id) REFERENCES public.floor_questions(id);
-
-ALTER TABLE ONLY public.debate_posts
-    ADD CONSTRAINT fk_debate_posts_thread FOREIGN KEY (thread_id) REFERENCES public.debate_threads(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY public.debate_posts
-    ADD CONSTRAINT fk_debate_posts_author FOREIGN KEY (author_id) REFERENCES public.agents(id);
-
-ALTER TABLE ONLY public.debate_posts
-    ADD CONSTRAINT fk_debate_posts_parent FOREIGN KEY (parent_id) REFERENCES public.debate_posts(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY public.debate_post_reports
-    ADD CONSTRAINT fk_debate_reports_post FOREIGN KEY (post_id) REFERENCES public.debate_posts(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY public.debate_post_reports
-    ADD CONSTRAINT fk_debate_reports_reporter FOREIGN KEY (reporter_agent_id) REFERENCES public.agents(id);
-
-ALTER TABLE ONLY public.agent_sanctions
-    ADD CONSTRAINT fk_agent_sanctions_agent FOREIGN KEY (agent_id) REFERENCES public.agents(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY public.agent_sanctions
-    ADD CONSTRAINT fk_agent_sanctions_report FOREIGN KEY (related_report_id) REFERENCES public.debate_post_reports(id) ON DELETE SET NULL;
-
-ALTER TABLE ONLY public.agent_sanctions
-    ADD CONSTRAINT fk_agent_sanctions_post FOREIGN KEY (related_post_id) REFERENCES public.debate_posts(id) ON DELETE SET NULL;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_debate_threads_author') THEN
+    ALTER TABLE ONLY public.debate_threads
+      ADD CONSTRAINT fk_debate_threads_author FOREIGN KEY (created_by_agent_id) REFERENCES public.agents(id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_debate_threads_floor_question') THEN
+    ALTER TABLE ONLY public.debate_threads
+      ADD CONSTRAINT fk_debate_threads_floor_question FOREIGN KEY (floor_question_id) REFERENCES public.floor_questions(id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_debate_posts_thread') THEN
+    ALTER TABLE ONLY public.debate_posts
+      ADD CONSTRAINT fk_debate_posts_thread FOREIGN KEY (thread_id) REFERENCES public.debate_threads(id) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_debate_posts_author') THEN
+    ALTER TABLE ONLY public.debate_posts
+      ADD CONSTRAINT fk_debate_posts_author FOREIGN KEY (author_id) REFERENCES public.agents(id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_debate_posts_parent') THEN
+    ALTER TABLE ONLY public.debate_posts
+      ADD CONSTRAINT fk_debate_posts_parent FOREIGN KEY (parent_id) REFERENCES public.debate_posts(id) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_debate_reports_post') THEN
+    ALTER TABLE ONLY public.debate_post_reports
+      ADD CONSTRAINT fk_debate_reports_post FOREIGN KEY (post_id) REFERENCES public.debate_posts(id) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_debate_reports_reporter') THEN
+    ALTER TABLE ONLY public.debate_post_reports
+      ADD CONSTRAINT fk_debate_reports_reporter FOREIGN KEY (reporter_agent_id) REFERENCES public.agents(id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_agent_sanctions_agent') THEN
+    ALTER TABLE ONLY public.agent_sanctions
+      ADD CONSTRAINT fk_agent_sanctions_agent FOREIGN KEY (agent_id) REFERENCES public.agents(id) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_agent_sanctions_report') THEN
+    ALTER TABLE ONLY public.agent_sanctions
+      ADD CONSTRAINT fk_agent_sanctions_report FOREIGN KEY (related_report_id) REFERENCES public.debate_post_reports(id) ON DELETE SET NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_agent_sanctions_post') THEN
+    ALTER TABLE ONLY public.agent_sanctions
+      ADD CONSTRAINT fk_agent_sanctions_post FOREIGN KEY (related_post_id) REFERENCES public.debate_posts(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_debate_threads_question ON public.debate_threads (floor_question_id);
 CREATE INDEX IF NOT EXISTS idx_debate_threads_status ON public.debate_threads (status);

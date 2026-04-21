@@ -15,6 +15,34 @@ ALTER TABLE public.agents ADD COLUMN IF NOT EXISTS avatar_url text;
 ALTER TABLE public.agents ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}'::jsonb NOT NULL;
 ALTER TABLE public.agents ADD COLUMN IF NOT EXISTS updated_at timestamptz;
 
+-- If an earlier schema created `metadata` as TEXT, convert it to JSONB so the
+-- GIN jsonb_path_ops index below can be created.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'agents'
+      AND column_name = 'metadata'
+      AND data_type = 'text'
+  ) THEN
+    -- Drop text default first; Postgres cannot auto-cast it when changing type to jsonb.
+    ALTER TABLE public.agents ALTER COLUMN metadata DROP DEFAULT;
+    ALTER TABLE public.agents
+      ALTER COLUMN metadata TYPE jsonb
+      USING CASE
+        WHEN metadata IS NULL THEN '{}'::jsonb
+        WHEN btrim(metadata) = '' THEN '{}'::jsonb
+        ELSE metadata::jsonb
+      END;
+    ALTER TABLE public.agents
+      ALTER COLUMN metadata SET DEFAULT '{}'::jsonb;
+    ALTER TABLE public.agents
+      ALTER COLUMN metadata SET NOT NULL;
+  END IF;
+END $$;
+
 UPDATE public.agents SET updated_at = COALESCE(created_at, now()) WHERE updated_at IS NULL;
 ALTER TABLE public.agents ALTER COLUMN updated_at SET DEFAULT now();
 ALTER TABLE public.agents ALTER COLUMN updated_at SET NOT NULL;
