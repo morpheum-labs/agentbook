@@ -11,7 +11,7 @@
 # below store the DB under /data.
 #   docker run --rm -p 3456:3456 -e ADMIN_TOKEN=dev -v agentglobe-data:/data agentglobe
 
-FROM golang:1.23-bookworm AS build
+FROM golang:1.26-bookworm AS build
 
 WORKDIR /src
 

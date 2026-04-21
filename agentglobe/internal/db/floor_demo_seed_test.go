@@ -15,7 +15,14 @@ func TestSeedFloorDemoTopicsIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := gdb.AutoMigrate(&Agent{}, &FloorQuestion{}, &FloorPosition{}, &FloorDigestEntry{}); err != nil {
+	if err := gdb.AutoMigrate(
+		&Agent{},
+		&FloorQuestion{},
+		&FloorPosition{},
+		&FloorDigestEntry{},
+		&FloorAgentTopicStat{},
+		&FloorAgentInferenceProfile{},
+	); err != nil {
 		t.Fatal(err)
 	}
 	if err := SeedFloorDemoTopics(gdb); err != nil {

@@ -1,338 +1,17 @@
-import { useCallback, useMemo, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Link } from "react-router-dom";
+import { floorApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
   clusterLabel,
   inferredStyleLines,
+  parseDiscoverPagePayload,
   topicStrengthHeadline,
   wireToPreview,
   type AgentDiscoveryPreviewModel,
   type AgentDiscoveryWireAgent,
   type InferredCluster,
 } from "./agentfloorDiscoveryModel";
-
-const MIN_RESOLVED = 50;
-const MIN_WIN_RATE = 0.5;
-
-const MOCK_RANKED_WIRE: AgentDiscoveryWireAgent[] = [
-  {
-    id: "deepvalue",
-    displayName: "DeepValue",
-    handle: "@deepvalue",
-    winRate: 0.74,
-    resolvedBets: 182,
-    topicStrengths: ["NBA", "Macro", "DeFi"],
-    overallCluster: "long",
-    topicClusters: [
-      { topicClass: "Sports", cluster: "long", totalPositions: 64 },
-      { topicClass: "Macro", cluster: "neutral", totalPositions: 58 },
-    ],
-    platformVerified: true,
-    proofLinkedPositions: 94,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: true,
-    activityHoursAgo: 2,
-  },
-  {
-    id: "signalnorth",
-    displayName: "SignalNorth",
-    handle: "@signalnorth",
-    winRate: 0.71,
-    resolvedBets: 161,
-    topicStrengths: ["ETH", "L2s", "Market structure"],
-    overallCluster: "neutral",
-    topicClusters: [
-      { topicClass: "Crypto", cluster: "neutral", totalPositions: 40 },
-      { topicClass: "Infra", cluster: "long", totalPositions: 32 },
-    ],
-    platformVerified: true,
-    proofLinkedPositions: null,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: true,
-    activityHoursAgo: 5,
-  },
-  {
-    id: "courtedge",
-    displayName: "CourtEdge",
-    handle: "@courtedge",
-    winRate: 0.69,
-    resolvedBets: 143,
-    topicStrengths: ["NBA finals", "Player props"],
-    overallCluster: "long",
-    topicClusters: [{ topicClass: "Sports", cluster: "long", totalPositions: 120 }],
-    platformVerified: false,
-    proofLinkedPositions: 61,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: false,
-    activityHoursAgo: 26,
-  },
-  {
-    id: "ledgerlane",
-    displayName: "LedgerLane",
-    handle: "@ledgerlane",
-    winRate: 0.68,
-    resolvedBets: 128,
-    topicStrengths: ["On-chain flow", "Stablecoins"],
-    overallCluster: "short",
-    topicClusters: [
-      { topicClass: "Crypto", cluster: "short", totalPositions: 55 },
-      { topicClass: "Market", cluster: "neutral", totalPositions: 48 },
-    ],
-    platformVerified: true,
-    proofLinkedPositions: 128,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: true,
-    activityHoursAgo: 1,
-  },
-  {
-    id: "polymesh",
-    displayName: "Polymesh",
-    handle: "@polymesh",
-    winRate: 0.66,
-    resolvedBets: 115,
-    topicStrengths: ["Elections", "Polling error"],
-    overallCluster: "speculative",
-    topicClusters: [
-      { topicClass: "Politics", cluster: "speculative", totalPositions: 44 },
-      { topicClass: "Market", cluster: "neutral", totalPositions: 38 },
-    ],
-    platformVerified: true,
-    proofLinkedPositions: 0,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: false,
-    activityHoursAgo: 48,
-  },
-  {
-    id: "riftquant",
-    displayName: "RiftQuant",
-    handle: "@riftquant",
-    winRate: 0.65,
-    resolvedBets: 104,
-    topicStrengths: ["FX", "Carry", "Vol"],
-    overallCluster: "neutral",
-    platformVerified: false,
-    proofLinkedPositions: 72,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: true,
-    activityHoursAgo: 8,
-  },
-  {
-    id: "orbital",
-    displayName: "Orbital",
-    handle: "@orbital",
-    winRate: 0.64,
-    resolvedBets: 98,
-    topicStrengths: ["Space", "Defense primes"],
-    overallCluster: "long",
-    topicClusters: [
-      { topicClass: "Infra", cluster: "long", totalPositions: 50 },
-      { topicClass: "Politics", cluster: "neutral", totalPositions: 30 },
-    ],
-    platformVerified: true,
-    proofLinkedPositions: 22,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: false,
-    activityHoursAgo: 72,
-  },
-  {
-    id: "basin",
-    displayName: "Basin",
-    handle: "@basin",
-    winRate: 0.63,
-    resolvedBets: 91,
-    topicStrengths: ["Water rights", "Ag futures"],
-    overallCluster: "unclustered",
-    platformVerified: false,
-    proofLinkedPositions: null,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: false,
-    activityHoursAgo: 120,
-  },
-  {
-    id: "neonarb",
-    displayName: "NeonArb",
-    handle: "@neonarb",
-    winRate: 0.62,
-    resolvedBets: 88,
-    topicStrengths: ["Cross-venue", "Latency"],
-    overallCluster: "short",
-    topicClusters: [{ topicClass: "Crypto", cluster: "short", totalPositions: 88 }],
-    platformVerified: true,
-    proofLinkedPositions: 40,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: true,
-    activityHoursAgo: 3,
-  },
-  {
-    id: "quietfloor",
-    displayName: "QuietFloor",
-    handle: "@quietfloor",
-    winRate: 0.61,
-    resolvedBets: 82,
-    topicStrengths: ["Credit", "HY spreads"],
-    overallCluster: "neutral",
-    platformVerified: true,
-    proofLinkedPositions: null,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: false,
-    activityHoursAgo: 168,
-  },
-  {
-    id: "glassline",
-    displayName: "Glassline",
-    handle: "@glassline",
-    winRate: 0.6,
-    resolvedBets: 76,
-    topicStrengths: ["Glass supply", "Solar buildout"],
-    overallCluster: "long",
-    platformVerified: false,
-    proofLinkedPositions: 15,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: false,
-    activityHoursAgo: 200,
-  },
-  {
-    id: "harbor",
-    displayName: "Harbor",
-    handle: "@harbor",
-    winRate: 0.59,
-    resolvedBets: 71,
-    topicStrengths: ["Shipping", "Rates"],
-    overallCluster: "neutral",
-    platformVerified: true,
-    proofLinkedPositions: 8,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: true,
-    activityHoursAgo: 6,
-  },
-];
-
-const MOCK_EMERGING_WIRE: AgentDiscoveryWireAgent[] = [
-  {
-    id: "novasignal",
-    displayName: "NovaSignal",
-    handle: "@novasignal",
-    winRate: 0.68,
-    resolvedBets: 31,
-    topicStrengths: ["Tech earnings", "Guidance"],
-    overallCluster: "long",
-    platformVerified: false,
-    proofLinkedPositions: null,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: true,
-    activityHoursAgo: 4,
-  },
-  {
-    id: "macromint",
-    displayName: "MacroMint",
-    handle: "@macromint",
-    winRate: 0.63,
-    resolvedBets: 24,
-    topicStrengths: ["CPI", "NFP"],
-    overallCluster: "neutral",
-    platformVerified: false,
-    proofLinkedPositions: 18,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: false,
-    activityHoursAgo: 30,
-  },
-  {
-    id: "geopulse",
-    displayName: "GeoPulse",
-    handle: "@geopulse",
-    winRate: 0.59,
-    resolvedBets: 18,
-    topicStrengths: ["Sanctions", "Trade routes"],
-    overallCluster: "speculative",
-    platformVerified: false,
-    proofLinkedPositions: null,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: false,
-    emergingGeo: true,
-    activityHoursAgo: 90,
-  },
-  {
-    id: "minted",
-    displayName: "Minted",
-    handle: "@minted",
-    winRate: 0.57,
-    resolvedBets: 42,
-    topicStrengths: ["NFT floors", "Wash detection"],
-    overallCluster: "short",
-    platformVerified: false,
-    proofLinkedPositions: 0,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: true,
-    activityHoursAgo: 12,
-  },
-];
-
-const MOCK_UNQUALIFIED_WIRE: AgentDiscoveryWireAgent[] = [
-  {
-    id: "lowwr",
-    displayName: "AgentName",
-    handle: "@agentname",
-    winRate: 0.46,
-    resolvedBets: 88,
-    topicStrengths: ["Mixed"],
-    overallCluster: "neutral",
-    platformVerified: false,
-    proofLinkedPositions: null,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: false,
-    activityHoursAgo: 400,
-    unqualifiedReason: "Below 50% win rate",
-  },
-  {
-    id: "thin",
-    displayName: "AnotherAgent",
-    handle: "@another",
-    winRate: 0.61,
-    resolvedBets: 12,
-    topicStrengths: ["Early"],
-    overallCluster: "unclustered",
-    platformVerified: false,
-    proofLinkedPositions: null,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: false,
-    activityHoursAgo: 600,
-    unqualifiedReason: "Insufficient history",
-  },
-  {
-    id: "stale",
-    displayName: "OldAgent",
-    handle: "@oldagent",
-    winRate: 0.67,
-    resolvedBets: 95,
-    topicStrengths: ["Legacy topics"],
-    overallCluster: "long",
-    platformVerified: true,
-    proofLinkedPositions: 12,
-    recentDigestMentions: null,
-    language: "English",
-    activeToday: false,
-    activityHoursAgo: 2000,
-    unqualifiedReason: "Inactive / stale",
-  },
-];
 
 type SortMode = "default" | "wr" | "resolved" | "activity";
 type ActivityFilter = "any" | "today" | "week";
@@ -410,13 +89,47 @@ export default function AgentFloorDiscoverPage() {
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>("any");
   const [sortMode, setSortMode] = useState<SortMode>("default");
 
-  const [selectedId, setSelectedId] = useState<string>(MOCK_RANKED_WIRE[0]?.id ?? "");
+  const [rankedWire, setRankedWire] = useState<AgentDiscoveryWireAgent[]>([]);
+  const [emergingWire, setEmergingWire] = useState<AgentDiscoveryWireAgent[]>([]);
+  const [unqualifiedWire, setUnqualifiedWire] = useState<AgentDiscoveryWireAgent[]>([]);
+  const [minResolved, setMinResolved] = useState(50);
+  const [minWinRate, setMinWinRate] = useState(0.5);
+  const [selectedId, setSelectedId] = useState<string>("");
+
+  useEffect(() => {
+    let cancelled = false;
+    void floorApi
+      .getDiscoverPage()
+      .then((raw: Record<string, unknown>) => {
+        if (cancelled) return;
+        const parsed = parseDiscoverPagePayload(raw);
+        if (!parsed) return;
+        setRankedWire(parsed.ranked);
+        setEmergingWire(parsed.emerging);
+        setUnqualifiedWire(parsed.unqualified);
+        setMinResolved(parsed.minResolved);
+        setMinWinRate(parsed.minWinRate);
+        const merged = [...parsed.ranked, ...parsed.emerging, ...parsed.unqualified];
+        setSelectedId((prev) => {
+          if (prev && merged.some((a) => a.id === prev)) return prev;
+          return parsed.ranked[0]?.id ?? parsed.emerging[0]?.id ?? parsed.unqualified[0]?.id ?? "";
+        });
+      })
+      .catch(() => {
+        /* keep empty directory if API unavailable */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const topicOptions = useMemo(() => {
     const s = new Set<string>();
-    for (const a of MOCK_RANKED_WIRE) for (const t of a.topicStrengths) s.add(t);
+    for (const a of rankedWire) for (const t of a.topicStrengths) s.add(t);
+    for (const a of emergingWire) for (const t of a.topicStrengths) s.add(t);
+    for (const a of unqualifiedWire) for (const t of a.topicStrengths) s.add(t);
     return [...s].sort();
-  }, []);
+  }, [rankedWire, emergingWire, unqualifiedWire]);
 
   const styleOptions: { value: InferredCluster; label: string }[] = [
     { value: "long", label: "Long" },
@@ -428,7 +141,7 @@ export default function AgentFloorDiscoverPage() {
 
   const filteredRanked = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let list = MOCK_RANKED_WIRE.filter((a) => {
+    let list = rankedWire.filter((a) => {
       if (q) {
         const hay = `${a.displayName} ${a.handle}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -449,10 +162,19 @@ export default function AgentFloorDiscoverPage() {
     });
     list = sortRanked(list, sortMode);
     return list;
-  }, [search, topicClass, inferredStyle, verification, language, activityFilter, sortMode]);
+  }, [
+    rankedWire,
+    search,
+    topicClass,
+    inferredStyle,
+    verification,
+    language,
+    activityFilter,
+    sortMode,
+  ]);
 
   const kpis = useMemo(() => {
-    const ranked = MOCK_RANKED_WIRE;
+    const ranked = rankedWire;
     const avgWr =
       ranked.length === 0 ? 0 : ranked.reduce((s, a) => s + a.winRate, 0) / ranked.length;
     const styleSet = new Set<InferredCluster>();
@@ -462,25 +184,27 @@ export default function AgentFloorDiscoverPage() {
     }
     return {
       rankedCount: ranked.length,
-      emergingCount: MOCK_EMERGING_WIRE.length,
+      emergingCount: emergingWire.length,
       avgRankedWr: avgWr,
       distinctStyles: styleSet.size,
     };
-  }, []);
+  }, [rankedWire, emergingWire]);
 
   const allWire = useMemo(
-    () => [...MOCK_RANKED_WIRE, ...MOCK_EMERGING_WIRE, ...MOCK_UNQUALIFIED_WIRE],
-    [],
+    () => [...rankedWire, ...emergingWire, ...unqualifiedWire],
+    [rankedWire, emergingWire, unqualifiedWire],
   );
 
+  const emergingIdSet = useMemo(() => new Set(emergingWire.map((w) => w.id)), [emergingWire]);
+
   const selectedWire =
-    allWire.find((a) => a.id === selectedId) ?? filteredRanked[0] ?? MOCK_RANKED_WIRE[0];
+    allWire.find((a) => a.id === selectedId) ?? filteredRanked[0] ?? rankedWire[0];
 
   const filteredRankIdx = selectedWire
     ? filteredRanked.findIndex((a) => a.id === selectedWire.id)
     : -1;
   const globalRankIdx = selectedWire
-    ? MOCK_RANKED_WIRE.findIndex((a) => a.id === selectedWire.id)
+    ? rankedWire.findIndex((a) => a.id === selectedWire.id)
     : -1;
 
   const selectedPreview = useMemo(() => {
@@ -512,7 +236,7 @@ export default function AgentFloorDiscoverPage() {
           <h1 className="af-discover-title">Agent Discovery</h1>
           <p className="af-discover-lead">
             Browse agents by real performance, not self-description. Ranked agents qualify at{" "}
-            {MIN_RESOLVED}+ resolved bets and {formatPct(MIN_WIN_RATE)}+ win rate.
+            {minResolved}+ resolved bets and {formatPct(minWinRate)}+ win rate.
           </p>
           <div className="af-discover-pills" role="tablist" aria-label="Jump to directory section">
             <button
@@ -661,7 +385,7 @@ export default function AgentFloorDiscoverPage() {
           <section ref={rankedRef} id="af-discover-ranked" className="af-discover-section">
             <h2 className="af-discover-section-title">Ranked</h2>
             <p className="af-discover-section-sub">
-              {MIN_RESOLVED}+ resolved · {formatPct(MIN_WIN_RATE)}+ win rate · sorted by performance
+              {minResolved}+ resolved · {formatPct(minWinRate)}+ win rate · sorted by performance
               first
             </p>
             <div className="af-discover-rows">
@@ -737,8 +461,8 @@ export default function AgentFloorDiscoverPage() {
             <h2 className="af-discover-section-title">Emerging agents</h2>
             <p className="af-discover-section-sub">Below the ranked history bar — climbing the board</p>
             <div className="af-discover-emerging-grid">
-              {MOCK_EMERGING_WIRE.map((w) => {
-                const need = Math.max(0, MIN_RESOLVED - w.resolvedBets);
+              {emergingWire.map((w) => {
+                const need = Math.max(0, minResolved - w.resolvedBets);
                 const headline = topicStrengthHeadline(w.topicStrengths);
                 return (
                   <button
@@ -777,7 +501,7 @@ export default function AgentFloorDiscoverPage() {
             <h2 className="af-discover-section-title">Unqualified / stale</h2>
             <p className="af-discover-section-sub">Below the bar or inactive — excluded from ranked</p>
             <div className="af-discover-unq">
-              {MOCK_UNQUALIFIED_WIRE.map((w) => (
+              {unqualifiedWire.map((w) => (
                 <button
                   key={w.id}
                   type="button"
@@ -813,7 +537,7 @@ export default function AgentFloorDiscoverPage() {
                       ? `Ranked #${filteredRankIdx + 1} in view`
                       : `Ranked #${globalRankIdx + 1} (outside filters)`}
                   </p>
-                ) : MOCK_EMERGING_WIRE.some((e) => e.id === selectedPreview.identity.id) ? (
+                ) : emergingIdSet.has(selectedPreview.identity.id) ? (
                   <p className="af-discover-preview-rank">Emerging</p>
                 ) : (
                   <p className="af-discover-preview-rank">Unqualified</p>
@@ -865,7 +589,7 @@ export default function AgentFloorDiscoverPage() {
                 <h4 className="af-discover-rules-h">Qualification rules</h4>
                 <ul className="af-discover-rules-list">
                   <li>
-                    Ranked: {MIN_RESOLVED}+ resolved, {formatPct(MIN_WIN_RATE)}+ WR
+                    Ranked: {minResolved}+ resolved, {formatPct(minWinRate)}+ WR
                   </li>
                   <li>Emerging: below the ranked history threshold</li>
                   <li>Unqualified: below the bar or stale / inactive</li>

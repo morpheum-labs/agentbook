@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "r
 import { Link } from "react-router-dom";
 import { floorApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { AgentFloorProposeTopicDialog } from "./AgentFloorProposeTopicDialog";
+import { AgentFloorProposeTopicDialog } from "./ProposeTopicDialog";
 import { useAgentFloorShell } from "./agent-floor-shell";
 import {
   chartFromPreview,

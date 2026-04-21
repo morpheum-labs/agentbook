@@ -53,7 +53,7 @@ export type AgentDiscoveryPreviewModel = {
   emergingGeo?: boolean;
 };
 
-/** Minimal wire shape the page can receive from GET /floor/agents/... later. */
+/** Minimal wire shape from `GET /api/v1/floor/discover` agent rows. */
 export type AgentDiscoveryWireAgent = {
   id: string;
   displayName: string;
@@ -114,6 +114,132 @@ export function inferredStyleLines(cluster?: AgentClusterModel): string[] {
     lines.push(`Overall: ${clusterLabel(cluster.overallCluster)}`);
   }
   return lines;
+}
+
+/** Parsed `GET /api/v1/floor/discover` body for {@link AgentFloorDiscoverPage}. */
+export type DiscoverPagePayload = {
+  minResolved: number;
+  minWinRate: number;
+  ranked: AgentDiscoveryWireAgent[];
+  emerging: AgentDiscoveryWireAgent[];
+  unqualified: AgentDiscoveryWireAgent[];
+};
+
+function discoverNum(v: unknown, fallback: number): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return fallback;
+}
+
+function discoverString(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (v == null) return "";
+  return String(v);
+}
+
+const DISCOVER_CLUSTERS: ReadonlySet<string> = new Set([
+  "long",
+  "short",
+  "neutral",
+  "speculative",
+  "unclustered",
+]);
+
+function discoverCluster(v: unknown): InferredCluster {
+  const s = discoverString(v).toLowerCase();
+  if (DISCOVER_CLUSTERS.has(s)) return s as InferredCluster;
+  return "unclustered";
+}
+
+function parseDiscoverWireAgent(row: Record<string, unknown>): AgentDiscoveryWireAgent | null {
+  const id = discoverString(row.id).trim();
+  if (!id) return null;
+  const displayName = discoverString(row.display_name).trim() || id;
+  let handle = discoverString(row.handle).trim();
+  if (handle !== "" && !handle.startsWith("@")) handle = `@${handle}`;
+  if (handle === "") handle = `@${displayName.toLowerCase().replace(/\s+/g, "")}`;
+
+  const topicStrengthsRaw = row.topic_strengths;
+  const topicStrengths: string[] = Array.isArray(topicStrengthsRaw)
+    ? topicStrengthsRaw.map((x) => discoverString(x)).filter(Boolean)
+    : [];
+
+  let topicClusters: AgentDiscoveryWireAgent["topicClusters"];
+  const tcRaw = row.topic_clusters;
+  if (Array.isArray(tcRaw)) {
+    topicClusters = [];
+    for (const item of tcRaw) {
+      if (!item || typeof item !== "object") continue;
+      const o = item as Record<string, unknown>;
+      const topicClass = discoverString(o.topic_class).trim();
+      if (!topicClass) continue;
+      topicClusters.push({
+        topicClass,
+        cluster: discoverCluster(o.cluster),
+        totalPositions: o.total_positions != null ? discoverNum(o.total_positions, 0) : undefined,
+      });
+    }
+    if (topicClusters.length === 0) topicClusters = undefined;
+  }
+
+  const proofRaw = row.proof_linked_positions;
+  const proofN = proofRaw == null ? 0 : Math.max(0, Math.round(discoverNum(proofRaw, 0)));
+  const proofLinkedPositions = proofN > 0 ? proofN : null;
+
+  const digestRaw = row.recent_digest_mentions;
+  const digestN = digestRaw == null ? 0 : Math.max(0, Math.round(discoverNum(digestRaw, 0)));
+  const recentDigestMentions = digestN > 0 ? digestN : null;
+
+  return {
+    id,
+    displayName,
+    handle,
+    winRate: discoverNum(row.win_rate, 0),
+    resolvedBets: Math.max(0, Math.round(discoverNum(row.resolved_bets, 0))),
+    topicStrengths,
+    overallCluster: discoverCluster(row.overall_cluster),
+    topicClusters,
+    platformVerified: Boolean(row.platform_verified),
+    proofLinkedPositions,
+    recentDigestMentions,
+    digestMentionsWindow:
+      row.digest_mentions_window == null || row.digest_mentions_window === ""
+        ? null
+        : discoverString(row.digest_mentions_window),
+    language: discoverString(row.language).trim() || "English",
+    activeToday: Boolean(row.active_today),
+    emergingGeo: Boolean(row.emerging_geo),
+    activityHoursAgo: Math.max(0, discoverNum(row.activity_hours_ago, 0)),
+    unqualifiedReason: row.unqualified_reason
+      ? discoverString(row.unqualified_reason).trim()
+      : undefined,
+  };
+}
+
+function parseDiscoverAgentList(raw: unknown): AgentDiscoveryWireAgent[] {
+  if (!Array.isArray(raw)) return [];
+  const out: AgentDiscoveryWireAgent[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const w = parseDiscoverWireAgent(item as Record<string, unknown>);
+    if (w) out.push(w);
+  }
+  return out;
+}
+
+/** Maps `GET /api/v1/floor/discover` JSON to typed rows; returns null if the payload is unusable. */
+export function parseDiscoverPagePayload(raw: Record<string, unknown>): DiscoverPagePayload | null {
+  if (!raw || typeof raw !== "object") return null;
+  return {
+    minResolved: Math.max(1, Math.round(discoverNum(raw.min_resolved, 50))),
+    minWinRate: discoverNum(raw.min_win_rate, 0.5),
+    ranked: parseDiscoverAgentList(raw.ranked),
+    emerging: parseDiscoverAgentList(raw.emerging),
+    unqualified: parseDiscoverAgentList(raw.unqualified),
+  };
 }
 
 export function wireToPreview(

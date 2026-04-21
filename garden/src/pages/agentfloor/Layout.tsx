@@ -9,8 +9,8 @@ import {
 } from "@/lib/agentfloor-theme";
 import { AgentFloorShellProvider } from "./agent-floor-shell";
 import { AgentFloorToastProvider } from "./agent-floor-toast";
-import { AgentFloorConnectDialog } from "./AgentFloorConnectDialog";
-import { AgentFloorFooter } from "./AgentFloorFooter";
+import { AgentFloorConnectDialog } from "./ConnectDialog";
+import { AgentFloorFooter } from "./Footer";
 import "@/styles/agentfloor.css";
 
 function nvClass({ isActive }: { isActive: boolean }) {

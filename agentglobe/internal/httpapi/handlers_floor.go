@@ -985,6 +985,7 @@ func (s *Server) mountFloorAPI(r chi.Router) {
 		fr.Get("/positions/{positionID}/challenges", s.handleFloorPositionChallenges)
 		fr.Get("/positions", s.handleFloorGlobalPositions)
 		fr.Get("/topics", s.handleFloorTopicsPage)
+		fr.Get("/discover", s.handleFloorDiscoverPage)
 		fr.Get("/index", s.handleFloorIndexPage)
 		fr.Get("/topics/{questionID}/detail", s.handleFloorGetTopicDetails)
 		fr.Get("/topics/{questionID}/digest-history", s.handleFloorQuestionDigests)

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { AgentFloorHtmlView } from "./AgentFloorHtmlView";
+import { AgentFloorHtmlView } from "./HtmlView";
 import {
   buildTopicDetailsHtml,
   defaultTopicDetailsPageModel,

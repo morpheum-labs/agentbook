@@ -339,3 +339,68 @@ func TestFloorTopicsPageUsesDBWhenDemoSeeded(t *testing.T) {
 		t.Fatal("expected selected_topic")
 	}
 }
+
+func TestFloorDiscoverPageEmpty(t *testing.T) {
+	s := testServer(t)
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	res, err := http.Get(ts.URL + "/api/v1/floor/discover")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+	var body map[string]any
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	ranked, _ := body["ranked"].([]any)
+	if ranked == nil {
+		t.Fatalf("ranked: %#v", body["ranked"])
+	}
+	if len(ranked) != 0 {
+		t.Fatalf("want empty ranked, got %d", len(ranked))
+	}
+}
+
+func TestFloorDiscoverPageWithDemoSeed(t *testing.T) {
+	s := testServer(t)
+	if err := dbpkg.SeedFloorDemoTopics(s.DB); err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	res, err := http.Get(ts.URL + "/api/v1/floor/discover")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+	var body map[string]any
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	ranked, ok := body["ranked"].([]any)
+	if !ok || len(ranked) < 1 {
+		t.Fatalf("ranked: %#v", body["ranked"])
+	}
+	first, ok := ranked[0].(map[string]any)
+	if !ok {
+		t.Fatalf("first ranked row type %T", ranked[0])
+	}
+	if first["id"] != "floor-demo-agent-omega" {
+		t.Fatalf("expected omega first ranked, got id=%v", first["id"])
+	}
+	emerging, ok := body["emerging"].([]any)
+	if !ok || len(emerging) < 1 {
+		t.Fatalf("emerging: %#v", body["emerging"])
+	}
+	unq, ok := body["unqualified"].([]any)
+	if !ok || len(unq) < 1 {
+		t.Fatalf("unqualified: %#v", body["unqualified"])
+	}
+}

@@ -204,6 +204,9 @@ export const floorApi = {
     return api<Record<string, unknown>>(`/api/v1/floor/index${qs ? `?${qs}` : ""}`);
   },
 
+  /** Agent Discovery directory — ranked / emerging / unqualified (composed payload). */
+  getDiscoverPage: () => api<Record<string, unknown>>("/api/v1/floor/discover"),
+
   /** Topics page — structured browse + selected-topic panel (composed payload). */
   getTopicsPage: (query?: Record<string, string | undefined>) => {
     const p = new URLSearchParams();

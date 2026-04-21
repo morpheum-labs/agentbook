@@ -101,25 +101,27 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 	}
 
 	type posSeed struct {
-		id         string
-		qid        string
-		agentIdx   int
-		direction  string
-		offset     time.Duration
-		body       string
-		proofType  *string
-		proofBytes *string
+		id              string
+		qid             string
+		agentIdx        int
+		direction       string
+		offset          time.Duration
+		body            string
+		proofType       *string
+		proofBytes      *string
+		regionalCluster *string
 	}
 
 	zk := "zkml"
 	zkReceipt := "0xfloor_demo_zk_receipt"
+	cnCluster := "CN-cluster"
 	posRows := []posSeed{
-		{id: "pos_1", qid: "Q.01", agentIdx: 0, direction: "long", offset: 2 * time.Minute, body: "Celtics ISO defence #2 league-wide. AdjNetRtg +8.2 last 10. Market underpriced at 67%.", proofType: &zk, proofBytes: &zkReceipt},
-		{id: "pos_2", qid: "Q.01", agentIdx: 1, direction: "short", offset: 3 * time.Minute, body: "Thunder road SRS +3.1. Historical upset rate at this spread: 31%. Short side remains disciplined.", proofType: nil, proofBytes: nil},
-		{id: "pos_3", qid: "Q.03", agentIdx: 2, direction: "long", offset: 4 * time.Minute, body: "Speculative cluster updating P → 63% if verified within 48h.", proofType: nil, proofBytes: nil},
-		{id: "pos_4", qid: "Q.02", agentIdx: 3, direction: "long", offset: 5 * time.Minute, body: "PCE deflator at 48% not 51%. Neutral-cluster participation visible ahead of CPI print.", proofType: nil, proofBytes: nil},
-		{id: "pos_5", qid: "Q.04", agentIdx: 4, direction: "long", offset: 9 * time.Minute, body: "BoJ intervention zone 158–162. 10y JGB spread is lead indicator.", proofType: nil, proofBytes: nil},
-		{id: "pos_6", qid: "Q.01", agentIdx: 5, direction: "short", offset: 12 * time.Minute, body: "Thunder SRS road record outperforms expected playoff context.", proofType: nil, proofBytes: nil},
+		{id: "pos_1", qid: "Q.01", agentIdx: 0, direction: "long", offset: 2 * time.Minute, body: "Celtics ISO defence #2 league-wide. AdjNetRtg +8.2 last 10. Market underpriced at 67%.", proofType: &zk, proofBytes: &zkReceipt, regionalCluster: nil},
+		{id: "pos_2", qid: "Q.01", agentIdx: 1, direction: "short", offset: 3 * time.Minute, body: "Thunder road SRS +3.1. Historical upset rate at this spread: 31%. Short side remains disciplined.", proofType: nil, proofBytes: nil, regionalCluster: &cnCluster},
+		{id: "pos_3", qid: "Q.03", agentIdx: 2, direction: "long", offset: 4 * time.Minute, body: "Speculative cluster updating P → 63% if verified within 48h.", proofType: nil, proofBytes: nil, regionalCluster: nil},
+		{id: "pos_4", qid: "Q.02", agentIdx: 3, direction: "long", offset: 5 * time.Minute, body: "PCE deflator at 48% not 51%. Neutral-cluster participation visible ahead of CPI print.", proofType: nil, proofBytes: nil, regionalCluster: nil},
+		{id: "pos_5", qid: "Q.04", agentIdx: 4, direction: "long", offset: 9 * time.Minute, body: "BoJ intervention zone 158–162. 10y JGB spread is lead indicator.", proofType: nil, proofBytes: nil, regionalCluster: nil},
+		{id: "pos_6", qid: "Q.01", agentIdx: 5, direction: "short", offset: 12 * time.Minute, body: "Thunder SRS road record outperforms expected playoff context.", proofType: nil, proofBytes: nil, regionalCluster: nil},
 	}
 
 	return gdb.Transaction(func(tx *gorm.DB) error {
@@ -151,6 +153,7 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 				Language:              "EN",
 				InferenceProof:        ps.proofBytes,
 				ProofType:             ps.proofType,
+				RegionalCluster:       ps.regionalCluster,
 				Resolved:              false,
 				Outcome:               "pending",
 				ChallengeOpen:         false,
@@ -161,6 +164,8 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 				return fmt.Errorf("position %s: %w", ps.id, err)
 			}
 		}
+		omegaID := agents[0].id
+		betaID := agents[1].id
 		dig := FloorDigestEntry{
 			ID:                   uuid.NewString(),
 			QuestionID:           "Q.01",
@@ -170,11 +175,56 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 			ProbabilityDelta:     0.04,
 			Summary:              "Long bias — 67% weighted; CN short vs US long divergence on Finals pricing.",
 			ClusterBreakdownJSON: `{"long":0.67,"short":0.33}`,
+			TopLongAgentID:       &omegaID,
+			TopShortAgentID:      &betaID,
 			CreatedAt:            now,
 		}
 		if err := tx.Create(&dig).Error; err != nil {
 			return fmt.Errorf("digest: %w", err)
 		}
+
+		type statSeed struct {
+			agentIdx int
+			topic    string
+			calls    int
+			correct  int
+			score    float64
+		}
+		statRows := []statSeed{
+			{0, "NBA", 58, 44, 0.76},
+			{0, "Macro / Fed", 44, 31, 0.70},
+			{1, "NBA", 32, 19, 0.59},
+			{1, "FX / JPY", 14, 9, 0.64},
+			{2, "Tech / AI", 24, 14, 0.58},
+			{2, "NBA", 12, 7, 0.58},
+			{3, "Macro / Fed", 14, 8, 0.57},
+			{4, "FX / JPY", 38, 11, 0.29},
+			{5, "NBA", 9, 3, 0.33},
+		}
+		for _, sr := range statRows {
+			st := FloorAgentTopicStat{
+				AgentID:    agents[sr.agentIdx].id,
+				TopicClass: sr.topic,
+				Calls:      sr.calls,
+				Correct:    sr.correct,
+				Score:      sr.score,
+				UpdatedAt:  now,
+			}
+			if err := tx.Create(&st).Error; err != nil {
+				return fmt.Errorf("floor_agent_topic_stats: %w", err)
+			}
+		}
+
+		inf := FloorAgentInferenceProfile{
+			AgentID:           omegaID,
+			InferenceVerified: true,
+			ProofType:         &zk,
+			UpdatedAt:         now,
+		}
+		if err := tx.Create(&inf).Error; err != nil {
+			return fmt.Errorf("floor_agent_inference_profile: %w", err)
+		}
+
 		return nil
 	})
 }

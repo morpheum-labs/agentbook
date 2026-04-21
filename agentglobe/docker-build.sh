@@ -40,7 +40,7 @@ if [[ -z "${TAG}" ]]; then
   fi
 fi
 
-IMAGE_NAME="agentdorkbook"
+IMAGE_NAME="agentglobe"
 DOCKERFILE="Dockerfile"
 
 DOCKER_REGISTRY="${DOCKER_SPACE_SORA:-}"

@@ -11,19 +11,19 @@ import AgentProfilePage from "@/pages/AgentProfilePage";
 import ProjectPage from "@/pages/ProjectPage";
 import PostPage from "@/pages/PostPage";
 import ApiReferencePage from "@/pages/ApiReferencePage";
-import AgentFloorLayout from "@/pages/agentfloor/AgentFloorLayout";
-import AgentFloorDashboardPage from "@/pages/agentfloor/AgentFloorDashboardPage";
-import AgentFloorIndexPage from "@/pages/agentfloor/AgentFloorIndexPage";
-import AgentFloorTopicsPage from "@/pages/agentfloor/AgentFloorTopicsPage";
-import AgentFloorDiscoverPage from "@/pages/agentfloor/AgentFloorDiscoverPage";
-import AgentFloorResearchPage from "@/pages/agentfloor/AgentFloorResearchPage";
-import AgentFloorResearchArticlePage from "@/pages/agentfloor/AgentFloorResearchArticlePage";
-import AgentFloorLivePage from "@/pages/agentfloor/AgentFloorLivePage";
-import AgentFloorTopicDetailsPage from "@/pages/agentfloor/AgentFloorTopicDetailsPage";
-import { AgentFloorQuestionPathRedirect } from "@/pages/agentfloor/AgentFloorQuestionPathRedirect";
-import AgentFloorAgentProfilePage from "@/pages/agentfloor/AgentFloorAgentProfilePage";
-import AgentFloorSubscribePage from "@/pages/agentfloor/AgentFloorSubscribePage";
-import AgentFloorOnboardPage from "@/pages/agentfloor/AgentFloorOnboardPage";
+import AgentFloorLayout from "@/pages/agentfloor/Layout";
+import AgentFloorDashboardPage from "@/pages/agentfloor/DashboardPage";
+import AgentFloorIndexPage from "@/pages/agentfloor/IndexPage";
+import AgentFloorTopicsPage from "@/pages/agentfloor/TopicsPage";
+import AgentFloorDiscoverPage from "@/pages/agentfloor/DiscoverPage";
+import AgentFloorResearchPage from "@/pages/agentfloor/ResearchPage";
+import AgentFloorResearchArticlePage from "@/pages/agentfloor/ResearchArticlePage";
+import AgentFloorLivePage from "@/pages/agentfloor/LivePage";
+import AgentFloorTopicDetailsPage from "@/pages/agentfloor/TopicDetailsPage";
+import { AgentFloorQuestionPathRedirect } from "@/pages/agentfloor/QuestionPathRedirect";
+import AgentFloorAgentProfilePage from "@/pages/agentfloor/AgentProfilePage";
+import AgentFloorSubscribePage from "@/pages/agentfloor/SubscribePage";
+import AgentFloorOnboardPage from "@/pages/agentfloor/OnboardPage";
 
 /** Old `/agentfloor/...` URLs → `/...` after floor moved to site root. */
 function AgentFloorPathRedirect() {

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import agentHtml from "./html/agent.html?raw";
-import { AgentFloorHtmlView } from "./AgentFloorHtmlView";
+import { AgentFloorHtmlView } from "./HtmlView";
 
 /** Distinct from Agentbook `AgentProfilePage` (`/api/v1/agents/{id}/profile`). */
 export default function AgentFloorAgentProfilePage() {
