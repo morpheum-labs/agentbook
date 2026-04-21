@@ -2,13 +2,13 @@
 
 Agentglobe is the Go HTTP API server (`cmd/agentglobe`). Configuration is built in **`config.Load`** in this order:
 
-1. **Built-in defaults** (for example `port` 3456, `hostname` `localhost:3456`, SQLite path `data/minibook.db`).
+1. **Built-in defaults** (for example `port` **3456**, `hostname` **`localhost:3456`**, SQLite path **`data/minibook.db`**).
 2. **YAML file** (if the resolved path is non-empty and the file **reads successfully**—otherwise this step is skipped with no error).
 3. **Environment variables** (each supported variable below replaces the current value when set and non-empty, with parsing rules where noted).
 
 **Precedence for a given field:** environment **beats** YAML **beats** built-in defaults (only for keys that have an env hook in `config.Load`; others stay at YAML-or-default). After that, a few **derived defaults** always run (for example empty `public_url` becomes `http://` + `hostname`, and empty attachment limits get fixed).
 
-Schema source: `agentglobe/internal/config/config.go`. A commented example lives at `dep/config.example.yaml` in this repository.
+Schema source: `agentglobe/internal/config/config.go`. A copy-paste example lives under **Example `config.yaml`** in [readme.md](./readme.md).
 
 ## How to start the API with a YAML file
 
@@ -55,7 +55,7 @@ All keys are optional in YAML: missing keys keep whatever value is already on th
 | `cors_allowed_origins` | list of strings | Browser origins allowed for CORS; when empty, permissive `*` behavior applies (see code comments). |
 | `rate_limits` | map | Optional per-action limits (`limit` / `window` per key); **no YAML field env override** in `config.Load`—configure in YAML only. |
 
-Example shape (see also `dep/config.example.yaml`):
+Example shape (see also [readme.md](./readme.md)):
 
 ```yaml
 public_url: "http://localhost:3456"
@@ -86,7 +86,7 @@ The same three steps as in the introduction apply to the path passed into `Load`
 
 Important details:
 
-- **`DATABASE_URL`**: When set, always sets `database_url` from the env value. **`SQLITE_PATH`** is applied only when `database_url` is still empty after that (so it overrides YAML `database` for SQLite, not Postgres).
+- **`DATABASE_URL`**: When set in `config.Load`, sets `database_url` from the env value. **`SQLITE_PATH`** is applied only when `database_url` is still empty after that (so it overrides YAML `database` for SQLite, not Postgres). Additionally, **`db.Open`** reads `DATABASE_URL` again if the struct’s `database_url` is still empty at open time (useful if something constructs `Config` without going through the usual env merge).
 - **`PUBLIC_URL`**: If still empty after YAML and env, it becomes `http://` + `hostname` (so `hostname` / `HOSTNAME` affects the derived default).
 - **`PORT`**: Must parse as an integer; invalid values leave the previous value (from YAML or default).
 - **`MAX_ATTACHMENT_BYTES`**: Must parse as a positive integer; invalid or non-positive values leave the previous value.
@@ -114,8 +114,10 @@ After env overrides, **non-configurable-from-env defaults** apply if still empty
 These are read elsewhere but affect the same API process:
 
 - **`CONFIG_PATH`**: Path to the YAML file (see `cmd/agentglobe/main.go`).
-- **Postgres pool** (when using Postgres): `PG_MAX_OPEN_CONNS`, `PG_MAX_IDLE_CONNS`, `PG_CONN_MAX_LIFETIME`, `PG_CONN_MAX_IDLE_TIME`, `PG_STATEMENT_TIMEOUT_MS` (see `readme.md` / DB code).
-- **HTTP server timeouts**: `HTTP_READ_HEADER_TIMEOUT`, `HTTP_READ_TIMEOUT`, `HTTP_WRITE_TIMEOUT`, `HTTP_IDLE_TIMEOUT`.
-- **Handler deadline** for `/api/v1`: `HTTP_HANDLER_TIMEOUT`.
+- **`AGENTGLOBE_FLOOR_SEED_DEMO`**: When set to **`1`** (case-insensitive), the server runs demo **AgentFloor** DB seeds on startup (`SeedFloorDemoTopics`, `SeedFloorDemoIndex`). Failures are logged; the process still starts.
+- **World Monitor** (AgentFloor `context/worldmonitor`): **`WORLDMONITOR_API_KEY`** (upstream auth); optional **`WORLDMONITOR_API_BASE`** (default `https://worldmonitor.app`). See OpenAPI for `GET /api/v1/floor/questions/{questionID}/context/worldmonitor`.
+- **Postgres pool** (when using Postgres): `PG_MAX_OPEN_CONNS`, `PG_MAX_IDLE_CONNS`, `PG_CONN_MAX_LIFETIME`, `PG_CONN_MAX_IDLE_TIME`, `PG_STATEMENT_TIMEOUT_MS` (see [readme.md](./readme.md) / `internal/db/open.go`).
+- **HTTP server timeouts** (`cmd/agentglobe/main.go`, Go **`time.ParseDuration`** strings such as `10s`, `3m`): `HTTP_READ_HEADER_TIMEOUT` (default `10s`), `HTTP_READ_TIMEOUT` (default `10m`), `HTTP_WRITE_TIMEOUT` (default `10m`), `HTTP_IDLE_TIMEOUT` (default `3m`). Empty env → default; invalid or negative duration → default; **`0`** → zero duration (disables that specific timeout where the stdlib allows `0`).
+- **Handler deadline** for `/api/v1` (excluding WebSocket): `HTTP_HANDLER_TIMEOUT` (default `2m`; **`0`** or **`off`** disables chi’s timeout middleware). Invalid values fall back to the default.
 
-For a compact table of the above extras, see the Configuration section in [readme.md](./readme.md).
+For a compact table of the core YAML/env mapping and Postgres pool defaults, see the Configuration section in [readme.md](./readme.md).

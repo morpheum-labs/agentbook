@@ -10,7 +10,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/glebarez/sqlite"
 	"github.com/morpheumlabs/agentbook/agentglobe/internal/config"
@@ -33,16 +32,12 @@ func testServer(t *testing.T) *Server {
 	if err := gdb.AutoMigrate(
 		&dbpkg.Agent{}, &dbpkg.Project{}, &dbpkg.ProjectMember{}, &dbpkg.Post{}, &dbpkg.Comment{},
 		&dbpkg.Webhook{}, &dbpkg.GitHubWebhook{}, &dbpkg.Notification{}, &dbpkg.Attachment{},
-		&dbpkg.ParliamentState{}, &dbpkg.Motion{}, &dbpkg.MotionVote{}, &dbpkg.MotionSpeech{},
-		&dbpkg.SpeechHeart{}, &dbpkg.AgentFaction{}, &dbpkg.ClerkBriefItem{},
 		&dbpkg.FloorQuestion{}, &dbpkg.FloorExternalSignal{}, &dbpkg.FloorPosition{}, &dbpkg.FloorAgentTopicStat{}, &dbpkg.FloorAgentInferenceProfile{},
-		&dbpkg.FloorDigestEntry{}, &dbpkg.FloorQuestionProbabilityPoint{}, &dbpkg.FloorShieldClaim{}, &dbpkg.FloorShieldChallenge{},
-		&dbpkg.FloorShieldChallengeVote{}, &dbpkg.FloorPositionChallenge{}, &dbpkg.FloorResearchArticle{}, &dbpkg.FloorBroadcast{},
+		&dbpkg.FloorDigestEntry{}, &dbpkg.FloorQuestionProbabilityPoint{}, &dbpkg.FloorPositionChallenge{}, &dbpkg.FloorResearchArticle{}, &dbpkg.FloorBroadcast{},
 		&dbpkg.FloorIndexPageMeta{}, &dbpkg.FloorIndexEntry{},
 	); err != nil {
 		t.Fatal(err)
 	}
-	dbpkg.SeedParliamentDefaults(gdb)
 	cfg := &config.Config{
 		Hostname:       "test",
 		Port:           3456,
@@ -315,52 +310,6 @@ func TestPostCreateAndGet(t *testing.T) {
 	defer res3.Body.Close()
 	if res3.StatusCode != http.StatusOK {
 		t.Fatalf("get post %d", res3.StatusCode)
-	}
-}
-
-func TestParliamentSessionAndMotion(t *testing.T) {
-	s := testServer(t)
-	ts := httptest.NewServer(s.Handler())
-	defer ts.Close()
-	res, err := http.Get(ts.URL + "/api/v1/parliament/session")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("session %d", res.StatusCode)
-	}
-	reg, _ := http.Post(ts.URL+"/api/v1/agents", "application/json", bytes.NewReader([]byte(`{"name":"ParlAgent"}`)))
-	var agent map[string]any
-	_ = json.NewDecoder(reg.Body).Decode(&agent)
-	reg.Body.Close()
-	key, _ := agent["api_key"].(string)
-	closeAt := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339Nano)
-	body := `{"title":"Will it rain?","category":"MACRO","close_time":"` + closeAt + `","subtext":"test"}`
-	req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/v1/motions", bytes.NewReader([]byte(body)))
-	req.Header.Set("Authorization", "Bearer "+key)
-	req.Header.Set("Content-Type", "application/json")
-	res2, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer res2.Body.Close()
-	if res2.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(res2.Body)
-		t.Fatalf("create motion %d: %s", res2.StatusCode, string(b))
-	}
-	var motion map[string]any
-	if err := json.NewDecoder(res2.Body).Decode(&motion); err != nil {
-		t.Fatal(err)
-	}
-	mid, _ := motion["id"].(string)
-	res3, err := http.Get(ts.URL + "/api/v1/motions/" + mid)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer res3.Body.Close()
-	if res3.StatusCode != http.StatusOK {
-		t.Fatalf("get motion %d", res3.StatusCode)
 	}
 }
 

@@ -334,7 +334,7 @@ func (s *Server) handleGetPlan(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = s.dbCtx(r).Preload("Author").First(&plan, "id = ?", plan.ID).Error
 	att := s.listPostAttachments(s.dbCtx(r), plan.ID)
-	writeJSON(w, http.StatusOK, s.postMap(&plan, plan.Author.Name, s.Posts.CountComments(s.dbCtx(r), plan.ID), &att))
+	writeJSON(w, http.StatusOK, s.postMap(&plan, plan.Author.Name, s.Floor.CountComments(s.dbCtx(r), plan.ID), &att))
 }
 
 func (s *Server) handlePutPlan(w http.ResponseWriter, r *http.Request) {
@@ -396,7 +396,7 @@ func (s *Server) handlePutPlan(w http.ResponseWriter, r *http.Request) {
 	_ = s.dbCtx(r).Preload("Author").First(&plan, "id = ?", plan.ID).Error
 	att := s.listPostAttachments(s.dbCtx(r), plan.ID)
 	s.emitProject(pid, map[string]any{"type": "post_updated", "project_id": pid, "post_id": plan.ID})
-	writeJSON(w, http.StatusOK, s.postMap(&plan, plan.Author.Name, s.Posts.CountComments(s.dbCtx(r), plan.ID), &att))
+	writeJSON(w, http.StatusOK, s.postMap(&plan, plan.Author.Name, s.Floor.CountComments(s.dbCtx(r), plan.ID), &att))
 }
 
 func (s *Server) handleAdminListProjects(w http.ResponseWriter, r *http.Request) {

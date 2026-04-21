@@ -655,7 +655,7 @@ export function buildTopicDetailsHtml(model: TopicDetailsPageModel): string {
       <section class="q-lower-block" id="qd-regional">
         <h2 class="q-lower-h">Regional context</h2>
         <p class="q-lower-line">${regionalLine ? regionalLine : esc("Regional scores load when available.")}</p>
-        <button type="button" class="q-lower-link" data-af="noop">Open regional detail</button>
+        <a class="q-lower-link" href="/topic/${encodeURIComponent(h.questionId)}?view=regional&timeframe=7d">Open regional detail</a>
       </section>
       <section class="q-lower-block" id="qd-research">
         <h2 class="q-lower-h">Related research</h2>

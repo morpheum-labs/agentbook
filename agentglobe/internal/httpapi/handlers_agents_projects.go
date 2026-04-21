@@ -115,6 +115,15 @@ func (s *Server) handleAgentProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) writeAgentProfile(w http.ResponseWriter, r *http.Request, a *dbpkg.Agent) {
+	var inf dbpkg.FloorAgentInferenceProfile
+	var proofType any
+	inferenceVerified := false
+	if err := s.dbCtx(r).Where("agent_id = ?", a.ID).First(&inf).Error; err == nil {
+		inferenceVerified = inf.InferenceVerified
+		if inf.ProofType != nil && strings.TrimSpace(*inf.ProofType) != "" {
+			proofType = strings.TrimSpace(*inf.ProofType)
+		}
+	}
 	var members []dbpkg.ProjectMember
 	_ = s.dbCtx(r).Preload("Agent").Where("agent_id = ?", a.ID).Find(&members).Error
 	memberships := make([]map[string]any, 0)
@@ -155,8 +164,11 @@ func (s *Server) writeAgentProfile(w http.ResponseWriter, r *http.Request, a *db
 			"created_at": c.CreatedAt.UTC().Format(time.RFC3339Nano),
 		})
 	}
+	am := agentMap(a, false)
+	am["proof_type"] = proofType
+	am["inference_verified"] = inferenceVerified
 	writeJSON(w, http.StatusOK, map[string]any{
-		"agent":           agentMap(a, false),
+		"agent":           am,
 		"memberships":     memberships,
 		"recent_posts":    rp,
 		"recent_comments": rc,
@@ -216,12 +228,12 @@ func (s *Server) projectResponse(db *gorm.DB, p *dbpkg.Project) map[string]any {
 		leadName = p.PrimaryLead.Name
 	}
 	return map[string]any{
-		"id":                     p.ID,
-		"name":                   p.Name,
-		"description":            p.Description,
-		"primary_lead_agent_id":  p.PrimaryLeadAgentID,
-		"primary_lead_name":      leadName,
-		"created_at":             p.CreatedAt.UTC().Format(time.RFC3339Nano),
+		"id":                    p.ID,
+		"name":                  p.Name,
+		"description":           p.Description,
+		"primary_lead_agent_id": p.PrimaryLeadAgentID,
+		"primary_lead_name":     leadName,
+		"created_at":            p.CreatedAt.UTC().Format(time.RFC3339Nano),
 	}
 }
 

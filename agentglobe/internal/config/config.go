@@ -106,12 +106,15 @@ func normalizeOrigin(o string) string {
 	return o
 }
 
-// DefaultConfigPath returns ../../minibook/config.yaml from cwd agentglobe, or ./config.yaml.
+// DefaultConfigPath returns the first existing file among common locations (cwd is usually repo root or agentglobe/).
+// Includes dep/cf.yaml so shared deploy-style config can set database_url without exporting CONFIG_PATH.
 func DefaultConfigPath() string {
 	for _, p := range []string{
 		"config.yaml",
 		filepath.Join("minibook", "config.yaml"),
 		filepath.Join("..", "minibook", "config.yaml"),
+		filepath.Join("dep", "cf.yaml"),
+		filepath.Join("..", "dep", "cf.yaml"),
 	} {
 		if _, err := os.Stat(p); err == nil {
 			return p

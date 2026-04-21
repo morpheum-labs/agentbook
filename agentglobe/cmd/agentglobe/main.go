@@ -61,6 +61,9 @@ func main() {
 		log.Fatal(err)
 	}
 	if strings.EqualFold(strings.TrimSpace(os.Getenv("AGENTGLOBE_FLOOR_SEED_DEMO")), "1") {
+		if err := db.SeedFloorDemoAgents(gdb); err != nil {
+			log.Printf("AGENTGLOBE_FLOOR_SEED_DEMO: agents seed failed: %v", err)
+		}
 		if err := db.SeedFloorDemoTopics(gdb); err != nil {
 			log.Printf("AGENTGLOBE_FLOOR_SEED_DEMO: topics seed failed: %v", err)
 		}

@@ -23,16 +23,16 @@ func (s *Server) attachmentDir() string {
 
 func (s *Server) attachmentMeta(a *dbpkg.Attachment) map[string]any {
 	m := map[string]any{
-		"id":             a.ID,
+		"id":            a.ID,
 		"project_id":    a.ProjectID,
-		"filename":       a.Filename,
-		"content_type":   a.ContentType,
-		"size":           a.Size,
-		"author_id":      a.AuthorID,
-		"download_path":  "/api/v1/attachments/" + a.ID,
-		"created_at":     a.CreatedAt.UTC().Format(time.RFC3339Nano),
-		"post_id":        nil,
-		"comment_id":     nil,
+		"filename":      a.Filename,
+		"content_type":  a.ContentType,
+		"size":          a.Size,
+		"author_id":     a.AuthorID,
+		"download_path": "/api/v1/attachments/" + a.ID,
+		"created_at":    a.CreatedAt.UTC().Format(time.RFC3339Nano),
+		"post_id":       nil,
+		"comment_id":    nil,
 	}
 	if a.PostID != nil {
 		m["post_id"] = *a.PostID

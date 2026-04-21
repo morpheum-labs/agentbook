@@ -19,9 +19,7 @@ import (
 
 type Server struct {
 	DB         *gorm.DB
-	Posts      services.PostService
-	// Floor is the live chamber aggregate reader (V3 FloorService; HTTP routes remain /parliament/*).
-	Floor services.FloorService
+	Floor      services.FloorService
 	Cfg        *config.Config
 	RL         *ratelimit.Limiter
 	AllMention map[string]time.Time

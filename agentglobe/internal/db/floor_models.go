@@ -25,26 +25,29 @@ type FloorQuestion struct {
 func (FloorQuestion) TableName() string { return "floor_questions" }
 
 type FloorPosition struct {
-	ID                    string        `gorm:"primaryKey;type:text"`
-	QuestionID            string        `gorm:"column:question_id;index;not null;type:text"`
-	Question              FloorQuestion `gorm:"foreignKey:QuestionID;references:ID"`
-	AgentID               string        `gorm:"column:agent_id;index;not null;type:text"`
-	Agent                 Agent         `gorm:"foreignKey:AgentID;references:ID"`
-	Direction             string        `gorm:"not null;type:text"`
-	StakedAt              time.Time     `gorm:"column:staked_at"`
-	Body                  string        `gorm:"not null;type:text;default:''"`
-	Language              string        `gorm:"not null;type:text;default:'EN'"`
-	AccuracyScoreAtStake  *float64      `gorm:"column:accuracy_score_at_stake"`
-	InferenceProof        *string       `gorm:"column:inference_proof;type:text"`
-	ProofType             *string       `gorm:"column:proof_type;type:text"`
-	RegionalCluster       *string       `gorm:"column:regional_cluster;type:text"`
-	Resolved              bool          `gorm:"not null"`
-	Outcome               string        `gorm:"not null;type:text;default:pending"`
-	ChallengeOpen         bool          `gorm:"column:challenge_open;not null"`
-	SourcePostID          *string       `gorm:"column:source_post_id;type:text"`
-	SourceCommentID       *string       `gorm:"column:source_comment_id;type:text"`
-	ExternalSignalIDsJSON string        `gorm:"column:external_signal_ids_json;not null;type:text;default:'[]'"`
-	CreatedAt             time.Time     `gorm:"column:created_at"`
+	ID                   string        `gorm:"primaryKey;type:text"`
+	QuestionID           string        `gorm:"column:question_id;index;not null;type:text"`
+	Question             FloorQuestion `gorm:"foreignKey:QuestionID;references:ID"`
+	AgentID              string        `gorm:"column:agent_id;index;not null;type:text"`
+	Agent                Agent         `gorm:"foreignKey:AgentID;references:ID"`
+	Direction            string        `gorm:"not null;type:text"`
+	StakedAt             time.Time     `gorm:"column:staked_at"`
+	Body                 string        `gorm:"not null;type:text;default:''"`
+	Language             string        `gorm:"not null;type:text;default:'EN'"`
+	AccuracyScoreAtStake *float64      `gorm:"column:accuracy_score_at_stake"`
+	InferenceProof       *string       `gorm:"column:inference_proof;type:text"`
+	ProofType            *string       `gorm:"column:proof_type;type:text"`
+	// Speculative is orthogonal to base direction (long/short/neutral); see spec/agent-discovery.md.
+	Speculative            bool      `gorm:"column:speculative;not null;default:false"`
+	InferredClusterAtStake *string   `gorm:"column:inferred_cluster_at_stake;type:text"`
+	RegionalCluster        *string   `gorm:"column:regional_cluster;type:text"`
+	Resolved               bool      `gorm:"not null"`
+	Outcome                string    `gorm:"not null;type:text;default:pending"`
+	ChallengeOpen          bool      `gorm:"column:challenge_open;not null"`
+	SourcePostID           *string   `gorm:"column:source_post_id;type:text"`
+	SourceCommentID        *string   `gorm:"column:source_comment_id;type:text"`
+	ExternalSignalIDsJSON  string    `gorm:"column:external_signal_ids_json;not null;type:text;default:'[]'"`
+	CreatedAt              time.Time `gorm:"column:created_at"`
 }
 
 func (FloorPosition) TableName() string { return "floor_positions" }
@@ -88,21 +91,31 @@ type FloorAgentInferenceProfile struct {
 func (FloorAgentInferenceProfile) TableName() string { return "floor_agent_inference_profile" }
 
 type FloorDigestEntry struct {
-	ID                   string    `gorm:"primaryKey;type:text"`
-	QuestionID           string    `gorm:"column:question_id;not null;type:text;uniqueIndex:floor_digest_question_date"`
-	DigestDate           string    `gorm:"column:digest_date;not null;type:text;uniqueIndex:floor_digest_question_date"`
-	ConsensusLevel       string    `gorm:"column:consensus_level;not null;type:text"`
-	Probability          float64   `gorm:"not null"`
-	ProbabilityDelta     float64   `gorm:"column:probability_delta;not null"`
-	Summary              string    `gorm:"not null;type:text"`
-	TopLongAgentID       *string   `gorm:"column:top_long_agent_id;type:text"`
-	TopShortAgentID      *string   `gorm:"column:top_short_agent_id;type:text"`
-	ClusterBreakdownJSON string    `gorm:"column:cluster_breakdown_json;not null;type:text;default:'{}'"`
-	LlmIndexHits         *int      `gorm:"column:llm_index_hits"`
-	CreatedAt            time.Time `gorm:"column:created_at"`
+	ID                   string  `gorm:"primaryKey;type:text"`
+	QuestionID           string  `gorm:"column:question_id;not null;type:text;uniqueIndex:floor_digest_question_date"`
+	DigestDate           string  `gorm:"column:digest_date;not null;type:text;uniqueIndex:floor_digest_question_date"`
+	ConsensusLevel       string  `gorm:"column:consensus_level;not null;type:text"`
+	Probability          float64 `gorm:"not null"`
+	ProbabilityDelta     float64 `gorm:"column:probability_delta;not null"`
+	Summary              string  `gorm:"not null;type:text"`
+	TopLongAgentID       *string `gorm:"column:top_long_agent_id;type:text"`
+	TopShortAgentID      *string `gorm:"column:top_short_agent_id;type:text"`
+	ClusterBreakdownJSON string  `gorm:"column:cluster_breakdown_json;not null;type:text;default:'{}'"`
+	// MentionedAgentIDsJSON lists agent ids cited in the digest beyond top_long/top_short (see agent-discovery digest mentions).
+	MentionedAgentIDsJSON string    `gorm:"column:mentioned_agent_ids_json;not null;type:text;default:'[]'"`
+	LlmIndexHits          *int      `gorm:"column:llm_index_hits"`
+	CreatedAt             time.Time `gorm:"column:created_at"`
 }
 
 func (FloorDigestEntry) TableName() string { return "floor_digest_entries" }
+
+func (d *FloorDigestEntry) MentionedAgentIDs() []string {
+	return decodeStringSlice(d.MentionedAgentIDsJSON)
+}
+
+func (d *FloorDigestEntry) SetMentionedAgentIDs(ids []string) {
+	d.MentionedAgentIDsJSON = encodeStringSlice(ids)
+}
 
 type FloorQuestionProbabilityPoint struct {
 	ID          string    `gorm:"primaryKey;type:text"`
@@ -113,58 +126,6 @@ type FloorQuestionProbabilityPoint struct {
 }
 
 func (FloorQuestionProbabilityPoint) TableName() string { return "floor_question_probability_points" }
-
-type FloorShieldClaim struct {
-	ID                    string                 `gorm:"primaryKey;type:text"`
-	Keyword               string                 `gorm:"not null;type:text"`
-	AgentID               string                 `gorm:"column:agent_id;index;not null;type:text"`
-	Agent                 Agent                  `gorm:"foreignKey:AgentID;references:ID"`
-	Category              *string                `gorm:"type:text"`
-	Rationale             string                 `gorm:"not null;type:text;default:''"`
-	StakedAt              time.Time              `gorm:"column:staked_at"`
-	ChallengePeriodEndsAt *time.Time             `gorm:"column:challenge_period_ends_at"`
-	AccuracyThresholdMet  bool                   `gorm:"column:accuracy_threshold_met;not null"`
-	ChallengeCount        int                    `gorm:"column:challenge_count;not null"`
-	ChallengePeriodOpen   bool                   `gorm:"column:challenge_period_open;not null"`
-	Sustained             bool                   `gorm:"not null"`
-	DigestPublished       bool                   `gorm:"column:digest_published;not null"`
-	InferenceProof        *string                `gorm:"column:inference_proof;type:text"`
-	StrengthScore         *float64               `gorm:"column:strength_score"`
-	Status                string                 `gorm:"not null;type:text;default:active"`
-	LinkedQuestionID      *string                `gorm:"column:linked_question_id;type:text"`
-	CreatedAt             time.Time              `gorm:"column:created_at"`
-	UpdatedAt             time.Time              `gorm:"column:updated_at"`
-	Challenges            []FloorShieldChallenge `gorm:"foreignKey:ClaimID;references:ID"`
-}
-
-func (FloorShieldClaim) TableName() string { return "floor_shield_claims" }
-
-type FloorShieldChallenge struct {
-	ID                string                     `gorm:"primaryKey;type:text"`
-	ClaimID           string                     `gorm:"column:claim_id;index;not null;type:text"`
-	ChallengerAgentID string                     `gorm:"column:challenger_agent_id;index;not null;type:text"`
-	Challenger        Agent                      `gorm:"foreignKey:ChallengerAgentID;references:ID"`
-	OpenedAt          time.Time                  `gorm:"column:opened_at"`
-	ClosesAt          time.Time                  `gorm:"column:closes_at"`
-	Resolution        *string                    `gorm:"type:text"`
-	ResolvedAt        *time.Time                 `gorm:"column:resolved_at"`
-	TallyJSON         string                     `gorm:"column:tally_json;not null;type:text;default:'{}'"`
-	Votes             []FloorShieldChallengeVote `gorm:"foreignKey:ChallengeID;references:ID"`
-}
-
-func (FloorShieldChallenge) TableName() string { return "floor_shield_challenges" }
-
-type FloorShieldChallengeVote struct {
-	ID           string    `gorm:"primaryKey;type:text"`
-	ChallengeID  string    `gorm:"column:challenge_id;not null;type:text;uniqueIndex:floor_shield_vote_chal_voter"`
-	VoterAgentID string    `gorm:"column:voter_agent_id;not null;type:text;uniqueIndex:floor_shield_vote_chal_voter"`
-	Voter        Agent     `gorm:"foreignKey:VoterAgentID;references:ID"`
-	Vote         string    `gorm:"not null;type:text"`
-	Weight       float64   `gorm:"not null;default:1"`
-	CastAt       time.Time `gorm:"column:cast_at"`
-}
-
-func (FloorShieldChallengeVote) TableName() string { return "floor_shield_challenge_votes" }
 
 type FloorPositionChallenge struct {
 	ID                string     `gorm:"primaryKey;type:text"`

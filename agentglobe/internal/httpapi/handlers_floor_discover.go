@@ -11,27 +11,12 @@ import (
 )
 
 const (
-	floorDiscoverMinResolved        = 50
-	floorDiscoverMinWinRate         = 0.5
-	floorDiscoverStaleHours         = 168
-	floorDiscoverDigestLookbackDays = 30
+	floorDiscoverMinResolved           = 50
+	floorDiscoverMinWinRate            = 0.5
+	floorDiscoverStaleHours            = 168
+	floorDiscoverDigestLookbackDays    = 30
+	floorDiscoverTopicStrengthMinCalls = 5
 )
-
-func floorDiscoverDirectionToCluster(dir string) string {
-	d := strings.ToLower(strings.TrimSpace(dir))
-	switch d {
-	case "long":
-		return "long"
-	case "short":
-		return "short"
-	case "speculative", "spec":
-		return "speculative"
-	case "neutral", "abstain", "abstention":
-		return "neutral"
-	default:
-		return "neutral"
-	}
-}
 
 func floorDiscoverLanguageLabel(code string) string {
 	switch strings.ToUpper(strings.TrimSpace(code)) {
@@ -102,16 +87,27 @@ func floorDiscoverAgentWire(
 	proofLinked int64,
 	digestMentions int,
 	digestWindow string,
+	proofType string,
 	lang string,
 	activeToday bool,
 	emergingGeo bool,
 	activityHours float64,
 	unqualifiedReason string,
 ) map[string]any {
-	handle := floorDiscoverHandleFromName(agent.Name)
+	displayName := strings.TrimSpace(agent.Name)
+	if agent.DisplayName != nil && strings.TrimSpace(*agent.DisplayName) != "" {
+		displayName = strings.TrimSpace(*agent.DisplayName)
+	}
+	handle := strings.TrimPrefix(floorDiscoverHandleFromName(agent.Name), "@")
+	if agent.FloorHandle != nil && strings.TrimSpace(*agent.FloorHandle) != "" {
+		handle = strings.TrimSpace(*agent.FloorHandle)
+	}
+	if handle == "" {
+		handle = "agent"
+	}
 	m := map[string]any{
 		"id":                     agent.ID,
-		"display_name":           agent.Name,
+		"display_name":           displayName,
 		"handle":                 handle,
 		"win_rate":               winRate,
 		"resolved_bets":          resolvedBets,
@@ -126,6 +122,9 @@ func floorDiscoverAgentWire(
 		"emerging_geo":           emergingGeo,
 		"activity_hours_ago":     activityHours,
 	}
+	if agent.Bio != nil && strings.TrimSpace(*agent.Bio) != "" {
+		m["bio"] = strings.TrimSpace(*agent.Bio)
+	}
 	if len(topicClusters) > 0 {
 		m["topic_clusters"] = topicClusters
 	}
@@ -135,6 +134,9 @@ func floorDiscoverAgentWire(
 	if digestMentions > 0 {
 		m["recent_digest_mentions"] = digestMentions
 		m["digest_mentions_window"] = digestWindow
+	}
+	if strings.TrimSpace(proofType) != "" {
+		m["proof_type"] = strings.TrimSpace(proofType)
 	}
 	if unqualifiedReason != "" {
 		m["unqualified_reason"] = unqualifiedReason
@@ -157,7 +159,7 @@ type discoverAgg struct {
 	dirSpec         int
 	dirNeutral      int
 	langCode        string
-	topicDirCounts  map[string]map[string]int // category -> direction -> count
+	topicDirCounts  map[string]map[string]int // category -> inferred cluster -> count
 
 	statCalls   int
 	statCorrect int
@@ -212,15 +214,18 @@ func floorDiscoverTopicClustersFromPositions(topicDirCounts map[string]map[strin
 	out := make([]map[string]any, 0, len(order))
 	for _, p := range order {
 		dm := topicDirCounts[p.cat]
-		bestDir := "long"
+		bestCluster := "long"
 		bestN := -1
-		for d, n := range dm {
+		for clKey, n := range dm {
 			if n > bestN {
 				bestN = n
-				bestDir = d
+				bestCluster = clKey
 			}
 		}
-		cl := floorDiscoverDirectionToCluster(bestDir)
+		cl := floorNormalizeInferredCluster(bestCluster)
+		if cl == "" {
+			cl = "neutral"
+		}
 		out = append(out, map[string]any{
 			"topic_class":     p.cat,
 			"cluster":         cl,
@@ -256,8 +261,19 @@ func floorDiscoverTopicStrengths(rows []dbpkg.FloorAgentTopicStat) []string {
 	if len(rows) == 0 {
 		return nil
 	}
-	cp := append([]dbpkg.FloorAgentTopicStat(nil), rows...)
+	cp := make([]dbpkg.FloorAgentTopicStat, 0, len(rows))
+	for i := range rows {
+		if rows[i].Calls >= floorDiscoverTopicStrengthMinCalls {
+			cp = append(cp, rows[i])
+		}
+	}
+	if len(cp) == 0 {
+		return nil
+	}
 	sort.Slice(cp, func(i, j int) bool {
+		if cp[i].Score != cp[j].Score {
+			return cp[i].Score > cp[j].Score
+		}
 		if cp[i].Calls != cp[j].Calls {
 			return cp[i].Calls > cp[j].Calls
 		}
@@ -272,6 +288,32 @@ func floorDiscoverTopicStrengths(rows []dbpkg.FloorAgentTopicStat) []string {
 		out = append(out, cp[i].TopicClass)
 	}
 	return out
+}
+
+// floorDigestUniqueAgentAppearances returns each agent id that counts as one digest appearance
+// (top slots plus explicit mentions; at most one increment per agent per digest row).
+func floorDigestUniqueAgentAppearances(d *dbpkg.FloorDigestEntry) map[string]struct{} {
+	if d == nil {
+		return nil
+	}
+	seen := make(map[string]struct{})
+	add := func(id string) {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			return
+		}
+		seen[id] = struct{}{}
+	}
+	if d.TopLongAgentID != nil {
+		add(*d.TopLongAgentID)
+	}
+	if d.TopShortAgentID != nil {
+		add(*d.TopShortAgentID)
+	}
+	for _, id := range d.MentionedAgentIDs() {
+		add(id)
+	}
+	return seen
 }
 
 func floorDiscoverActivityHours(agent dbpkg.Agent, lastStake, statLast *time.Time) float64 {
@@ -353,8 +395,7 @@ func (s *Server) handleFloorDiscoverPage(w http.ResponseWriter, r *http.Request)
 			t := st
 			a.lastStakedAt = &t
 		}
-		d := strings.ToLower(strings.TrimSpace(p.Direction))
-		switch floorDiscoverDirectionToCluster(d) {
+		switch floorPositionInferredClusterForAggregate(p) {
 		case "long":
 			a.dirLong++
 		case "short":
@@ -375,7 +416,8 @@ func (s *Server) handleFloorDiscoverPage(w http.ResponseWriter, r *http.Request)
 			if a.topicDirCounts[cat] == nil {
 				a.topicDirCounts[cat] = make(map[string]int)
 			}
-			a.topicDirCounts[cat][d]++
+			cl := floorPositionInferredClusterForAggregate(p)
+			a.topicDirCounts[cat][cl]++
 		}
 	}
 
@@ -419,8 +461,12 @@ func (s *Server) handleFloorDiscoverPage(w http.ResponseWriter, r *http.Request)
 	var infs []dbpkg.FloorAgentInferenceProfile
 	_ = db.Find(&infs).Error
 	infVerified := make(map[string]bool, len(infs))
+	infProofType := make(map[string]string, len(infs))
 	for i := range infs {
 		infVerified[infs[i].AgentID] = infs[i].InferenceVerified
+		if infs[i].ProofType != nil && strings.TrimSpace(*infs[i].ProofType) != "" {
+			infProofType[infs[i].AgentID] = strings.TrimSpace(*infs[i].ProofType)
+		}
 	}
 
 	digestCutoff := time.Now().UTC().AddDate(0, 0, -floorDiscoverDigestLookbackDays).Format("2006-01-02")
@@ -429,11 +475,8 @@ func (s *Server) handleFloorDiscoverPage(w http.ResponseWriter, r *http.Request)
 	digestHits := make(map[string]int)
 	for i := range digests {
 		d := &digests[i]
-		if d.TopLongAgentID != nil && *d.TopLongAgentID != "" {
-			digestHits[*d.TopLongAgentID]++
-		}
-		if d.TopShortAgentID != nil && *d.TopShortAgentID != "" {
-			digestHits[*d.TopShortAgentID]++
+		for id := range floorDigestUniqueAgentAppearances(d) {
+			digestHits[id]++
 		}
 	}
 
@@ -475,8 +518,9 @@ func (s *Server) handleFloorDiscoverPage(w http.ResponseWriter, r *http.Request)
 			}
 		}
 
-		verified := infVerified[id]
+		verified := agent.PlatformVerified || infVerified[id]
 		dm := digestHits[id]
+		pt := infProofType[id]
 		lang := ag.langCode
 		if lang == "" {
 			lang = "EN"
@@ -519,6 +563,7 @@ func (s *Server) handleFloorDiscoverPage(w http.ResponseWriter, r *http.Request)
 			ag.proofLinked,
 			dm,
 			digestWindow,
+			pt,
 			lang,
 			activeToday,
 			ag.hasGeo,

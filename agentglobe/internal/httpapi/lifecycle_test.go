@@ -89,7 +89,7 @@ func TestAgentGlobeLifecycle(t *testing.T) {
 		t.Fatal("register B: missing api_key or id")
 	}
 
-	// 3. Identity, presence, ratelimit, faction (A)
+	// 3. Identity, presence, ratelimit (A)
 	resMe := doReq(http.MethodGet, "/api/v1/agents/me", keyA, "", nil)
 	mustStatus(t, resMe, http.StatusOK)
 	_ = resMe.Body.Close()
@@ -101,10 +101,6 @@ func TestAgentGlobeLifecycle(t *testing.T) {
 	resRL := doReq(http.MethodGet, "/api/v1/agents/me/ratelimit", keyA, "", nil)
 	mustStatus(t, resRL, http.StatusOK)
 	_ = resRL.Body.Close()
-
-	resFac := doReq(http.MethodPatch, "/api/v1/agents/me/faction", keyA, "application/json", strings.NewReader(`{"faction":"bull"}`))
-	mustStatus(t, resFac, http.StatusOK)
-	_ = resFac.Body.Close()
 
 	// 4. Project: A creates, B joins
 	resProj := doReq(http.MethodPost, "/api/v1/projects", keyA, "application/json", strings.NewReader(`{"name":"`+projName+`","description":"lifecycle"}`))
@@ -234,35 +230,7 @@ func TestAgentGlobeLifecycle(t *testing.T) {
 		t.Fatalf("A notifications: want type reply, got %#v", notifsA)
 	}
 
-	// 9. Chamber: motion → vote → speech; B receives broadcastAll (e.g. new_position)
-	closeAt := time.Now().UTC().Add(48 * time.Hour).Format(time.RFC3339Nano)
-	motionBody := `{"title":"Lifecycle motion","category":"MACRO","close_time":"` + closeAt + `","subtext":"e2e"}`
-	resMot := doReq(http.MethodPost, "/api/v1/motions", keyA, "application/json", strings.NewReader(motionBody))
-	mustStatus(t, resMot, http.StatusOK)
-	var motion map[string]any
-	if err := json.NewDecoder(resMot.Body).Decode(&motion); err != nil {
-		t.Fatal(err)
-	}
-	_ = resMot.Body.Close()
-	mid, _ := motion["id"].(string)
-	if mid == "" {
-		t.Fatal("missing motion id")
-	}
-
-	resVote := doReq(http.MethodPost, "/api/v1/motions/"+mid+"/vote", keyA, "application/json", strings.NewReader(`{"stance":"aye"}`))
-	mustStatus(t, resVote, http.StatusOK)
-	_ = resVote.Body.Close()
-
-	resSpeech := doReq(http.MethodPost, "/api/v1/motions/"+mid+"/speeches", keyA, "application/json", strings.NewReader(`{"text":"Hear hear","stance":"aye"}`))
-	mustStatus(t, resSpeech, http.StatusOK)
-	_ = resSpeech.Body.Close()
-
-	parlMsg := wsReadUntilType("new_position", 5*time.Second)
-	if parlMsg["motion_id"] != mid {
-		t.Fatalf("new_position motion_id want %q got %v", mid, parlMsg["motion_id"])
-	}
-
-	// 10. online_only + admin list (no api_key)
+	// 9. online_only + admin list (no api_key)
 	resHB2 := doReq(http.MethodPost, "/api/v1/agents/heartbeat", keyA, "", nil)
 	_ = resHB2.Body.Close()
 	resHB3 := doReq(http.MethodPost, "/api/v1/agents/heartbeat", keyB, "", nil)

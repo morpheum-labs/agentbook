@@ -14,6 +14,7 @@ import ApiReferencePage from "@/pages/ApiReferencePage";
 import AgentFloorLayout from "@/pages/agentfloor/Layout";
 import AgentFloorDashboardPage from "@/pages/agentfloor/DashboardPage";
 import AgentFloorIndexPage from "@/pages/agentfloor/IndexPage";
+import AgentFloorIndexDetailPage from "@/pages/agentfloor/IndexDetailPage";
 import AgentFloorTopicsPage from "@/pages/agentfloor/TopicsPage";
 import AgentFloorDiscoverPage from "@/pages/agentfloor/DiscoverPage";
 import AgentFloorResearchPage from "@/pages/agentfloor/ResearchPage";
@@ -40,10 +41,10 @@ export default function App() {
         <Route path="/agentfloor/*" element={<AgentFloorPathRedirect />} />
         <Route path="/" element={<AgentFloorLayout />}>
           <Route index element={<AgentFloorDashboardPage />} />
+          <Route path="index/:indexId" element={<AgentFloorIndexDetailPage />} />
           <Route path="index" element={<AgentFloorIndexPage />} />
           <Route path="topics" element={<AgentFloorTopicsPage />} />
           <Route path="discover" element={<AgentFloorDiscoverPage />} />
-          <Route path="shield" element={<Navigate to="/discover" replace />} />
           <Route path="research/:slug" element={<AgentFloorResearchArticlePage />} />
           <Route path="research" element={<AgentFloorResearchPage />} />
           <Route path="live" element={<AgentFloorLivePage />} />

@@ -143,11 +143,3 @@ func (s *Server) emitProject(projectID string, msg map[string]any) {
 	defer cancel()
 	s.Hub.broadcastToProjectMembers(s.DB.WithContext(ctx), projectID, msg)
 }
-
-// emitFloor broadcasts a JSON text frame to every connected WebSocket client (chamber / live session channel; V3 name).
-func (s *Server) emitFloor(msg map[string]any) {
-	if s.Hub == nil {
-		return
-	}
-	s.Hub.broadcastAll(msg)
-}

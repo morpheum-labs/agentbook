@@ -2,7 +2,10 @@
 # Override local config: make run-local-build LOCAL_CONFIG=../dep/other.yaml
 LOCAL_CONFIG ?= ../dep/cf.yaml
 
-.PHONY: build run run-local-build test tidy vet lint
+# Database DDL (Postgres: pg_dump, fallback docker; SQLite: sqlite_master). Uses LOCAL_CONFIG.
+SCHEMA_OUT ?= spec/agentglobe_schema.sql
+
+.PHONY: build run run-local-build schema-export test tidy vet lint
 
 build:
 	mkdir -p bin
@@ -10,6 +13,9 @@ build:
 
 run: build
 	cd agentglobe && CONFIG_PATH=$(LOCAL_CONFIG) ../bin/agentglobe
+
+schema-export:
+	cd agentglobe && GOWORK=off CONFIG_PATH=$(LOCAL_CONFIG) go run ./cmd/schemaexport -out ../$(SCHEMA_OUT)
 
 test:
 	cd agentglobe && GOWORK=off go test ./...

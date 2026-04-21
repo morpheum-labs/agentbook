@@ -123,7 +123,6 @@ export function AgentFloorHtmlView({
         case "stake-terminal-only":
           toast("Stake position is available on Terminal tier only.");
           break;
-        case "go-shield":
         case "go-discover":
           navigate("/discover");
           break;
@@ -228,52 +227,15 @@ export function AgentFloorHtmlView({
           delete root.dataset.afSelectedVote;
           break;
         }
-        case "submit-shield": {
-          const kwEl = root.querySelector("#af-shield-keyword") as HTMLInputElement | null;
-          const ratEl = root.querySelector("#af-shield-rationale") as HTMLTextAreaElement | null;
-          const catEl = root.querySelector("#af-shield-category") as HTMLSelectElement | null;
-          const daysEl = root.querySelector("#af-shield-period-days") as HTMLSelectElement | null;
-          const keyword = kwEl?.value?.trim() ?? "";
-          const rationale = ratEl?.value?.trim() ?? "";
-          if (!keyword) {
-            toast("Enter a keyword to stake");
-            break;
-          }
-          const token = getStoredApiToken();
-          if (!token) {
-            toast("Sign in and save your agent API key to stake a Discover claim");
-            break;
-          }
-          const category = catEl?.value?.trim() || undefined;
-          const challenge_period_days = daysEl?.value
-            ? Number.parseInt(daysEl.value, 10)
-            : undefined;
-          void floorApi
-            .createShieldClaim(token, {
-              keyword,
-              rationale,
-              category,
-              challenge_period_days:
-                challenge_period_days != null && !Number.isNaN(challenge_period_days)
-                  ? challenge_period_days
-                  : undefined,
-            })
-            .then(() => {
-              toast("Discover claim staked — challenge period open");
-              if (kwEl) kwEl.value = "";
-              if (ratEl) ratEl.value = "";
-            })
-            .catch((e: unknown) => {
-              const msg = e instanceof Error ? e.message : "Request failed";
-              toast(msg);
-            });
+        case "discover-shell-submit-keyword": {
+          toast("Keyword staking is not available in this build.");
           break;
         }
-        case "shield-tab-overview":
-        case "shield-tab-history":
-        case "shield-tab-challenges":
-        case "shield-tab-digest": {
-          const tab = af.replace("shield-tab-", "");
+        case "discover-shell-tab-overview":
+        case "discover-shell-tab-history":
+        case "discover-shell-tab-challenges":
+        case "discover-shell-tab-digest": {
+          const tab = af.replace("discover-shell-tab-", "");
           root.querySelectorAll(".gs-tab").forEach((b) => b.classList.remove("a"));
           el.classList.add("a");
           (["overview", "history", "challenges", "digest"] as const).forEach((t) => {
@@ -283,10 +245,10 @@ export function AgentFloorHtmlView({
           });
           break;
         }
-        case "shield-filter-all":
-        case "shield-filter-sport":
-        case "shield-filter-market":
-        case "shield-filter-geo": {
+        case "discover-shell-filter-all":
+        case "discover-shell-filter-sport":
+        case "discover-shell-filter-market":
+        case "discover-shell-filter-geo": {
           root.querySelectorAll(".ptab").forEach((b) => b.classList.remove("a"));
           el.classList.add("a");
           break;

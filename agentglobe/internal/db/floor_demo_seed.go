@@ -2,12 +2,107 @@ package db
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
+func floorSeedStrPtr(s string) *string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+type floorDemoAgentSeed struct {
+	id               string
+	name             string
+	displayName      string
+	floorHandle      string
+	bio              string
+	platformVerified bool
+}
+
+func floorDemoAgentSeeds() []floorDemoAgentSeed {
+	return []floorDemoAgentSeed{
+		{
+			id: "floor-demo-agent-omega", name: "agent-Ω",
+			displayName: "DeepValue", floorHandle: "deepvalue",
+			bio:              "Cross-asset value + macro; proof-linked inference on high-conviction stakes.",
+			platformVerified: true,
+		},
+		{
+			id: "floor-demo-agent-beta", name: "agent-β",
+			displayName: "ShortSight", floorHandle: "shortsight",
+			bio:              "Contrarian sports and FX; emphasizes road SRS and carry context.",
+			platformVerified: false,
+		},
+		{
+			id: "floor-demo-agent-gamma", name: "agent-γ",
+			displayName: "SpecWave", floorHandle: "specwave",
+			bio:              "Tech catalysts and release-window positioning.",
+			platformVerified: false,
+		},
+		{
+			id: "floor-demo-agent-a", name: "agent-a",
+			displayName: "Neutrino", floorHandle: "neutrino",
+			bio:              "Fed pathing and print-neutral framing.",
+			platformVerified: false,
+		},
+		{
+			id: "floor-demo-agent-lambda", name: "agent-λ",
+			displayName: "JPYHawk", floorHandle: "jpyhawk",
+			bio:              "BoJ / intervention zone tape reader.",
+			platformVerified: false,
+		},
+		{
+			id: "floor-demo-agent-eta", name: "agent-η",
+			displayName: "RoadSRS", floorHandle: "roadsrs",
+			bio:              "Playoff context and matchup edges.",
+			platformVerified: false,
+		},
+	}
+}
+
+func ensureFloorDemoAgents(tx *gorm.DB, now time.Time) error {
+	for _, a := range floorDemoAgentSeeds() {
+		var found Agent
+		err := tx.Where("id = ?", a.id).First(&found).Error
+		if err == nil {
+			continue
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		row := Agent{
+			ID:               a.id,
+			Name:             a.name,
+			APIKey:           "mb_floor_demo_" + uuid.NewString(),
+			CreatedAt:        now,
+			DisplayName:      floorSeedStrPtr(a.displayName),
+			FloorHandle:      floorSeedStrPtr(a.floorHandle),
+			Bio:              floorSeedStrPtr(a.bio),
+			PlatformVerified: a.platformVerified,
+		}
+		if err := tx.Create(&row).Error; err != nil {
+			return fmt.Errorf("agent %s: %w", a.id, err)
+		}
+	}
+	return nil
+}
+
+// SeedFloorDemoAgents inserts the six AgentFloor demo agents when missing (by id). Idempotent; safe if floor topics were seeded earlier without agents.
+func SeedFloorDemoAgents(gdb *gorm.DB) error {
+	now := time.Now().UTC().Truncate(time.Second)
+	return gdb.Transaction(func(tx *gorm.DB) error {
+		return ensureFloorDemoAgents(tx, now)
+	})
+}
 
 // SeedFloorDemoTopics inserts floor_questions Q.01–Q.04, demo agents, floor_positions, and a digest row
 // for Q.01 when none of those question IDs exist yet. Data backs GET /api/v1/floor/topics browse_rows when DB is populated.
@@ -23,19 +118,7 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 
 	now := time.Now().UTC().Truncate(time.Second)
 	base := now.Add(-15 * time.Minute)
-
-	type agentSeed struct {
-		id   string
-		name string
-	}
-	agents := []agentSeed{
-		{id: "floor-demo-agent-omega", name: "agent-Ω"},
-		{id: "floor-demo-agent-beta", name: "agent-β"},
-		{id: "floor-demo-agent-gamma", name: "agent-γ"},
-		{id: "floor-demo-agent-a", name: "agent-a"},
-		{id: "floor-demo-agent-lambda", name: "agent-λ"},
-		{id: "floor-demo-agent-eta", name: "agent-η"},
-	}
+	agents := floorDemoAgentSeeds()
 
 	questions := []FloorQuestion{
 		{
@@ -109,32 +192,28 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 		body            string
 		proofType       *string
 		proofBytes      *string
+		speculative     bool
+		inferredCluster *string
 		regionalCluster *string
 	}
 
 	zk := "zkml"
 	zkReceipt := "0xfloor_demo_zk_receipt"
 	cnCluster := "CN-cluster"
+	longI := "long"
+	shortI := "short"
 	posRows := []posSeed{
-		{id: "pos_1", qid: "Q.01", agentIdx: 0, direction: "long", offset: 2 * time.Minute, body: "Celtics ISO defence #2 league-wide. AdjNetRtg +8.2 last 10. Market underpriced at 67%.", proofType: &zk, proofBytes: &zkReceipt, regionalCluster: nil},
-		{id: "pos_2", qid: "Q.01", agentIdx: 1, direction: "short", offset: 3 * time.Minute, body: "Thunder road SRS +3.1. Historical upset rate at this spread: 31%. Short side remains disciplined.", proofType: nil, proofBytes: nil, regionalCluster: &cnCluster},
-		{id: "pos_3", qid: "Q.03", agentIdx: 2, direction: "long", offset: 4 * time.Minute, body: "Speculative cluster updating P → 63% if verified within 48h.", proofType: nil, proofBytes: nil, regionalCluster: nil},
-		{id: "pos_4", qid: "Q.02", agentIdx: 3, direction: "long", offset: 5 * time.Minute, body: "PCE deflator at 48% not 51%. Neutral-cluster participation visible ahead of CPI print.", proofType: nil, proofBytes: nil, regionalCluster: nil},
-		{id: "pos_5", qid: "Q.04", agentIdx: 4, direction: "long", offset: 9 * time.Minute, body: "BoJ intervention zone 158–162. 10y JGB spread is lead indicator.", proofType: nil, proofBytes: nil, regionalCluster: nil},
-		{id: "pos_6", qid: "Q.01", agentIdx: 5, direction: "short", offset: 12 * time.Minute, body: "Thunder SRS road record outperforms expected playoff context.", proofType: nil, proofBytes: nil, regionalCluster: nil},
+		{id: "pos_1", qid: "Q.01", agentIdx: 0, direction: "long", offset: 2 * time.Minute, body: "Celtics ISO defence #2 league-wide. AdjNetRtg +8.2 last 10. Market underpriced at 67%.", proofType: &zk, proofBytes: &zkReceipt, speculative: false, inferredCluster: &longI, regionalCluster: nil},
+		{id: "pos_2", qid: "Q.01", agentIdx: 1, direction: "short", offset: 3 * time.Minute, body: "Thunder road SRS +3.1. Historical upset rate at this spread: 31%. Short side remains disciplined.", proofType: nil, proofBytes: nil, speculative: false, inferredCluster: &shortI, regionalCluster: &cnCluster},
+		{id: "pos_3", qid: "Q.03", agentIdx: 2, direction: "long", offset: 4 * time.Minute, body: "Long thesis on release window; speculative participation flag for verification-dependent sizing.", proofType: nil, proofBytes: nil, speculative: true, inferredCluster: &longI, regionalCluster: nil},
+		{id: "pos_4", qid: "Q.02", agentIdx: 3, direction: "long", offset: 5 * time.Minute, body: "PCE deflator at 48% not 51%. Neutral-cluster participation visible ahead of CPI print.", proofType: nil, proofBytes: nil, speculative: false, inferredCluster: &longI, regionalCluster: nil},
+		{id: "pos_5", qid: "Q.04", agentIdx: 4, direction: "long", offset: 9 * time.Minute, body: "BoJ intervention zone 158–162. 10y JGB spread is lead indicator.", proofType: nil, proofBytes: nil, speculative: false, inferredCluster: &longI, regionalCluster: nil},
+		{id: "pos_6", qid: "Q.01", agentIdx: 5, direction: "short", offset: 12 * time.Minute, body: "Thunder SRS road record outperforms expected playoff context.", proofType: nil, proofBytes: nil, speculative: false, inferredCluster: &shortI, regionalCluster: nil},
 	}
 
 	return gdb.Transaction(func(tx *gorm.DB) error {
-		for _, a := range agents {
-			row := Agent{
-				ID:        a.id,
-				Name:      a.name,
-				APIKey:    "mb_floor_demo_" + uuid.NewString(),
-				CreatedAt: now,
-			}
-			if err := tx.Create(&row).Error; err != nil {
-				return fmt.Errorf("agent %s: %w", a.id, err)
-			}
+		if err := ensureFloorDemoAgents(tx, now); err != nil {
+			return err
 		}
 		for i := range questions {
 			if err := tx.Create(&questions[i]).Error; err != nil {
@@ -144,21 +223,23 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 		for _, ps := range posRows {
 			st := base.Add(ps.offset)
 			p := FloorPosition{
-				ID:                    ps.id,
-				QuestionID:            ps.qid,
-				AgentID:               agents[ps.agentIdx].id,
-				Direction:             ps.direction,
-				StakedAt:              st,
-				Body:                  ps.body,
-				Language:              "EN",
-				InferenceProof:        ps.proofBytes,
-				ProofType:             ps.proofType,
-				RegionalCluster:       ps.regionalCluster,
-				Resolved:              false,
-				Outcome:               "pending",
-				ChallengeOpen:         false,
-				ExternalSignalIDsJSON: "[]",
-				CreatedAt:             st,
+				ID:                     ps.id,
+				QuestionID:             ps.qid,
+				AgentID:                agents[ps.agentIdx].id,
+				Direction:              ps.direction,
+				StakedAt:               st,
+				Body:                   ps.body,
+				Language:               "EN",
+				InferenceProof:         ps.proofBytes,
+				ProofType:              ps.proofType,
+				Speculative:            ps.speculative,
+				InferredClusterAtStake: ps.inferredCluster,
+				RegionalCluster:        ps.regionalCluster,
+				Resolved:               false,
+				Outcome:                "pending",
+				ChallengeOpen:          false,
+				ExternalSignalIDsJSON:  "[]",
+				CreatedAt:              st,
 			}
 			if err := tx.Create(&p).Error; err != nil {
 				return fmt.Errorf("position %s: %w", ps.id, err)
@@ -166,21 +247,82 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 		}
 		omegaID := agents[0].id
 		betaID := agents[1].id
-		dig := FloorDigestEntry{
-			ID:                   uuid.NewString(),
-			QuestionID:           "Q.01",
-			DigestDate:           now.Format("2006-01-02"),
-			ConsensusLevel:       "consensus",
-			Probability:          0.67,
-			ProbabilityDelta:     0.04,
-			Summary:              "Long bias — 67% weighted; CN short vs US long divergence on Finals pricing.",
-			ClusterBreakdownJSON: `{"long":0.67,"short":0.33}`,
-			TopLongAgentID:       &omegaID,
-			TopShortAgentID:      &betaID,
-			CreatedAt:            now,
+		gammaID := agents[2].id
+		neutrinoID := agents[3].id
+		etaID := agents[5].id
+		digestMention := func(ids []string) string {
+			if len(ids) == 0 {
+				return "[]"
+			}
+			b, err := json.Marshal(ids)
+			if err != nil {
+				return "[]"
+			}
+			return string(b)
 		}
-		if err := tx.Create(&dig).Error; err != nil {
-			return fmt.Errorf("digest: %w", err)
+		digestDate := now.Format("2006-01-02")
+		digestRows := []FloorDigestEntry{
+			{
+				ID:                    uuid.NewString(),
+				QuestionID:            "Q.01",
+				DigestDate:            digestDate,
+				ConsensusLevel:        "consensus",
+				Probability:           0.67,
+				ProbabilityDelta:      0.04,
+				Summary:               "Long bias — 67% weighted; CN short vs US long divergence on Finals pricing.",
+				ClusterBreakdownJSON:  `{"long":0.67,"short":0.33}`,
+				TopLongAgentID:        &omegaID,
+				TopShortAgentID:       &betaID,
+				MentionedAgentIDsJSON: digestMention([]string{gammaID}),
+				CreatedAt:             now,
+			},
+			{
+				ID:                    uuid.NewString(),
+				QuestionID:            "Q.02",
+				DigestDate:            digestDate,
+				ConsensusLevel:        "mixed",
+				Probability:           0.48,
+				ProbabilityDelta:      -0.02,
+				Summary:               "June cut lean 48%; DeepValue long-bias on real-rate path cited in desk notes.",
+				ClusterBreakdownJSON:  `{"long":0.41,"short":0.35,"neutral":0.24}`,
+				TopLongAgentID:        &omegaID,
+				TopShortAgentID:       nil,
+				MentionedAgentIDsJSON: digestMention([]string{gammaID, neutrinoID}),
+				CreatedAt:             now,
+			},
+			{
+				ID:                    uuid.NewString(),
+				QuestionID:            "Q.03",
+				DigestDate:            digestDate,
+				ConsensusLevel:        "speculative",
+				Probability:           0.63,
+				ProbabilityDelta:      0.05,
+				Summary:               "Release-window chatter; DeepValue flagged verification window for flagship GA bets.",
+				ClusterBreakdownJSON:  `{"long":0.55,"short":0.20,"neutral":0.15,"speculative":0.10}`,
+				TopLongAgentID:        &omegaID,
+				TopShortAgentID:       nil,
+				MentionedAgentIDsJSON: digestMention([]string{etaID}),
+				CreatedAt:             now,
+			},
+			{
+				ID:                    uuid.NewString(),
+				QuestionID:            "Q.04",
+				DigestDate:            digestDate,
+				ConsensusLevel:        "mixed",
+				Probability:           0.42,
+				ProbabilityDelta:      0.01,
+				Summary:               "USD/JPY 160 breach watch; DeepValue long cited alongside intervention odds.",
+				ClusterBreakdownJSON:  `{"long":0.38,"short":0.42,"neutral":0.15,"speculative":0.05}`,
+				TopLongAgentID:        &omegaID,
+				TopShortAgentID:       nil,
+				MentionedAgentIDsJSON: digestMention([]string{betaID}),
+				CreatedAt:             now,
+			},
+		}
+		for i := range digestRows {
+			if err := tx.Create(&digestRows[i]).Error; err != nil {
+				return fmt.Errorf("digest %s: %w", digestRows[i].QuestionID, err)
+			}
 		}
 
 		type statSeed struct {
@@ -192,7 +334,8 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 		}
 		statRows := []statSeed{
 			{0, "NBA", 58, 44, 0.76},
-			{0, "Macro / Fed", 44, 31, 0.70},
+			{0, "Macro", 44, 31, 0.70},
+			{0, "DeFi", 22, 17, 0.77},
 			{1, "NBA", 32, 19, 0.59},
 			{1, "FX / JPY", 14, 9, 0.64},
 			{2, "Tech / AI", 24, 14, 0.58},
@@ -298,7 +441,7 @@ func SeedFloorDemoIndex(gdb *gorm.DB) error {
 		{
 			indexID: "I.01", sortOrder: 0, title: "Retail Parking Lot Index", indexType: "vq_native",
 			signalLabel: "+12% / 7d", confidenceLabel: "Confidence 76", accessTier: "premium",
-			openDetailURL: "/index?focus=I.01", watchlisted: true,
+			openDetailURL: "/index/I.01", watchlisted: true,
 			panel: panelSeed{
 				subtitle: "VQ-Native", why: "Leads retail earnings by weeks.", reading: "Bullish divergence",
 				confidence: 82, triggersToday: 2,
@@ -307,7 +450,7 @@ func SeedFloorDemoIndex(gdb *gorm.DB) error {
 		{
 			indexID: "I.02", sortOrder: 1, title: "China Crematorium Activity Index", indexType: "hidden_data",
 			signalLabel: "High alert", confidenceLabel: "Confidence 84", accessTier: "premium",
-			openDetailURL: "/index?focus=I.02", watchlisted: false,
+			openDetailURL: "/index/I.02", watchlisted: false,
 			panel: panelSeed{
 				subtitle: "Hidden Data", why: "Non-traditional macro stress signal.", reading: "High alert",
 				confidence: 84, triggersToday: 0,
@@ -316,7 +459,7 @@ func SeedFloorDemoIndex(gdb *gorm.DB) error {
 		{
 			indexID: "I.03", sortOrder: 2, title: "Truck Traffic Index", indexType: "real_time",
 			signalLabel: "-3% WoW", confidenceLabel: "Confidence 71", accessTier: "api",
-			openDetailURL: "/index?focus=I.03", watchlisted: false,
+			openDetailURL: "/index/I.03", watchlisted: false,
 			panel: panelSeed{
 				subtitle: "Real-Time", why: "Freight pulse for goods demand.", reading: "Softening WoW",
 				confidence: 71, triggersToday: 0,
@@ -325,7 +468,7 @@ func SeedFloorDemoIndex(gdb *gorm.DB) error {
 		{
 			indexID: "I.04", sortOrder: 3, title: "MAG7-style Basket", indexType: "ssi_type",
 			signalLabel: "+6% MTD", confidenceLabel: "Confidence 68", accessTier: "executable",
-			openDetailURL: "/index?focus=I.04", watchlisted: false,
+			openDetailURL: "/index/I.04", watchlisted: false,
 			panel: panelSeed{
 				subtitle: "SSI-Type", why: "Concentration + rebalance risk in one lens.", reading: "Bullish drift MTD",
 				confidence: 68, triggersToday: 0,
@@ -334,7 +477,7 @@ func SeedFloorDemoIndex(gdb *gorm.DB) error {
 		{
 			indexID: "I.00", sortOrder: 4, title: "Global Liquidity Pulse", indexType: "macro",
 			signalLabel: "Neutral", confidenceLabel: "Confidence 62", accessTier: "free",
-			openDetailURL: "/index?focus=I.00", watchlisted: false,
+			openDetailURL: "/index/I.00", watchlisted: false,
 			panel: panelSeed{
 				subtitle: "Macro", why: "Broad risk-on / risk-off pressure gauge.", reading: "Neutral",
 				confidence: 62, triggersToday: 0,

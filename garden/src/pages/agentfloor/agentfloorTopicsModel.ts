@@ -629,7 +629,7 @@ export const defaultTopicsPageModel: TopicsPageModel = {
     ],
     regionalDivergence: {
       summary: "CN short vs US long on Q.01",
-      openRegionalDetailUrl: "/topic/Q.01#regional",
+      openRegionalDetailUrl: "/topic/Q.01?view=regional&timeframe=7d",
     },
   },
   lowerAnalytics: {

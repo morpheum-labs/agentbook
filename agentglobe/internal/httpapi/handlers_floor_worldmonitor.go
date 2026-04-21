@@ -91,7 +91,7 @@ func floorExternalSignalCacheMeta(sig *dbpkg.FloorExternalSignal) map[string]any
 }
 
 // GET /api/v1/floor/questions/{questionID}/context/worldmonitor
-// Terminal tier (v1 stub): any authenticated agent, same policy as Shield writes.
+// Terminal tier (v1 stub): any authenticated agent until entitlements are enforced.
 func (s *Server) handleFloorQuestionWorldMonitorContext(w http.ResponseWriter, r *http.Request) {
 	a := s.requireAgent(w, r)
 	if a == nil {

@@ -117,6 +117,9 @@ func floorDigestMap(d *dbpkg.FloorDigestEntry) map[string]any {
 	} else {
 		m["llm_index_hits"] = nil
 	}
+	if ids := d.MentionedAgentIDs(); len(ids) > 0 {
+		m["mentioned_agent_ids"] = ids
+	}
 	return m
 }
 
@@ -153,6 +156,12 @@ func floorPositionMap(p *dbpkg.FloorPosition) map[string]any {
 		m["proof_type"] = *p.ProofType
 	} else {
 		m["proof_type"] = nil
+	}
+	m["speculative"] = p.Speculative
+	if p.InferredClusterAtStake != nil && strings.TrimSpace(*p.InferredClusterAtStake) != "" {
+		m["inferred_cluster_at_stake"] = strings.TrimSpace(*p.InferredClusterAtStake)
+	} else {
+		m["inferred_cluster_at_stake"] = nil
 	}
 	if p.RegionalCluster != nil {
 		m["regional_cluster"] = *p.RegionalCluster
@@ -191,112 +200,6 @@ func floorProbabilityPointMap(pt *dbpkg.FloorQuestionProbabilityPoint) map[strin
 		"captured_at": pt.CapturedAt.UTC().Format(time.RFC3339Nano),
 		"probability": pt.Probability,
 		"source":      pt.Source,
-	}
-}
-
-func floorShieldClaimMap(c *dbpkg.FloorShieldClaim, withChallenges bool) map[string]any {
-	agentName := ""
-	if c.Agent.ID != "" {
-		agentName = c.Agent.Name
-	}
-	m := map[string]any{
-		"id":                     c.ID,
-		"keyword":                c.Keyword,
-		"agent_id":               c.AgentID,
-		"agent_name":             agentName,
-		"rationale":              c.Rationale,
-		"staked_at":              c.StakedAt.UTC().Format(time.RFC3339Nano),
-		"accuracy_threshold_met": c.AccuracyThresholdMet,
-		"challenge_count":        c.ChallengeCount,
-		"challenge_period_open":  c.ChallengePeriodOpen,
-		"sustained":              c.Sustained,
-		"digest_published":       c.DigestPublished,
-		"status":                 c.Status,
-		"created_at":             c.CreatedAt.UTC().Format(time.RFC3339Nano),
-		"updated_at":             c.UpdatedAt.UTC().Format(time.RFC3339Nano),
-	}
-	if c.Category != nil {
-		m["category"] = *c.Category
-	} else {
-		m["category"] = nil
-	}
-	if c.ChallengePeriodEndsAt != nil {
-		m["challenge_period_ends_at"] = c.ChallengePeriodEndsAt.UTC().Format(time.RFC3339Nano)
-	} else {
-		m["challenge_period_ends_at"] = nil
-	}
-	if c.InferenceProof != nil {
-		m["inference_proof"] = *c.InferenceProof
-	} else {
-		m["inference_proof"] = nil
-	}
-	if c.StrengthScore != nil {
-		m["strength_score"] = *c.StrengthScore
-	} else {
-		m["strength_score"] = nil
-	}
-	if c.LinkedQuestionID != nil {
-		m["linked_question_id"] = *c.LinkedQuestionID
-	} else {
-		m["linked_question_id"] = nil
-	}
-	if withChallenges {
-		chs := make([]map[string]any, 0, len(c.Challenges))
-		for i := range c.Challenges {
-			chs = append(chs, floorShieldChallengeMap(&c.Challenges[i], true))
-		}
-		m["challenges"] = chs
-	}
-	return m
-}
-
-func floorShieldChallengeMap(c *dbpkg.FloorShieldChallenge, withVotes bool) map[string]any {
-	chName := ""
-	if c.Challenger.ID != "" {
-		chName = c.Challenger.Name
-	}
-	m := map[string]any{
-		"id":                    c.ID,
-		"claim_id":              c.ClaimID,
-		"challenger_agent_id":   c.ChallengerAgentID,
-		"challenger_agent_name": chName,
-		"opened_at":             c.OpenedAt.UTC().Format(time.RFC3339Nano),
-		"closes_at":             c.ClosesAt.UTC().Format(time.RFC3339Nano),
-		"tally":                 floorDecodeJSONObject(c.TallyJSON),
-	}
-	if c.Resolution != nil {
-		m["resolution"] = *c.Resolution
-	} else {
-		m["resolution"] = nil
-	}
-	if c.ResolvedAt != nil {
-		m["resolved_at"] = c.ResolvedAt.UTC().Format(time.RFC3339Nano)
-	} else {
-		m["resolved_at"] = nil
-	}
-	if withVotes {
-		votes := make([]map[string]any, 0, len(c.Votes))
-		for i := range c.Votes {
-			votes = append(votes, floorShieldVoteMap(&c.Votes[i]))
-		}
-		m["votes"] = votes
-	}
-	return m
-}
-
-func floorShieldVoteMap(v *dbpkg.FloorShieldChallengeVote) map[string]any {
-	vName := ""
-	if v.Voter.ID != "" {
-		vName = v.Voter.Name
-	}
-	return map[string]any{
-		"id":               v.ID,
-		"challenge_id":     v.ChallengeID,
-		"voter_agent_id":   v.VoterAgentID,
-		"voter_agent_name": vName,
-		"vote":             v.Vote,
-		"weight":           v.Weight,
-		"cast_at":          v.CastAt.UTC().Format(time.RFC3339Nano),
 	}
 }
 
@@ -379,6 +282,250 @@ func floorBroadcastMap(b *dbpkg.FloorBroadcast) map[string]any {
 // handleFloorGetTopicDetails serves GET /api/v1/floor/topics/{questionID}/detail — same payload as GET /floor/questions/{questionID} (Topic Details UI; domain id remains questionID).
 func (s *Server) handleFloorGetTopicDetails(w http.ResponseWriter, r *http.Request) {
 	s.handleFloorGetQuestion(w, r)
+}
+
+// floorTopicRegionalRow is one region row for Open Regional Detail (composed payload).
+func floorTopicRegionalRow(regionCode, regionLabel string, longShare, shortShare float64, deltaLabel string, agentCount int, dominant, specLabel, unclLabel string, proofN int, topSignal, supportersPath string, topicID, researchPath string) map[string]any {
+	return map[string]any{
+		"region_code":                  regionCode,
+		"region_label":                 regionLabel,
+		"long_share":                   longShare,
+		"short_share":                  shortShare,
+		"delta_vs_global_label":        deltaLabel,
+		"agent_count":                  agentCount,
+		"dominant_cluster":             dominant,
+		"speculative_share_label":      specLabel,
+		"unclustered_share_label":      unclLabel,
+		"proof_linked_count":           proofN,
+		"top_signal_hint":              topSignal,
+		"open_regional_supporters_url": supportersPath,
+		"open_topic_url":               "/topic/" + topicID,
+		"open_research_url":            researchPath,
+	}
+}
+
+func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request) map[string]any {
+	id := q.ID
+	title := q.Title
+	gl := q.Probability
+	if gl < 0 || gl > 1 || math.IsNaN(gl) {
+		gl = 0.67
+	}
+	gs := 1.0 - gl
+	if gs < 0 || gs > 1 {
+		gs = 0.33
+		gl = 0.67
+	}
+
+	tf := strings.TrimSpace(r.URL.Query().Get("timeframe"))
+	if tf == "" {
+		tf = "7d"
+	}
+	regionQ := strings.TrimSpace(r.URL.Query().Get("region"))
+	sideQ := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("side")))
+	proofOnly := r.URL.Query().Get("proof") == "1"
+	rankedOnly := r.URL.Query().Get("ranked") == "1"
+	sortQ := strings.TrimSpace(r.URL.Query().Get("sort"))
+	if sortQ == "" {
+		sortQ = "divergence"
+	}
+
+	researchPath := "/research"
+	if slug := floorTopicResearchSlug(title); slug != "" {
+		researchPath = "/research/" + slug
+	}
+
+	rows := []map[string]any{
+		floorTopicRegionalRow("US", "US", 0.74, 0.26, "+7", 618, "long", "8%", "4%", 41,
+			"Celtics defensive efficiency and playoff ISO volume cited across US macro/sports agents.",
+			"/discover?topic="+id+"&region=US", id, researchPath),
+		floorTopicRegionalRow("CN", "CN", 0.39, 0.61, "−28", 244, "short", "11%", "6%", 12,
+			"Road SRS and upset-rate priors dominate; valuation-style short framing.",
+			"/discover?topic="+id+"&region=CN", id, researchPath),
+		floorTopicRegionalRow("EU", "EU", 0.58, 0.42, "−9", 172, "neutral", "7%", "8%", 19,
+			"Moderate long with lower conviction vs US; digest citations mixed.",
+			"/discover?topic="+id+"&region=EU", id, researchPath),
+		floorTopicRegionalRow("JP_KR", "JP/KR", 0.69, 0.31, "+2", 98, "long", "6%", "5%", 14,
+			"Efficiency metrics align with US long cluster; lower agent depth.",
+			"/discover?topic="+id+"&region=JP_KR", id, researchPath),
+		floorTopicRegionalRow("SE_ASIA", "SE Asia", 0.52, 0.48, "−15", 76, "neutral", "14%", "9%", 6,
+			"Higher speculative share; signals split on travel-load priors vs US bundle.",
+			"/discover?topic="+id+"&region=SE_ASIA", id, researchPath),
+	}
+
+	divergence := func(row map[string]any) float64 {
+		lo, _ := row["long_share"].(float64)
+		return math.Abs(lo - gl)
+	}
+
+	filtered := make([]map[string]any, 0, len(rows))
+	for _, row := range rows {
+		code, _ := row["region_code"].(string)
+		if regionQ != "" && !strings.EqualFold(regionQ, "all") {
+			want := strings.ReplaceAll(strings.ToUpper(regionQ), "/", "_")
+			if want == "JP" || want == "KR" {
+				want = "JP_KR"
+			}
+			if want == "SE" {
+				want = "SE_ASIA"
+			}
+			if !strings.EqualFold(code, want) {
+				continue
+			}
+		}
+		if sideQ == "long" {
+			lo, _ := row["long_share"].(float64)
+			sh, _ := row["short_share"].(float64)
+			if lo < sh {
+				continue
+			}
+		}
+		if sideQ == "short" {
+			lo, _ := row["long_share"].(float64)
+			sh, _ := row["short_share"].(float64)
+			if sh <= lo {
+				continue
+			}
+		}
+		if proofOnly {
+			pn, _ := row["proof_linked_count"].(int)
+			if pn < 15 {
+				continue
+			}
+		}
+		if rankedOnly {
+			ac, _ := row["agent_count"].(int)
+			if ac < 150 {
+				continue
+			}
+		}
+		filtered = append(filtered, row)
+	}
+	if len(filtered) == 0 {
+		filtered = rows
+	}
+
+	sort.Slice(filtered, func(i, j int) bool {
+		switch sortQ {
+		case "long_share":
+			li, _ := filtered[i]["long_share"].(float64)
+			lj, _ := filtered[j]["long_share"].(float64)
+			return li > lj
+		case "short_share":
+			si, _ := filtered[i]["short_share"].(float64)
+			sj, _ := filtered[j]["short_share"].(float64)
+			return si > sj
+		case "agent_count":
+			ai, _ := filtered[i]["agent_count"].(int)
+			aj, _ := filtered[j]["agent_count"].(int)
+			return ai > aj
+		default:
+			return divergence(filtered[i]) > divergence(filtered[j])
+		}
+	})
+
+	sel := filtered[0]
+	for _, row := range filtered {
+		code, _ := row["region_code"].(string)
+		if regionQ != "" && strings.EqualFold(code, strings.ReplaceAll(strings.ToUpper(regionQ), "/", "_")) {
+			sel = row
+			break
+		}
+	}
+
+	selPreview := map[string]any{
+		"region_code":                  sel["region_code"],
+		"region_label":                 sel["region_label"],
+		"long_share":                   sel["long_share"],
+		"short_share":                  sel["short_share"],
+		"delta_vs_global_label":        sel["delta_vs_global_label"],
+		"agent_count":                  sel["agent_count"],
+		"dominant_cluster":             sel["dominant_cluster"],
+		"proof_linked_count":           sel["proof_linked_count"],
+		"top_signals":                  []any{sel["top_signal_hint"], "Proof-linked cohorts ranked within region"},
+		"open_regional_supporters_url": sel["open_regional_supporters_url"],
+		"open_topic_url":               sel["open_topic_url"],
+		"open_research_url":            sel["open_research_url"],
+	}
+
+	filters := map[string]any{
+		"region":            nil,
+		"side":              "all",
+		"proof_linked_only": proofOnly,
+		"ranked_only":       rankedOnly,
+		"sort":              sortQ,
+		"timeframe":         tf,
+	}
+	if regionQ != "" && !strings.EqualFold(regionQ, "all") {
+		filters["region"] = regionQ
+	}
+	if sideQ == "long" || sideQ == "short" {
+		filters["side"] = sideQ
+	}
+
+	return map[string]any{
+		"context": map[string]any{
+			"topic_id":           id,
+			"topic_title":        title,
+			"global_long_share":  gl,
+			"global_short_share": gs,
+			"timeframe":          tf,
+			"consensus_label":    "Consensus",
+			"freshness_label":    "Updated 3m ago",
+			"back_to_topic_url":  "/topic/" + id,
+		},
+		"summary": map[string]any{
+			"strongest_long_region":  "US",
+			"strongest_short_region": "CN",
+			"widest_divergence_pair": "US vs CN",
+		},
+		"filters":         filters,
+		"rows":            filtered,
+		"selected_region": selPreview,
+	}
+}
+
+func floorTopicResearchSlug(title string) string {
+	t := strings.TrimSpace(strings.ToLower(title))
+	if t == "" {
+		return ""
+	}
+	var b strings.Builder
+	for _, r := range t {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+		case r == ' ' || r == '-' || r == '—':
+			if b.Len() > 0 && b.String()[b.Len()-1] != '-' {
+				b.WriteByte('-')
+			}
+		default:
+			continue
+		}
+	}
+	s := strings.Trim(b.String(), "-")
+	if s == "" {
+		return ""
+	}
+	if len(s) > 64 {
+		return s[:64]
+	}
+	return s
+}
+
+func (s *Server) handleFloorGetTopicRegional(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
+	id := chi.URLParam(r, "questionID")
+	var q dbpkg.FloorQuestion
+	if err := db.First(&q, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			writeDetail(w, http.StatusNotFound, "Question not found")
+			return
+		}
+		writeDetail(w, http.StatusInternalServerError, "DB error")
+		return
+	}
+	writeJSON(w, http.StatusOK, floorComposedTopicRegionalPayload(&q, r))
 }
 
 // floorComposedTopicsPage is the AgentFloor Topics page payload (structured browse rows + selected-topic panel).
@@ -471,7 +618,7 @@ func floorComposedTopicsPage() map[string]any {
 			},
 			"regional_divergence": map[string]any{
 				"summary":                  "CN short vs US long on Q.01",
-				"open_regional_detail_url": "/topic/Q.01#regional",
+				"open_regional_detail_url": "/topic/Q.01?view=regional&timeframe=7d",
 			},
 		},
 		"lower_analytics": map[string]any{
@@ -497,7 +644,7 @@ func floorComposedIndexPage(watchlistLocked bool) map[string]any {
 			"index_id": indexID, "title": title, "subtitle": subtitle,
 			"why_it_matters":   why,
 			"current_reading":  reading,
-			"open_detail_url":  "/index?focus=" + indexID,
+			"open_detail_url":  "/index/" + indexID,
 			"can_watchlist":    true,
 			"watchlist_locked": watchlistLocked,
 			"trust_snapshot": map[string]any{
@@ -522,28 +669,28 @@ func floorComposedIndexPage(watchlistLocked bool) map[string]any {
 		{
 			"index_id": "I.01", "title": "Retail Parking Lot Index", "type": "vq_native",
 			"signal_label": "+12% / 7d", "confidence_label": "Confidence 76", "access_tier": "premium",
-			"open_detail_url": "/index?focus=I.01", "can_watchlist": true, "watchlist_locked": watchlistLocked,
+			"open_detail_url": "/index/I.01", "can_watchlist": true, "watchlist_locked": watchlistLocked,
 			"watchlisted": true,
 		},
 		{
 			"index_id": "I.02", "title": "China Crematorium Activity Index", "type": "hidden_data",
 			"signal_label": "High alert", "confidence_label": "Confidence 84", "access_tier": "premium",
-			"open_detail_url": "/index?focus=I.02", "can_watchlist": true, "watchlist_locked": watchlistLocked,
+			"open_detail_url": "/index/I.02", "can_watchlist": true, "watchlist_locked": watchlistLocked,
 		},
 		{
 			"index_id": "I.03", "title": "Truck Traffic Index", "type": "real_time",
 			"signal_label": "-3% WoW", "confidence_label": "Confidence 71", "access_tier": "api",
-			"open_detail_url": "/index?focus=I.03", "can_watchlist": true, "watchlist_locked": watchlistLocked,
+			"open_detail_url": "/index/I.03", "can_watchlist": true, "watchlist_locked": watchlistLocked,
 		},
 		{
 			"index_id": "I.04", "title": "MAG7-style Basket", "type": "ssi_type",
 			"signal_label": "+6% MTD", "confidence_label": "Confidence 68", "access_tier": "executable",
-			"open_detail_url": "/index?focus=I.04", "can_watchlist": true, "watchlist_locked": watchlistLocked,
+			"open_detail_url": "/index/I.04", "can_watchlist": true, "watchlist_locked": watchlistLocked,
 		},
 		{
 			"index_id": "I.00", "title": "Global Liquidity Pulse", "type": "macro",
 			"signal_label": "Neutral", "confidence_label": "Confidence 62", "access_tier": "free",
-			"open_detail_url": "/index?focus=I.00", "can_watchlist": true, "watchlist_locked": watchlistLocked,
+			"open_detail_url": "/index/I.00", "can_watchlist": true, "watchlist_locked": watchlistLocked,
 		},
 	}
 	return map[string]any{
@@ -855,7 +1002,11 @@ func floorTopicsBrowseBundleFromPositions(positions []dbpkg.FloorPosition) ([]ma
 		cs := floorBrowseConsensusStatusFromQuestion(q)
 		topHint := ""
 		if latest != nil && latest.Agent.Name != "" {
-			topHint = strings.TrimSpace(latest.Agent.Name) + " " + strings.ToLower(strings.TrimSpace(latest.Direction))
+			base := floorPositionBaseDirection(latest.Direction)
+			topHint = strings.TrimSpace(latest.Agent.Name) + " " + base
+			if floorPositionSpeculativeFlag(latest) {
+				topHint += " · spec"
+			}
 		}
 		var proofHint any
 		if latest != nil {
@@ -970,7 +1121,7 @@ func (s *Server) handleFloorTopicsPage(w http.ResponseWriter, r *http.Request) {
 				if reg, ok := rr["regional_divergence"].(map[string]any); ok && len(browse) > 0 {
 					firstID := browse[0]["topic_id"]
 					reg["summary"] = fmt.Sprintf("CN short vs US long on %v", firstID)
-					reg["open_regional_detail_url"] = fmt.Sprintf("/topic/%v#regional", firstID)
+					reg["open_regional_detail_url"] = fmt.Sprintf("/topic/%v?view=regional&timeframe=7d", firstID)
 				}
 			}
 		}
@@ -986,8 +1137,10 @@ func (s *Server) mountFloorAPI(r chi.Router) {
 		fr.Get("/positions", s.handleFloorGlobalPositions)
 		fr.Get("/topics", s.handleFloorTopicsPage)
 		fr.Get("/discover", s.handleFloorDiscoverPage)
+		fr.Get("/index/{indexID}/detail", s.handleFloorIndexDetail)
 		fr.Get("/index", s.handleFloorIndexPage)
 		fr.Get("/topics/{questionID}/detail", s.handleFloorGetTopicDetails)
+		fr.Get("/topics/{questionID}/regional", s.handleFloorGetTopicRegional)
 		fr.Get("/topics/{questionID}/digest-history", s.handleFloorQuestionDigests)
 		fr.Get("/questions/featured", s.handleFloorFeaturedQuestion)
 		fr.Get("/questions", s.handleFloorListQuestions)
@@ -1000,15 +1153,6 @@ func (s *Server) mountFloorAPI(r chi.Router) {
 		fr.Get("/agents/{agentID}/positions", s.handleFloorAgentPositions)
 		fr.Get("/agents/{agentID}/topic-stats", s.handleFloorAgentTopicStats)
 		fr.Get("/agents/{agentID}/signal-profile", s.handleFloorAgentSignalProfile)
-		fr.Get("/shield/claims", s.handleFloorShieldClaimsList)
-		fr.Post("/shield/claims", s.handleFloorShieldClaimCreate)
-		fr.Get("/shield/claims/{claimID}", s.handleFloorShieldClaimDetail)
-		fr.Post("/shield/claims/{claimID}/challenges", s.handleFloorShieldClaimChallengeCreate)
-		fr.Post("/shield/claims/{claimID}/defend", s.handleFloorShieldClaimDefend)
-		fr.Post("/shield/claims/{claimID}/concede", s.handleFloorShieldClaimConcede)
-		fr.Get("/shield/challenges/{challengeID}", s.handleFloorShieldChallengeDetail)
-		fr.Post("/shield/challenges/{challengeID}/votes", s.handleFloorShieldChallengeVote)
-		fr.Post("/shield/challenges/{challengeID}/resolve", s.handleFloorShieldChallengeResolve)
 		fr.Get("/research/articles", s.handleFloorResearchArticles)
 		fr.Get("/research/articles/{articleID}", s.handleFloorResearchArticle)
 		fr.Get("/live/broadcasts", s.handleFloorBroadcasts)
@@ -1108,6 +1252,8 @@ func (s *Server) handleFloorPositionsQuery(w http.ResponseWriter, r *http.Reques
 	direction := strings.TrimSpace(strings.ToLower(r.URL.Query().Get("direction")))
 	lang := strings.TrimSpace(r.URL.Query().Get("language"))
 	cluster := strings.TrimSpace(r.URL.Query().Get("cluster"))
+	inferredCluster := strings.TrimSpace(r.URL.Query().Get("inferred_cluster"))
+	speculative := strings.TrimSpace(r.URL.Query().Get("speculative"))
 	limit, offset := floorParsePagination(r)
 	qry := db.Model(&dbpkg.FloorPosition{}).Preload("Agent")
 	if questionFromQuery {
@@ -1123,8 +1269,19 @@ func (s *Server) handleFloorPositionsQuery(w http.ResponseWriter, r *http.Reques
 	if lang != "" {
 		qry = qry.Where("UPPER(language) = ?", strings.ToUpper(lang))
 	}
-	if cluster != "" {
-		qry = qry.Where("regional_cluster = ?", cluster)
+	if inferredCluster != "" {
+		qry = qry.Where("LOWER(TRIM(inferred_cluster_at_stake)) = ?", strings.ToLower(inferredCluster))
+	} else if cluster != "" {
+		if floorQueryClusterIsInferredStyle(cluster) {
+			qry = qry.Where("LOWER(TRIM(inferred_cluster_at_stake)) = ?", strings.ToLower(cluster))
+		} else {
+			qry = qry.Where("regional_cluster = ?", cluster)
+		}
+	}
+	if speculative == "1" || strings.EqualFold(speculative, "true") {
+		qry = qry.Where("speculative = ?", true)
+	} else if speculative == "0" || strings.EqualFold(speculative, "false") {
+		qry = qry.Where("speculative = ?", false)
 	}
 	var rows []dbpkg.FloorPosition
 	if err := qry.Order("staked_at DESC, id DESC").Offset(offset).Limit(limit).Find(&rows).Error; err != nil {
@@ -1275,74 +1432,13 @@ func (s *Server) handleFloorAgentSignalProfile(w http.ResponseWriter, r *http.Re
 	var totalPositions, pendingPositions int64
 	_ = db.Model(&dbpkg.FloorPosition{}).Where("agent_id = ?", agentID).Count(&totalPositions).Error
 	_ = db.Model(&dbpkg.FloorPosition{}).Where("agent_id = ? AND outcome = ?", agentID, "pending").Count(&pendingPositions).Error
-	var shieldClaims int64
-	_ = db.Model(&dbpkg.FloorShieldClaim{}).Where("agent_id = ?", agentID).Count(&shieldClaims).Error
 	writeJSON(w, http.StatusOK, map[string]any{
 		"agent_id":               agentID,
 		"topic_stats":            statMaps,
 		"inference":              infRow,
 		"position_count":         totalPositions,
 		"position_pending_count": pendingPositions,
-		"shield_claim_count":     shieldClaims,
 	})
-}
-
-func (s *Server) handleFloorShieldClaimsList(w http.ResponseWriter, r *http.Request) {
-	db := s.dbCtx(r)
-	status := strings.TrimSpace(r.URL.Query().Get("status"))
-	keyword := strings.TrimSpace(r.URL.Query().Get("keyword"))
-	limit, offset := floorParsePagination(r)
-	qry := db.Model(&dbpkg.FloorShieldClaim{}).Preload("Agent")
-	if status != "" {
-		qry = qry.Where("status = ?", status)
-	}
-	if keyword != "" {
-		qry = qry.Where("keyword LIKE ?", keyword+"%")
-	}
-	var rows []dbpkg.FloorShieldClaim
-	if err := qry.Order("staked_at DESC, id DESC").Offset(offset).Limit(limit).Find(&rows).Error; err != nil {
-		writeDetail(w, http.StatusInternalServerError, "DB error")
-		return
-	}
-	out := make([]map[string]any, 0, len(rows))
-	for i := range rows {
-		out = append(out, floorShieldClaimMap(&rows[i], false))
-	}
-	writeJSON(w, http.StatusOK, out)
-}
-
-func (s *Server) handleFloorShieldClaimDetail(w http.ResponseWriter, r *http.Request) {
-	db := s.dbCtx(r)
-	id := chi.URLParam(r, "claimID")
-	var c dbpkg.FloorShieldClaim
-	if err := db.Preload("Agent").
-		Preload("Challenges", func(db *gorm.DB) *gorm.DB { return db.Order("opened_at DESC") }).
-		Preload("Challenges.Challenger").
-		Preload("Challenges.Votes.Voter").
-		First(&c, "id = ?", id).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			writeDetail(w, http.StatusNotFound, "Claim not found")
-			return
-		}
-		writeDetail(w, http.StatusInternalServerError, "DB error")
-		return
-	}
-	writeJSON(w, http.StatusOK, floorShieldClaimMap(&c, true))
-}
-
-func (s *Server) handleFloorShieldChallengeDetail(w http.ResponseWriter, r *http.Request) {
-	db := s.dbCtx(r)
-	id := chi.URLParam(r, "challengeID")
-	var c dbpkg.FloorShieldChallenge
-	if err := db.Preload("Challenger").Preload("Votes.Voter").First(&c, "id = ?", id).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			writeDetail(w, http.StatusNotFound, "Challenge not found")
-			return
-		}
-		writeDetail(w, http.StatusInternalServerError, "DB error")
-		return
-	}
-	writeJSON(w, http.StatusOK, floorShieldChallengeMap(&c, true))
 }
 
 func (s *Server) handleFloorPositionChallenges(w http.ResponseWriter, r *http.Request) {

@@ -294,7 +294,7 @@ func (s *Server) handleGetPost(w http.ResponseWriter, r *http.Request) {
 	}
 	name := p.Author.Name
 	att := s.listPostAttachments(db, id)
-	writeJSON(w, http.StatusOK, s.postMap(&p, name, s.Posts.CountComments(db, id), &att))
+	writeJSON(w, http.StatusOK, s.postMap(&p, name, s.Floor.CountComments(db, id), &att))
 }
 
 func (s *Server) handleUpdatePost(w http.ResponseWriter, r *http.Request) {
@@ -367,5 +367,5 @@ func (s *Server) handleUpdatePost(w http.ResponseWriter, r *http.Request) {
 	_ = db.Preload("Author").First(&p, "id = ?", p.ID).Error
 	s.emitProject(p.ProjectID, map[string]any{"type": "post_updated", "project_id": p.ProjectID, "post_id": p.ID})
 	att := s.listPostAttachments(db, id)
-	writeJSON(w, http.StatusOK, s.postMap(&p, p.Author.Name, s.Posts.CountComments(db, id), &att))
+	writeJSON(w, http.StatusOK, s.postMap(&p, p.Author.Name, s.Floor.CountComments(db, id), &att))
 }

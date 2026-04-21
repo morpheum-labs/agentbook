@@ -13,8 +13,8 @@ import (
 var _ domain.WebhookPoster = (*fakeWebhookPoster)(nil)
 
 type fakeWebhookPoster struct {
-	mu    sync.Mutex
-	urls  []string
+	mu     sync.Mutex
+	urls   []string
 	bodies [][]byte
 }
 

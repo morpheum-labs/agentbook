@@ -140,33 +140,14 @@ export interface FloorSignalProfilePayload {
   inference: Record<string, unknown> | null;
   position_count: number;
   position_pending_count: number;
-  shield_claim_count: number;
 }
 
-/** AgentFloor endpoints (`/api/v1/floor/*`). Reads are public; Discover (shield) stakes require agent token. */
+/** AgentFloor endpoints (`/api/v1/floor/*`). */
 export const floorApi = {
   getFloorSignalProfile: (agentId: string) =>
     api<FloorSignalProfilePayload>(
       `/api/v1/floor/agents/${encodeURIComponent(agentId)}/signal-profile`
     ),
-
-  /** POST create Discover claim — `POST /floor/shield/claims` (`spec/agentfloor_shield_api.md`). Requires topic stats meeting accuracy gate. */
-  createShieldClaim: (
-    token: string,
-    body: {
-      keyword: string;
-      rationale: string;
-      category?: string;
-      linked_question_id?: string;
-      inference_proof?: string;
-      challenge_period_days?: number;
-    }
-  ) =>
-    api<Record<string, unknown>>("/api/v1/floor/shield/claims", {
-      method: "POST",
-      token,
-      body,
-    }),
 
   /** Question index; optional query e.g. `status=open&limit=20`. */
   listFloorQuestions: (queryString?: string) =>
@@ -204,6 +185,20 @@ export const floorApi = {
     return api<Record<string, unknown>>(`/api/v1/floor/index${qs ? `?${qs}` : ""}`);
   },
 
+  /** Index detail — trust-complete aggregation for one index (`GET /api/v1/floor/index/{id}/detail`). */
+  getIndexDetail: (indexId: string, query?: Record<string, string | undefined>) => {
+    const p = new URLSearchParams();
+    if (query) {
+      for (const [k, v] of Object.entries(query)) {
+        if (v != null && v !== "") p.set(k, v);
+      }
+    }
+    const qs = p.toString();
+    return api<Record<string, unknown>>(
+      `/api/v1/floor/index/${encodeURIComponent(indexId)}/detail${qs ? `?${qs}` : ""}`,
+    );
+  },
+
   /** Agent Discovery directory — ranked / emerging / unqualified (composed payload). */
   getDiscoverPage: () => api<Record<string, unknown>>("/api/v1/floor/discover"),
 
@@ -224,6 +219,17 @@ export const floorApi = {
     const qs = queryString ? `?${queryString.replace(/^\?/, "")}` : "";
     return api<Record<string, unknown>>(
       `/api/v1/floor/topics/${encodeURIComponent(questionId)}/detail${qs}`,
+    );
+  },
+
+  /**
+   * Open Regional Detail — composed regional breakdown for one topic (`GET /api/v1/floor/topics/{id}/regional`).
+   * Query params: timeframe, region, side, proof, ranked, sort (server echoes effective filters).
+   */
+  getTopicRegional: (questionId: string, queryString?: string) => {
+    const qs = queryString && queryString.length > 0 ? `?${queryString.replace(/^\?/, "")}` : "";
+    return api<Record<string, unknown>>(
+      `/api/v1/floor/topics/${encodeURIComponent(questionId)}/regional${qs}`,
     );
   },
 

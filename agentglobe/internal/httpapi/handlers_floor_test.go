@@ -46,17 +46,20 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 	}
 
 	posID := uuid.NewString()
+	longIC := "long"
 	pos := dbpkg.FloorPosition{
-		ID:         posID,
-		QuestionID: q.ID,
-		AgentID:    agent.ID,
-		Direction:  "long",
-		StakedAt:   now,
-		Body:       "test body",
-		Language:   "EN",
-		Resolved:   false,
-		Outcome:    "pending",
-		CreatedAt:  now,
+		ID:                     posID,
+		QuestionID:             q.ID,
+		AgentID:                agent.ID,
+		Direction:              "long",
+		StakedAt:               now,
+		Body:                   "test body",
+		Language:               "EN",
+		Speculative:            false,
+		InferredClusterAtStake: &longIC,
+		Resolved:               false,
+		Outcome:                "pending",
+		CreatedAt:              now,
 	}
 	if err := db.Create(&pos).Error; err != nil {
 		t.Fatal(err)
@@ -145,6 +148,32 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 		}
 	})
 
+	t.Run("topic regional composed payload", func(t *testing.T) {
+		res, err := http.Get(base + "/topics/" + q.ID + "/regional?timeframe=7d")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("status %d", res.StatusCode)
+		}
+		var m map[string]any
+		if err := json.NewDecoder(res.Body).Decode(&m); err != nil {
+			t.Fatal(err)
+		}
+		ctx, ok := m["context"].(map[string]any)
+		if !ok || ctx["topic_id"] != q.ID {
+			t.Fatalf("context: %#v", m["context"])
+		}
+		rows, ok := m["rows"].([]any)
+		if !ok || len(rows) == 0 {
+			t.Fatalf("rows: %#v", m["rows"])
+		}
+		if _, ok := m["selected_region"].(map[string]any); !ok {
+			t.Fatalf("selected_region: %#v", m["selected_region"])
+		}
+	})
+
 	t.Run("question digest-history matches digests", func(t *testing.T) {
 		for _, path := range []string{
 			"/questions/" + q.ID + "/digest-history",
@@ -220,6 +249,30 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 		}
 		if arr[0]["external_signal_ids"] == nil {
 			t.Fatal("expected external_signal_ids array")
+		}
+		if arr[0]["speculative"] != false {
+			t.Fatalf("speculative: %v", arr[0]["speculative"])
+		}
+		if arr[0]["inferred_cluster_at_stake"] != "long" {
+			t.Fatalf("inferred_cluster_at_stake: %v", arr[0]["inferred_cluster_at_stake"])
+		}
+	})
+
+	t.Run("global positions inferred_cluster filter", func(t *testing.T) {
+		res, err := http.Get(base + "/positions?question_id=" + q.ID + "&inferred_cluster=long")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("status %d", res.StatusCode)
+		}
+		var arr []map[string]any
+		if err := json.NewDecoder(res.Body).Decode(&arr); err != nil {
+			t.Fatal(err)
+		}
+		if len(arr) != 1 || arr[0]["id"] != posID {
+			t.Fatalf("filtered positions: %#v", arr)
 		}
 	})
 }
@@ -305,6 +358,43 @@ func TestFloorIndexPageJSON(t *testing.T) {
 	}
 	if body["summary_chips"] == nil {
 		t.Fatal("expected summary_chips")
+	}
+}
+
+func TestFloorIndexDetailComposed(t *testing.T) {
+	s := testServer(t)
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	res, err := http.Get(ts.URL + "/api/v1/floor/index/I.01/detail")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+	var body map[string]any
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if body["index_id"] != "I.01" {
+		t.Fatalf("index_id: %v", body["index_id"])
+	}
+	hero, ok := body["hero"].(map[string]any)
+	if !ok || hero["current_reading"] == nil {
+		t.Fatalf("hero: %#v", body["hero"])
+	}
+	rows, ok := body["topic_contribution_rows"].([]any)
+	if !ok || len(rows) < 1 {
+		t.Fatalf("topic_contribution_rows: %v", body["topic_contribution_rows"])
+	}
+	res404, err := http.Get(ts.URL + "/api/v1/floor/index/UNKNOWN/detail")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res404.Body.Close()
+	if res404.StatusCode != http.StatusNotFound {
+		t.Fatalf("unknown index want 404, got %d", res404.StatusCode)
 	}
 }
 
@@ -394,6 +484,25 @@ func TestFloorDiscoverPageWithDemoSeed(t *testing.T) {
 	}
 	if first["id"] != "floor-demo-agent-omega" {
 		t.Fatalf("expected omega first ranked, got id=%v", first["id"])
+	}
+	if first["display_name"] != "DeepValue" {
+		t.Fatalf("display_name: %v", first["display_name"])
+	}
+	if first["handle"] != "deepvalue" {
+		t.Fatalf("handle: %v", first["handle"])
+	}
+	if first["recent_digest_mentions"] == nil || int(first["recent_digest_mentions"].(float64)) < 4 {
+		t.Fatalf("recent_digest_mentions: %#v", first["recent_digest_mentions"])
+	}
+	if first["proof_linked_positions"] == nil || int(first["proof_linked_positions"].(float64)) < 1 {
+		t.Fatalf("proof_linked_positions: %#v", first["proof_linked_positions"])
+	}
+	if first["proof_type"] != "zkml" {
+		t.Fatalf("proof_type: %v", first["proof_type"])
+	}
+	tsList, ok := first["topic_strengths"].([]any)
+	if !ok || len(tsList) < 3 {
+		t.Fatalf("topic_strengths: %#v", first["topic_strengths"])
 	}
 	emerging, ok := body["emerging"].([]any)
 	if !ok || len(emerging) < 1 {
