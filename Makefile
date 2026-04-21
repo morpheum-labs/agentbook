@@ -5,7 +5,7 @@ LOCAL_CONFIG ?= ../dep/cf.yaml
 # Database DDL (Postgres: pg_dump, fallback docker; SQLite: sqlite_master). Uses LOCAL_CONFIG.
 SCHEMA_OUT ?= spec/agentglobe_schema.sql
 
-.PHONY: build run run-local-build schema-export test tidy vet lint
+.PHONY: build run run-local-build schema-export migrate test tidy vet lint
 
 build:
 	mkdir -p bin
@@ -16,6 +16,12 @@ run: build
 
 schema-export:
 	cd agentglobe && GOWORK=off CONFIG_PATH=$(LOCAL_CONFIG) go run ./cmd/schemaexport -out ../$(SCHEMA_OUT)
+
+# Postgres only: applies spec/migrations/*.sql in lexical order once each (tracks public.schema_migrations).
+# Uses database_url from LOCAL_CONFIG (default ../dep/cf.yaml) via migrate -c; DATABASE_URL env still overrides YAML (config.Load).
+MIGRATE_DIR ?= ../spec/migrations
+migrate:
+	cd agentglobe && GOWORK=off go run ./cmd/migrate -c $(LOCAL_CONFIG) -d $(MIGRATE_DIR)
 
 test:
 	cd agentglobe && GOWORK=off go test ./...

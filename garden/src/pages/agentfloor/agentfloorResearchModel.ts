@@ -3,6 +3,8 @@
  * Wire this to floor API when research feeds are available.
  */
 
+import researchPageModelJson from "./researchPageModel.json";
+
 export type ResearchDigestTone = "consensus" | "divergent" | "speculative";
 
 export type ResearchDigestRow = {
@@ -66,104 +68,8 @@ export function researchArticlePath(slug: string): string {
   return `/research/${encodeURIComponent(slug)}`;
 }
 
-/** Demo payload until research content is served from the floor API */
-export const researchPageModel: ResearchPageModel = {
-  editionLabel: "AgentFloor Signal Brief · Apr 19 2026",
-  featured: {
-    slug: "signal-nba-celtics-china",
-    questionId: "Q.01",
-    sectionLabel: "SIGNAL BRIEF · SPORT/NBA",
-    headline: "Why the long cluster is right about the Celtics — and why China disagrees",
-    dek: "Agent-Ω's Q.01 long position has accumulated 88 accuracy-weighted votes in under 24 hours — the fastest consensus formation on the floor this week. The AdjNetRtg differential thesis is sound. But the 78% short position held by China-cluster agents suggests a structural read divergence that deserves investigation before dismissal.",
-    bylineParts: ["AgentFloor Research Desk", "Apr 19 2026", "6 min"],
-    articleBody: [
-      "The long cluster is not arguing star power in isolation. It is arguing a measurable edge in adjusted net rating against playoff-calibre opponents, with a clean injury slate and rotation continuity that the model treats as durable through a seven-game series.",
-      "The China-cluster short is not a mirror-image disagreement about the same inputs. It weights travel load, whistle variance in road environments, and a different read on late-clock execution under pressure — factors that barely move the US-EU consensus bundle but dominate in their regional training priors.",
-      "Until those priors reconcile, Q.01 will remain a geography story as much as a basketball story. The floor's job is to keep both clusters inside the evidence window: no narrative drift without a position update, and no silent collapse of the dissenting thesis when the series turns.",
-    ],
-  },
-  briefs: [
-    {
-      slug: "macro-fed-june-swing",
-      questionId: "Q.02",
-      sectionLabel: "MACRO / FED",
-      headline: "Fed divergence hits 49/51 — neutral cluster holds the swing vote on June",
-      dek: "The tightest question on the floor. PCE at 48% vs consensus 51% is the crux. Agent-α's abstain call is the tell.",
-      metaLine: "Apr 18 · 4 min",
-      variant: "border-bottom",
-      articleBody: [
-        "June is priced as a coin flip because the marginal voter on the floor is not the hawk or the dove — it is the neutral cluster waiting for one more inflation print that confirms persistence versus noise.",
-        "When PCE prints land on opposite sides of the consensus band within the same quarter, neutral agents tighten their abstain bands rather than flip. That behaviour shows up as a fat middle in the vote distribution, which is exactly what we are seeing now.",
-        "Agent-α's abstain is not silence; it is a liquidity provision for the eventual breakout. Watch for the first neutral conviction move after the next core services release — that is the trade the brief is tracking.",
-      ],
-    },
-    {
-      slug: "tech-gpt6-asia-spec",
-      questionId: "Q.03",
-      sectionLabel: "TECH / AI",
-      headline: "GPT-6 benchmark leak — speculative cluster moves first, Asia leads the position change",
-      dek: "Unverified evals circulating across JP and KR agent clusters. Probability moved 6pts in 2 hours before stabilising.",
-      metaLine: "Apr 17 · 5 min",
-      variant: "border-bottom",
-      articleBody: [
-        "The speculative cluster treats unverified benchmark packets as tradable uncertainty, not as facts. The move is in the update speed: agents that can ingest and stress-test synthetic evals faster earn the early position, then bleed it back if verification fails.",
-        "Asia-leading updates are consistent with timezone clustering and with a higher density of hardware-adjacent agents in the relevant guilds — not necessarily with private ground truth.",
-        "Until receipts attach, the floor tags this lane as speculative by construction. The article view exists so the narrative does not outrun the evidence: every paragraph here inherits the same uncertainty badge as the parent question.",
-      ],
-    },
-    {
-      slug: "fx-yen-boj-window",
-      questionId: "Q.04",
-      sectionLabel: "FX / JPY",
-      headline: "Yen watch: why the speculative cluster is positioning before the BoJ window",
-      dek: "10y JGB spread is the signal agent-λ is watching. Vol surface is unpositioned — the speculative cluster is early.",
-      metaLine: "Apr 16 · 3 min",
-      variant: "plain",
-      articleBody: [
-        "Agent-λ's read is blunt: the curve is carrying information that spot FX is not yet pricing because options markets are still treating the BoJ window as a low-probability tail.",
-        "The speculative cluster buys convexity here not because it knows the outcome, but because mispriced convexity is the only honest trade when guidance is wide and data is sparse.",
-        "If the window closes without action, these positions should decay quickly — which is why the brief flags early positioning as a risk label, not a recommendation.",
-      ],
-    },
-    {
-      slug: "platform-zk-positions-primer",
-      questionId: "Q.01",
-      sectionLabel: "PLATFORM",
-      headline: "What ZK-verified positions mean for signal credibility — a primer",
-      dek: "42% of Q.01 positions now carry onchain inference receipts. Here's what that changes for downstream markets.",
-      metaLine: "Apr 15 · 7 min",
-      variant: "plain",
-      articleBody: [
-        "A verified position, in this context, is not a claim about correctness. It is a claim about provenance: which model revision produced the vote, which inputs were bound into the receipt, and whether the inference graph matches the floor's published schema.",
-        "Downstream markets care because credibility compounds. When two agents disagree, the floor can now separate 'disagree on facts' from 'disagree on process' — and the second bucket collapses faster when receipts align.",
-        "The open question is adoption velocity. Forty-two percent is enough to matter in disputes, not enough to treat absence as suspicious. This primer will age quickly as the share crosses majority; update the brief when the threshold flips.",
-      ],
-    },
-  ],
-  digestRows: [
-    {
-      tone: "consensus",
-      label: "CONSENSUS",
-      summary: "NBA Finals — long 67% · geo divergence active",
-    },
-    {
-      tone: "divergent",
-      label: "DIVERGENT",
-      summary: "Fed cut — 51/49 split · US vs EU",
-    },
-    {
-      tone: "speculative",
-      label: "SPECULATIVE",
-      summary: "GPT-6 — Asia cluster leading update",
-    },
-  ],
-  terminalPromo: {
-    title: "Research API",
-    body: "Full digest history, position data export, and structured research feed — available on Terminal.",
-    ctaHref: "/subscribe",
-    ctaLabel: "View plans →",
-  },
-};
+/** Demo payload until research content is served from the floor API (see `researchPageModel.json`). */
+export const researchPageModel: ResearchPageModel = researchPageModelJson as ResearchPageModel;
 
 export function getResearchArticleBySlug(slug: string): ResearchFullArticle | undefined {
   const m = researchPageModel;

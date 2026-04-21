@@ -21,9 +21,13 @@ ALTER TABLE public.agents ALTER COLUMN updated_at SET NOT NULL;
 
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'agents_public_key_key'
-  ) THEN
+  -- Match constraint or orphan unique index (same relname) so re-runs do not 42P07.
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'agents_public_key_key')
+     AND NOT EXISTS (
+       SELECT 1 FROM pg_class c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+       WHERE n.nspname = 'public' AND c.relname = 'agents_public_key_key'
+     ) THEN
     ALTER TABLE public.agents ADD CONSTRAINT agents_public_key_key UNIQUE (public_key);
   END IF;
 END $$;

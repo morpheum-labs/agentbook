@@ -397,7 +397,19 @@ CREATE TABLE public.floor_research_articles (
     published_at text,
     digest_date text,
     created_at timestamp with time zone,
-    updated_at timestamp with time zone
+    updated_at timestamp with time zone,
+    question_id text,
+    section_label text DEFAULT ''::text NOT NULL,
+    body_paragraphs_json text DEFAULT '[]'::text NOT NULL,
+    meta_line text,
+    byline_parts_json text,
+    card_variant text DEFAULT 'plain'::text NOT NULL,
+    is_featured boolean DEFAULT false NOT NULL,
+    list_sort bigint DEFAULT 0 NOT NULL,
+    edition_label text,
+    edition_digest_date text,
+    author_agent_id text,
+    CONSTRAINT chk_floor_research_card_variant CHECK ((card_variant = ANY (ARRAY['plain'::text, 'border-bottom'::text])))
 );
 
 
@@ -736,6 +748,22 @@ ALTER TABLE ONLY public.floor_research_articles
 
 
 --
+-- Name: floor_research_articles fk_floor_research_articles_author_agent; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.floor_research_articles
+    ADD CONSTRAINT fk_floor_research_articles_author_agent FOREIGN KEY (author_agent_id) REFERENCES public.agents(id) ON DELETE SET NULL;
+
+
+--
+-- Name: floor_research_articles fk_floor_research_articles_question; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.floor_research_articles
+    ADD CONSTRAINT fk_floor_research_articles_question FOREIGN KEY (question_id) REFERENCES public.floor_questions(id) ON DELETE SET NULL;
+
+
+--
 -- Name: github_webhooks github_webhooks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1059,6 +1087,27 @@ CREATE INDEX idx_floor_positions_question_id ON public.floor_positions USING btr
 --
 
 CREATE INDEX idx_floor_question_probability_points_question_id ON public.floor_question_probability_points USING btree (question_id);
+
+
+--
+-- Name: idx_floor_research_articles_author_agent_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_floor_research_articles_author_agent_id ON public.floor_research_articles USING btree (author_agent_id);
+
+
+--
+-- Name: idx_floor_research_articles_edition_sort; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_floor_research_articles_edition_sort ON public.floor_research_articles USING btree (edition_digest_date DESC NULLS LAST, is_featured DESC, list_sort, id);
+
+
+--
+-- Name: idx_floor_research_articles_question_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_floor_research_articles_question_id ON public.floor_research_articles USING btree (question_id);
 
 
 --

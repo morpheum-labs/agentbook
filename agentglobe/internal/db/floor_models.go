@@ -150,6 +150,18 @@ type FloorResearchArticle struct {
 	DigestDate      *string   `gorm:"column:digest_date;type:text"`
 	CreatedAt       time.Time `gorm:"column:created_at"`
 	UpdatedAt       time.Time `gorm:"column:updated_at"`
+	// researchPageModel.json / garden AgentFloor Research
+	QuestionID         *string `gorm:"column:question_id;index;type:text"`
+	SectionLabel       string  `gorm:"column:section_label;not null;type:text;default:''"`
+	BodyParagraphsJSON string  `gorm:"column:body_paragraphs_json;not null;type:text;default:'[]'"`
+	MetaLine           *string `gorm:"column:meta_line;type:text"`
+	BylinePartsJSON    *string `gorm:"column:byline_parts_json;type:text"`
+	CardVariant        string  `gorm:"column:card_variant;not null;type:text;default:'plain'"` // plain | border-bottom
+	IsFeatured         bool    `gorm:"column:is_featured;not null;default:false"`
+	ListSort           int     `gorm:"column:list_sort;not null;default:0"`
+	EditionLabel       *string `gorm:"column:edition_label;type:text"`
+	EditionDigestDate  *string `gorm:"column:edition_digest_date;index;type:text"`
+	AuthorAgentID      *string `gorm:"column:author_agent_id;index;type:text"`
 }
 
 func (FloorResearchArticle) TableName() string { return "floor_research_articles" }

@@ -229,14 +229,84 @@ func floorPositionChallengeMap(c *dbpkg.FloorPositionChallenge) map[string]any {
 	return m
 }
 
+func floorResearchArticleParagraphs(a *dbpkg.FloorResearchArticle) []string {
+	raw := strings.TrimSpace(a.BodyParagraphsJSON)
+	if raw != "" && raw != "[]" {
+		var out []string
+		if err := json.Unmarshal([]byte(raw), &out); err == nil && len(out) > 0 {
+			return out
+		}
+	}
+	if a.Body != nil {
+		b := strings.TrimSpace(*a.Body)
+		if b != "" {
+			return strings.Split(b, "\n\n")
+		}
+	}
+	return []string{}
+}
+
+func floorResearchBylineParts(a *dbpkg.FloorResearchArticle) []string {
+	if a.BylinePartsJSON == nil {
+		return nil
+	}
+	s := strings.TrimSpace(*a.BylinePartsJSON)
+	if s == "" || s == "[]" {
+		return nil
+	}
+	var out []string
+	if err := json.Unmarshal([]byte(s), &out); err != nil || len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
 func floorArticleMap(a *dbpkg.FloorResearchArticle) map[string]any {
 	m := map[string]any{
-		"id":           a.ID,
-		"title":        a.Title,
-		"summary":      a.Summary,
-		"cluster_tags": floorDecodeJSONArray(a.ClusterTagsJSON),
-		"created_at":   a.CreatedAt.UTC().Format(time.RFC3339Nano),
-		"updated_at":   a.UpdatedAt.UTC().Format(time.RFC3339Nano),
+		"id":            a.ID,
+		"slug":          a.ID,
+		"title":         a.Title,
+		"headline":      a.Title,
+		"summary":       a.Summary,
+		"dek":           a.Summary,
+		"article_body":  floorResearchArticleParagraphs(a),
+		"cluster_tags":  floorDecodeJSONArray(a.ClusterTagsJSON),
+		"section_label": a.SectionLabel,
+		"card_variant":  a.CardVariant,
+		"is_featured":   a.IsFeatured,
+		"list_sort":     a.ListSort,
+		"created_at":    a.CreatedAt.UTC().Format(time.RFC3339Nano),
+		"updated_at":    a.UpdatedAt.UTC().Format(time.RFC3339Nano),
+	}
+	if a.QuestionID != nil {
+		m["question_id"] = *a.QuestionID
+	} else {
+		m["question_id"] = nil
+	}
+	if a.MetaLine != nil {
+		m["meta_line"] = *a.MetaLine
+	} else {
+		m["meta_line"] = nil
+	}
+	if bp := floorResearchBylineParts(a); len(bp) > 0 {
+		m["byline_parts"] = bp
+	} else {
+		m["byline_parts"] = nil
+	}
+	if a.EditionLabel != nil {
+		m["edition_label"] = *a.EditionLabel
+	} else {
+		m["edition_label"] = nil
+	}
+	if a.EditionDigestDate != nil {
+		m["edition_digest_date"] = *a.EditionDigestDate
+	} else {
+		m["edition_digest_date"] = nil
+	}
+	if a.AuthorAgentID != nil {
+		m["author_agent_id"] = *a.AuthorAgentID
+	} else {
+		m["author_agent_id"] = nil
 	}
 	if a.Body != nil {
 		m["body"] = *a.Body
@@ -1461,7 +1531,8 @@ func (s *Server) handleFloorResearchArticles(w http.ResponseWriter, r *http.Requ
 	db := s.dbCtx(r)
 	limit, offset := floorParsePagination(r)
 	var rows []dbpkg.FloorResearchArticle
-	if err := db.Order("created_at DESC, id DESC").Offset(offset).Limit(limit).Find(&rows).Error; err != nil {
+	if err := db.Order("edition_digest_date DESC NULLS LAST, is_featured DESC, list_sort ASC, id ASC").
+		Offset(offset).Limit(limit).Find(&rows).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "DB error")
 		return
 	}
