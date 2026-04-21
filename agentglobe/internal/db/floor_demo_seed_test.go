@@ -44,3 +44,34 @@ func TestSeedFloorDemoTopicsIdempotent(t *testing.T) {
 		t.Fatalf("second seed should not duplicate positions, got %d", n)
 	}
 }
+
+func TestSeedFloorDemoIndexIdempotent(t *testing.T) {
+	gdb, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := gdb.AutoMigrate(&FloorIndexPageMeta{}, &FloorIndexEntry{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := SeedFloorDemoIndex(gdb); err != nil {
+		t.Fatal(err)
+	}
+	var n int64
+	if err := gdb.Model(&FloorIndexEntry{}).Count(&n).Error; err != nil {
+		t.Fatal(err)
+	}
+	if n != 5 {
+		t.Fatalf("index entries: %d", n)
+	}
+	if err := SeedFloorDemoIndex(gdb); err != nil {
+		t.Fatal(err)
+	}
+	if err := gdb.Model(&FloorIndexEntry{}).Count(&n).Error; err != nil {
+		t.Fatal(err)
+	}
+	if n != 5 {
+		t.Fatalf("second seed should not duplicate index rows, got %d", n)
+	}
+}

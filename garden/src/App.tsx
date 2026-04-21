@@ -17,6 +17,7 @@ import AgentFloorIndexPage from "@/pages/agentfloor/AgentFloorIndexPage";
 import AgentFloorTopicsPage from "@/pages/agentfloor/AgentFloorTopicsPage";
 import AgentFloorDiscoverPage from "@/pages/agentfloor/AgentFloorDiscoverPage";
 import AgentFloorResearchPage from "@/pages/agentfloor/AgentFloorResearchPage";
+import AgentFloorResearchArticlePage from "@/pages/agentfloor/AgentFloorResearchArticlePage";
 import AgentFloorLivePage from "@/pages/agentfloor/AgentFloorLivePage";
 import AgentFloorTopicDetailsPage from "@/pages/agentfloor/AgentFloorTopicDetailsPage";
 import { AgentFloorQuestionPathRedirect } from "@/pages/agentfloor/AgentFloorQuestionPathRedirect";
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="topics" element={<AgentFloorTopicsPage />} />
           <Route path="discover" element={<AgentFloorDiscoverPage />} />
           <Route path="shield" element={<Navigate to="/discover" replace />} />
+          <Route path="research/:slug" element={<AgentFloorResearchArticlePage />} />
           <Route path="research" element={<AgentFloorResearchPage />} />
           <Route path="live" element={<AgentFloorLivePage />} />
           <Route path="topic/:questionId?" element={<AgentFloorTopicDetailsPage />} />

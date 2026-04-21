@@ -64,12 +64,12 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 
 	dig := dbpkg.FloorDigestEntry{
 		ID:                   uuid.NewString(),
-		QuestionID:         q.ID,
-		DigestDate:         now.Format("2006-01-02"),
-		ConsensusLevel:     "consensus",
-		Probability:        0.55,
-		ProbabilityDelta:   0.01,
-		Summary:            "Test digest",
+		QuestionID:           q.ID,
+		DigestDate:           now.Format("2006-01-02"),
+		ConsensusLevel:       "consensus",
+		Probability:          0.55,
+		ProbabilityDelta:     0.01,
+		Summary:              "Test digest",
 		ClusterBreakdownJSON: `{}`,
 		CreatedAt:            now,
 	}
@@ -189,12 +189,12 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 		if !ok || hdr["title"] != "Topics" {
 			t.Fatalf("header: %#v", body["header"])
 		}
-		rows, ok := body["feed_rows"].([]any)
+		rows, ok := body["browse_rows"].([]any)
 		if !ok || len(rows) < 1 {
-			t.Fatalf("feed_rows: %#v", body["feed_rows"])
+			t.Fatalf("browse_rows: %#v", body["browse_rows"])
 		}
 		first, ok := rows[0].(map[string]any)
-		if !ok || first["direction"] != "long" {
+		if !ok || first["topic_id"] == nil || first["probability_long"] == nil {
 			t.Fatalf("first row: %#v", rows[0])
 		}
 	})
@@ -224,6 +224,90 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 	})
 }
 
+func TestFloorIndexPageUsesDBWhenSeeded(t *testing.T) {
+	s := testServer(t)
+	if err := dbpkg.SeedFloorDemoIndex(s.DB); err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	res, err := http.Get(ts.URL + "/api/v1/floor/index")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+	var body map[string]any
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	rows, ok := body["rows"].([]any)
+	if !ok || len(rows) != 5 {
+		t.Fatalf("rows len: %v", body["rows"])
+	}
+	first, ok := rows[0].(map[string]any)
+	if !ok || first["index_id"] != "I.01" {
+		t.Fatalf("first row: %#v", rows[0])
+	}
+	if first["watchlist_locked"] != true {
+		t.Fatalf("default tier should lock watchlist, got %#v", first["watchlist_locked"])
+	}
+	res2, err := http.Get(ts.URL + "/api/v1/floor/index?tier=terminal")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res2.Body.Close()
+	if res2.StatusCode != http.StatusOK {
+		t.Fatalf("tier status %d", res2.StatusCode)
+	}
+	var body2 map[string]any
+	if err := json.NewDecoder(res2.Body).Decode(&body2); err != nil {
+		t.Fatal(err)
+	}
+	rows2, ok := body2["rows"].([]any)
+	if !ok || len(rows2) < 1 {
+		t.Fatal(rows2)
+	}
+	r0, ok := rows2[0].(map[string]any)
+	if !ok || r0["watchlist_locked"] != false {
+		t.Fatalf("terminal tier should unlock watchlist: %#v", r0["watchlist_locked"])
+	}
+}
+
+func TestFloorIndexPageJSON(t *testing.T) {
+	s := testServer(t)
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	res, err := http.Get(ts.URL + "/api/v1/floor/index")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+	var body map[string]any
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	rows, ok := body["rows"].([]any)
+	if !ok || len(rows) < 1 {
+		t.Fatalf("rows: %v", body["rows"])
+	}
+	first, ok := rows[0].(map[string]any)
+	if !ok || first["index_id"] == nil {
+		t.Fatalf("first row: %#v", rows[0])
+	}
+	if body["selected_index"] == nil {
+		t.Fatal("expected selected_index")
+	}
+	if body["summary_chips"] == nil {
+		t.Fatal("expected summary_chips")
+	}
+}
+
 func TestFloorTopicsPageUsesDBWhenDemoSeeded(t *testing.T) {
 	s := testServer(t)
 	if err := dbpkg.SeedFloorDemoTopics(s.DB); err != nil {
@@ -243,16 +327,15 @@ func TestFloorTopicsPageUsesDBWhenDemoSeeded(t *testing.T) {
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
 		t.Fatal(err)
 	}
-	rows, ok := body["feed_rows"].([]any)
-	if !ok || len(rows) != 6 {
-		t.Fatalf("feed_rows len: %v", body["feed_rows"])
+	rows, ok := body["browse_rows"].([]any)
+	if !ok || len(rows) != 4 {
+		t.Fatalf("browse_rows len: %v", body["browse_rows"])
 	}
 	first, ok := rows[0].(map[string]any)
-	if !ok || first["topic_id"] != "Q.01" {
-		t.Fatalf("first row: %#v", rows[0])
+	if !ok || first["topic_id"] == nil || first["open_topic_details_url"] == nil {
+		t.Fatalf("first browse row: %#v", rows[0])
 	}
-	last, ok := rows[len(rows)-1].(map[string]any)
-	if !ok || last["position_id"] != "pos_1" || last["proof_label"] != "ZK proof" {
-		t.Fatalf("oldest row should be pos_1 with ZK proof: %#v", rows[len(rows)-1])
+	if body["selected_topic"] == nil {
+		t.Fatal("expected selected_topic")
 	}
 }

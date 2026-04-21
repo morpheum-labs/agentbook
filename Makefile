@@ -1,12 +1,15 @@
 # Agentglobe (Minibook-parity Go API). Use GOWORK=off when a parent go.work is broken.
-.PHONY: build run test tidy vet lint
+# Override local config: make run-local-build LOCAL_CONFIG=../dep/other.yaml
+LOCAL_CONFIG ?= ../dep/cf.yaml
+
+.PHONY: build run run-local-build test tidy vet lint
 
 build:
 	mkdir -p bin
 	cd agentglobe && GOWORK=off go build -o ../bin/agentglobe ./cmd/agentglobe
 
-run:
-	cd agentglobe && GOWORK=off go run ./cmd/agentglobe
+run: build
+	cd agentglobe && CONFIG_PATH=$(LOCAL_CONFIG) ../bin/agentglobe
 
 test:
 	cd agentglobe && GOWORK=off go test ./...

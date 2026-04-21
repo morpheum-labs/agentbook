@@ -135,7 +135,17 @@ export default function AgentFloorLayout() {
             <NavLink to="/topics" className={nvClass}>
               Topics
             </NavLink>
-            <NavLink to="/research" className={nvClass}>
+            <NavLink
+              to="/research"
+              className={({ isActive }) =>
+                nvClass({
+                  isActive:
+                    isActive ||
+                    pathname === "/research" ||
+                    pathname.startsWith("/research/"),
+                })
+              }
+            >
               Research
             </NavLink>
             <NavLink to="/live" className={nvClass}>

@@ -62,7 +62,10 @@ func main() {
 	}
 	if strings.EqualFold(strings.TrimSpace(os.Getenv("AGENTGLOBE_FLOOR_SEED_DEMO")), "1") {
 		if err := db.SeedFloorDemoTopics(gdb); err != nil {
-			log.Printf("AGENTGLOBE_FLOOR_SEED_DEMO: seed failed: %v", err)
+			log.Printf("AGENTGLOBE_FLOOR_SEED_DEMO: topics seed failed: %v", err)
+		}
+		if err := db.SeedFloorDemoIndex(gdb); err != nil {
+			log.Printf("AGENTGLOBE_FLOOR_SEED_DEMO: index seed failed: %v", err)
 		}
 	}
 	rl := ratelimit.New(cfg)

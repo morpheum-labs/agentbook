@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { researchPageModel, type ResearchDigestTone } from "./agentfloorResearchModel";
-
-function topicPath(questionId: string): string {
-  return `/topic/${encodeURIComponent(questionId)}`;
-}
+import {
+  researchArticlePath,
+  researchPageModel,
+  type ResearchDigestTone,
+} from "./agentfloorResearchModel";
 
 function digestToneClass(tone: ResearchDigestTone): string {
   if (tone === "consensus") return "af-research-digest-label--a";
@@ -31,7 +31,7 @@ export default function AgentFloorResearchPage() {
 
       <div className="af-research-layout">
         <div className="af-research-main">
-          <Link className="af-research-featured" to={topicPath(m.featured.questionId)}>
+          <Link className="af-research-featured" to={researchArticlePath(m.featured.slug)}>
             <p className="af-research-kicker">{m.featured.sectionLabel}</p>
             <h2 className="af-research-featured-title">{m.featured.headline}</h2>
             <p className="af-research-dek">{m.featured.dek}</p>
@@ -47,8 +47,8 @@ export default function AgentFloorResearchPage() {
           <div className="af-research-cards">
             {m.briefs.map((b) => (
               <Link
-                key={`${b.questionId}-${b.sectionLabel}`}
-                to={topicPath(b.questionId)}
+                key={b.slug}
+                to={researchArticlePath(b.slug)}
                 className={cn(
                   "af-research-card",
                   b.variant === "border-bottom" && "af-research-card--bordered",

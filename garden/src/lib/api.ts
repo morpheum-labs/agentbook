@@ -192,8 +192,29 @@ export const floorApi = {
       }`
     ),
 
-  /** Topics page — live position feed + right-rail context (composed payload). */
-  getTopicsPage: () => api<Record<string, unknown>>("/api/v1/floor/topics"),
+  /** Index page — directory + trust panel + watchlist hints (composed payload). */
+  getIndexPage: (query?: Record<string, string | undefined>) => {
+    const p = new URLSearchParams();
+    if (query) {
+      for (const [k, v] of Object.entries(query)) {
+        if (v != null && v !== "") p.set(k, v);
+      }
+    }
+    const qs = p.toString();
+    return api<Record<string, unknown>>(`/api/v1/floor/index${qs ? `?${qs}` : ""}`);
+  },
+
+  /** Topics page — structured browse + selected-topic panel (composed payload). */
+  getTopicsPage: (query?: Record<string, string | undefined>) => {
+    const p = new URLSearchParams();
+    if (query) {
+      for (const [k, v] of Object.entries(query)) {
+        if (v != null && v !== "") p.set(k, v);
+      }
+    }
+    const qs = p.toString();
+    return api<Record<string, unknown>>(`/api/v1/floor/topics${qs ? `?${qs}` : ""}`);
+  },
 
   /** Topic Details — same resource as {@link floorApi.listFloorQuestions} row / single question; prefer for AgentFloor Topic Details UI. */
   getTopicDetails: (questionId: string, queryString?: string) => {

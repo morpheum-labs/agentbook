@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -9,8 +10,7 @@ import (
 )
 
 // SeedFloorDemoTopics inserts floor_questions Q.01–Q.04, demo agents, floor_positions, and a digest row
-// for Q.01 when none of those question IDs exist yet. Data matches garden/src/pages/agentfloor/agentfloorTopicsModel.ts
-// defaultTopicsPageModel (mock Topics feed).
+// for Q.01 when none of those question IDs exist yet. Data backs GET /api/v1/floor/topics browse_rows when DB is populated.
 func SeedFloorDemoTopics(gdb *gorm.DB) error {
 	qids := []string{"Q.01", "Q.02", "Q.03", "Q.04"}
 	var existing int64
@@ -174,6 +174,210 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 		}
 		if err := tx.Create(&dig).Error; err != nil {
 			return fmt.Errorf("digest: %w", err)
+		}
+		return nil
+	})
+}
+
+func floorDemoIndexTrustSnapshot(confidence int, triggers int) map[string]any {
+	return map[string]any{
+		"confidence_score":           confidence,
+		"freshness_label":            "Updated 5m ago",
+		"last_human_review_label":    "Apr 20",
+		"disagreement_label":         "Moderate",
+		"methodology_reviewed_label": "Reviewed",
+		"triggers_today":             triggers,
+	}
+}
+
+func floorDemoIndexSourceProvenance() map[string]any {
+	return map[string]any{
+		"total_sources":   12,
+		"breakdown_label": "Official 4 · Market 3 · VQ 2 · News 2 · Agent 1",
+	}
+}
+
+func floorDemoIndexUpdateLog() []map[string]any {
+	return []map[string]any{
+		{"timestamp_label": "03:10", "text": "Coverage expanded"},
+		{"timestamp_label": "02:42", "text": "Volatility rose"},
+	}
+}
+
+func mustJSON(v any) (string, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+// SeedFloorDemoIndex inserts floor_index_page_meta + floor_index_entries (I.00–I.04) when no meta row exists yet.
+// Data backs GET /api/v1/floor/index when FloorIndexPageMetaDefaultID is present.
+func SeedFloorDemoIndex(gdb *gorm.DB) error {
+	var n int64
+	if err := gdb.Model(&FloorIndexPageMeta{}).Where("id = ?", FloorIndexPageMetaDefaultID).Count(&n).Error; err != nil {
+		return err
+	}
+	if n > 0 {
+		return nil
+	}
+
+	type panelSeed struct {
+		subtitle      string
+		why           string
+		reading       string
+		confidence    int
+		triggersToday int
+	}
+
+	type rowSeed struct {
+		indexID         string
+		sortOrder       int
+		title           string
+		indexType       string
+		signalLabel     string
+		confidenceLabel string
+		accessTier      string
+		openDetailURL   string
+		watchlisted     bool
+		panel           panelSeed
+	}
+
+	rows := []rowSeed{
+		{
+			indexID: "I.01", sortOrder: 0, title: "Retail Parking Lot Index", indexType: "vq_native",
+			signalLabel: "+12% / 7d", confidenceLabel: "Confidence 76", accessTier: "premium",
+			openDetailURL: "/index?focus=I.01", watchlisted: true,
+			panel: panelSeed{
+				subtitle: "VQ-Native", why: "Leads retail earnings by weeks.", reading: "Bullish divergence",
+				confidence: 82, triggersToday: 2,
+			},
+		},
+		{
+			indexID: "I.02", sortOrder: 1, title: "China Crematorium Activity Index", indexType: "hidden_data",
+			signalLabel: "High alert", confidenceLabel: "Confidence 84", accessTier: "premium",
+			openDetailURL: "/index?focus=I.02", watchlisted: false,
+			panel: panelSeed{
+				subtitle: "Hidden Data", why: "Non-traditional macro stress signal.", reading: "High alert",
+				confidence: 84, triggersToday: 0,
+			},
+		},
+		{
+			indexID: "I.03", sortOrder: 2, title: "Truck Traffic Index", indexType: "real_time",
+			signalLabel: "-3% WoW", confidenceLabel: "Confidence 71", accessTier: "api",
+			openDetailURL: "/index?focus=I.03", watchlisted: false,
+			panel: panelSeed{
+				subtitle: "Real-Time", why: "Freight pulse for goods demand.", reading: "Softening WoW",
+				confidence: 71, triggersToday: 0,
+			},
+		},
+		{
+			indexID: "I.04", sortOrder: 3, title: "MAG7-style Basket", indexType: "ssi_type",
+			signalLabel: "+6% MTD", confidenceLabel: "Confidence 68", accessTier: "executable",
+			openDetailURL: "/index?focus=I.04", watchlisted: false,
+			panel: panelSeed{
+				subtitle: "SSI-Type", why: "Concentration + rebalance risk in one lens.", reading: "Bullish drift MTD",
+				confidence: 68, triggersToday: 0,
+			},
+		},
+		{
+			indexID: "I.00", sortOrder: 4, title: "Global Liquidity Pulse", indexType: "macro",
+			signalLabel: "Neutral", confidenceLabel: "Confidence 62", accessTier: "free",
+			openDetailURL: "/index?focus=I.00", watchlisted: false,
+			panel: panelSeed{
+				subtitle: "Macro", why: "Broad risk-on / risk-off pressure gauge.", reading: "Neutral",
+				confidence: 62, triggersToday: 0,
+			},
+		},
+	}
+
+	summaryChips := []map[string]any{
+		{"label": "Top mover", "value": "Retail Parking +12%"},
+		{"label": "Highest confidence", "value": "China Crematorium 84"},
+		{"label": "Rebalance soon", "value": "MAG7-style · 3d"},
+		{"label": "Updated", "value": "5m"},
+	}
+	filters := []map[string]any{
+		{"label": "All", "value": "all", "active": true},
+		{"label": "Macro", "value": "macro"},
+		{"label": "Hidden Data", "value": "hidden_data"},
+		{"label": "VQ-Native", "value": "vq_native"},
+		{"label": "SSI-Type", "value": "ssi_type"},
+		{"label": "Free", "value": "free"},
+		{"label": "Premium", "value": "premium"},
+		{"label": "API", "value": "api"},
+		{"label": "Executable", "value": "executable"},
+		{"label": "My watchlist", "value": "my_watchlist"},
+	}
+	lowerStrip := map[string]any{
+		"rebalance_soon_label":  "MAG7-style Basket · 3d",
+		"latest_research_label": "Hidden indicators this week",
+		"open_research_url":     "/research",
+	}
+
+	scJSON, err := mustJSON(summaryChips)
+	if err != nil {
+		return err
+	}
+	fJSON, err := mustJSON(filters)
+	if err != nil {
+		return err
+	}
+	lsJSON, err := mustJSON(lowerStrip)
+	if err != nil {
+		return err
+	}
+
+	meta := FloorIndexPageMeta{
+		ID:                      FloorIndexPageMetaDefaultID,
+		HeaderTitle:             "Index",
+		HeaderSubtitle:          "Discover proprietary indices, trust the signal, and follow what matters now.",
+		HeaderWatchlistTierHint: "My watchlist — Analytic / Terminal",
+		SummaryChipsJSON:        scJSON,
+		FiltersJSON:             fJSON,
+		LowerStripJSON:          lsJSON,
+		SelectedIndexID:         "I.01",
+	}
+
+	return gdb.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&meta).Error; err != nil {
+			return fmt.Errorf("floor index meta: %w", err)
+		}
+		for _, rs := range rows {
+			ts, err := mustJSON(floorDemoIndexTrustSnapshot(rs.panel.confidence, rs.panel.triggersToday))
+			if err != nil {
+				return err
+			}
+			sp, err := mustJSON(floorDemoIndexSourceProvenance())
+			if err != nil {
+				return err
+			}
+			ul, err := mustJSON(floorDemoIndexUpdateLog())
+			if err != nil {
+				return err
+			}
+			row := FloorIndexEntry{
+				IndexID:              rs.indexID,
+				SortOrder:            rs.sortOrder,
+				Title:                rs.title,
+				Type:                 rs.indexType,
+				SignalLabel:          rs.signalLabel,
+				ConfidenceLabel:      rs.confidenceLabel,
+				AccessTier:           rs.accessTier,
+				OpenDetailURL:        rs.openDetailURL,
+				CanWatchlist:         true,
+				Watchlisted:          rs.watchlisted,
+				Subtitle:             rs.panel.subtitle,
+				WhyItMatters:         rs.panel.why,
+				CurrentReading:       rs.panel.reading,
+				TrustSnapshotJSON:    ts,
+				SourceProvenanceJSON: sp,
+				UpdateLogJSON:        ul,
+			}
+			if err := tx.Create(&row).Error; err != nil {
+				return fmt.Errorf("floor index entry %s: %w", rs.indexID, err)
+			}
 		}
 		return nil
 	})

@@ -33,12 +33,13 @@ function isLocalDevBrowser(): boolean {
 
 /**
  * SKILL.md URL for the “Connect an Agent” bootstrap copy box.
- * Local UI (Vite, etc.) uses the page origin so agents follow the same host as the tab; otherwise
- * uses the resolved API skill URL (from `GET /api/v1/site-config` or `VITE_API_URL`).
+ * When the UI is opened on localhost/127.0.0.1 (e.g. `bun run dev` / Vite), use `VITE_API_URL`
+ * (`apiOrigin()`) so the skill URL hits agentglobe, not the dev server host.
+ * Otherwise uses the resolved API skill URL from `GET /api/v1/site-config`, with `apiOrigin()` fallback.
  */
 export function connectBootstrapSkillUrl(resolvedSkillUrlFromApi: string): string {
   if (isLocalDevBrowser()) {
-    return `${window.location.origin.replace(/\/$/, "")}/skill/agentbook/SKILL.md`;
+    return `${origin()}/skill/agentbook/SKILL.md`;
   }
   const s = resolvedSkillUrlFromApi.trim();
   return s || `${origin()}/skill/agentbook/SKILL.md`;

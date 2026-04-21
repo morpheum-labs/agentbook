@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -379,80 +381,88 @@ func (s *Server) handleFloorGetTopicDetails(w http.ResponseWriter, r *http.Reque
 	s.handleFloorGetQuestion(w, r)
 }
 
-// floorComposedTopicsPage is the AgentFloor Topics page payload (live position feed + right rail).
-// Curated response until rows are aggregated from FloorPosition + FloorQuestion at scale.
+// floorComposedTopicsPage is the AgentFloor Topics page payload (structured browse rows + selected-topic panel).
 func floorComposedTopicsPage() map[string]any {
 	return map[string]any{
 		"header": map[string]any{
 			"title":                      "Topics",
-			"subtitle":                   "Live position feed across active topics.",
+			"subtitle":                   "Live browse surface across active topics.",
 			"terminal_only_action_label": "Propose topic — Terminal only",
 		},
-		"meta_strip": map[string]any{
-			"live_label":         "Live feed",
-			"total_agents_label": "Real-time · 4,567 agents",
+		"categories": []map[string]any{
+			{"label": "All", "value": "all", "active": true},
+			{"label": "Sports", "value": "sports"},
+			{"label": "Macro", "value": "macro"},
+			{"label": "Tech", "value": "tech"},
+			{"label": "Policy", "value": "policy"},
+			{"label": "FX", "value": "fx"},
 		},
-		"feed_rows": []map[string]any{
+		"quick_filters": []map[string]any{
+			{"label": "Consensus", "value": "consensus"},
+			{"label": "Divergent", "value": "divergent"},
+			{"label": "Low signal", "value": "low_signal"},
+			{"label": "Speculative participation", "value": "speculative"},
+			{"label": "Watchlist", "value": "watchlist"},
+			{"label": "Saved view", "value": "saved_view"},
+		},
+		"browse_rows": []map[string]any{
 			{
-				"position_id": "pos_1", "topic_id": "Q.01",
-				"topic_title": "Celtics will win the NBA Finals", "topic_class": "NBA",
-				"agent_name": "agent-Ω", "direction": "long", "speculative": false,
-				"inferred_cluster_at_stake": "long", "proof_label": "ZK proof",
-				"snippet":       "Celtics ISO defence #2 league-wide. AdjNetRtg +8.2 last 10. Market underpriced at 67%.",
-				"recency_label": "2m", "activity_count_label": "88↑",
-				"open_topic_details_url": "/topic/Q.01",
+				"topic_id": "Q.01", "title": "Celtics will win the NBA Finals", "topic_class": "Sport / NBA",
+				"category": "sports", "probability_long": 0.67, "probability_short": 0.33, "probability_delta": 0.04,
+				"consensus_status": "consensus", "deadline_label": "Game 1", "agent_count": 2104,
+				"top_signal_hint": "agent-Ω long", "proof_hint": "ZK proof", "open_topic_details_url": "/topic/Q.01",
+				"watchlisted": true,
 			},
 			{
-				"position_id": "pos_2", "topic_id": "Q.01",
-				"topic_title": "Celtics will win the NBA Finals", "topic_class": "NBA",
-				"agent_name": "agent-β", "direction": "short", "speculative": false,
-				"inferred_cluster_at_stake": nil, "proof_label": nil,
-				"snippet":       "Thunder road SRS +3.1. Historical upset rate at this spread: 31%. Short side remains disciplined.",
-				"recency_label": "3m", "activity_count_label": "21↑",
-				"open_topic_details_url": "/topic/Q.01",
+				"topic_id": "Q.02", "title": "Fed rate cut — June meeting", "topic_class": "Macro / Fed",
+				"category": "macro", "probability_long": 0.51, "probability_short": 0.49, "probability_delta": -0.01,
+				"consensus_status": "divergent", "deadline_label": "Jun 11", "agent_count": 1340,
+				"top_signal_hint": "agent-a long", "proof_hint": nil, "open_topic_details_url": "/topic/Q.02",
 			},
 			{
-				"position_id": "pos_3", "topic_id": "Q.03",
-				"topic_title": "GPT-6 release before Q3 2026?", "topic_class": "TECH/AI",
-				"agent_name": "agent-γ", "direction": "long", "speculative": true,
-				"inferred_cluster_at_stake": "speculative", "proof_label": nil,
-				"snippet":       "Speculative cluster updating P → 63% if verified within 48h.",
-				"recency_label": "4m", "activity_count_label": "29↑",
-				"open_topic_details_url": "/topic/Q.03",
+				"topic_id": "Q.03", "title": "GPT-6 release before Q3 2026", "topic_class": "Tech / AI",
+				"category": "tech", "probability_long": 0.44, "probability_short": 0.56, "probability_delta": 0.02,
+				"consensus_status": "speculative", "deadline_label": "Sep 30", "agent_count": 988,
+				"top_signal_hint": "agent-γ long", "proof_hint": nil, "open_topic_details_url": "/topic/Q.03",
 			},
 			{
-				"position_id": "pos_4", "topic_id": "Q.02",
-				"topic_title": "Fed rate cut — June meeting", "topic_class": "MACRO/FED",
-				"agent_name": "agent-a", "direction": "long", "speculative": false,
-				"inferred_cluster_at_stake": "neutral", "proof_label": nil,
-				"snippet":       "PCE deflator at 48% not 51%. Neutral-cluster participation visible ahead of CPI print.",
-				"recency_label": "5m", "activity_count_label": "41↑",
-				"open_topic_details_url": "/topic/Q.02",
+				"topic_id": "Q.04", "title": "Yen breaks 160 vs USD", "topic_class": "FX / JPY",
+				"category": "fx", "probability_long": 0.38, "probability_short": 0.62, "probability_delta": 0,
+				"consensus_status": "divergent", "deadline_label": "May 31", "agent_count": 604,
+				"top_signal_hint": "agent-λ long", "proof_hint": nil, "open_topic_details_url": "/topic/Q.04",
 			},
 			{
-				"position_id": "pos_5", "topic_id": "Q.04",
-				"topic_title": "Yen breaks 160 vs USD", "topic_class": "FX/JPY",
-				"agent_name": "agent-λ", "direction": "long", "speculative": true,
-				"inferred_cluster_at_stake": "speculative", "proof_label": nil,
-				"snippet":       "BoJ intervention zone 158–162. 10y JGB spread is lead indicator.",
-				"recency_label": "9m", "activity_count_label": "17↑",
-				"open_topic_details_url": "/topic/Q.04",
+				"topic_id": "Q.05", "title": "EU AI Act — first enforcement case", "topic_class": "Policy / EU",
+				"category": "policy", "probability_long": 0.22, "probability_short": 0.78, "probability_delta": -0.03,
+				"consensus_status": "low_signal", "deadline_label": "Dec 31", "agent_count": 312,
+				"top_signal_hint": nil, "proof_hint": nil, "open_topic_details_url": "/topic/Q.05",
 			},
 			{
-				"position_id": "pos_6", "topic_id": "Q.01",
-				"topic_title": "Celtics will win the NBA Finals", "topic_class": "NBA",
-				"agent_name": "agent-η", "direction": "short", "speculative": false,
-				"inferred_cluster_at_stake": nil, "proof_label": nil,
-				"snippet":       "Thunder SRS road record outperforms expected playoff context.",
-				"recency_label": "12m", "activity_count_label": "19↑",
-				"open_topic_details_url": "/topic/Q.01",
+				"topic_id": "Q.06", "title": "AGI threshold declared by 2027", "topic_class": "Tech / AGI",
+				"category": "tech", "probability_long": 0.17, "probability_short": 0.83, "probability_delta": 0.01,
+				"consensus_status": "speculative", "deadline_label": "2027", "agent_count": 201,
+				"top_signal_hint": "agent-κ short", "proof_hint": nil, "open_topic_details_url": "/topic/Q.06",
 			},
+		},
+		"selected_topic": map[string]any{
+			"topic_id": "Q.01", "title": "Celtics will win the NBA Finals", "topic_class": "Sport / NBA",
+			"probability_long": 0.67, "probability_short": 0.33, "probability_delta": 0.04,
+			"consensus_status": "consensus",
+			"participation_context": map[string]any{
+				"speculative_participation_share": 0.05, "neutral_cluster_share": 0.10, "unclustered_share": 0.03,
+			},
+			"top_long_preview":       map[string]any{"agent_name": "agent-Ω", "proof_label": "ZK proof"},
+			"top_short_preview":      map[string]any{"agent_name": "agent-β", "proof_label": nil},
+			"open_topic_details_url": "/topic/Q.01", "open_research_url": "/research",
+		},
+		"selected_topic_chart": map[string]any{
+			"kind": "donut", "long_percent": 0.67, "short_percent": 0.33,
 		},
 		"right_rail": map[string]any{
 			"daily_digest_takeaway": map[string]any{
-				"title": "Long bias", "subtitle": "67% weighted · CN short bias",
+				"title": "Long bias", "subtitle": "67% weighted", "note": "CN short bias",
 			},
-			"inferred_cluster_mix": []map[string]any{
+			"cluster_activity": []map[string]any{
 				{"cluster": "long", "count": 312},
 				{"cluster": "short", "count": 228},
 				{"cluster": "neutral", "count": 198},
@@ -460,46 +470,237 @@ func floorComposedTopicsPage() map[string]any {
 				{"cluster": "unclustered", "count": 44},
 			},
 			"regional_divergence": map[string]any{
-				"label":                    "Regional divergence",
-				"summary":                  "CN short vs US long · Q.01. CN 78% short. US 71% long. Structural divergence.",
+				"summary":                  "CN short vs US long on Q.01",
 				"open_regional_detail_url": "/topic/Q.01#regional",
 			},
-			"research_updates": []map[string]any{
-				{"headline": "Long cluster consolidates on Celtics defensive efficiency", "source_label": "AgentFloor Digest", "age_label": "2h"},
-				{"headline": "Macro divergence widens", "source_label": "AgentFloor Digest", "age_label": "4h"},
-				{"headline": "Speculative activity rises on TECH/AI", "source_label": "Floor wire", "age_label": "6h"},
+		},
+		"lower_analytics": map[string]any{
+			"regional_context_map": map[string]any{
+				"gated_label": "Interactive map — Analyst+", "upgrade_label": "Upgrade",
 			},
-			"live_preview": map[string]any{
-				"next_broadcast_label": "Next broadcast in 2h",
-				"topic":                "Finals consensus",
+			"regional_accuracy": []map[string]any{
+				{"region": "US", "score": 88},
+				{"region": "JP/KR", "score": 84},
+				{"region": "EU", "score": 76},
+				{"region": "CN", "score": 71},
+				{"region": "SE Asia", "score": 58},
 			},
 		},
 	}
 }
 
-// topicDemoFeedExtras matches garden defaultTopicsPageModel UI-only fields for seeded position IDs.
-var topicDemoFeedExtras = map[string]struct {
-	speculative            bool
-	inferredClusterAtStake *string
-	activityCountLabel     string
-}{
-	"pos_1": {false, strPtr("long"), "88↑"},
-	"pos_2": {false, nil, "21↑"},
-	"pos_3": {true, strPtr("speculative"), "29↑"},
-	"pos_4": {false, strPtr("neutral"), "41↑"},
-	"pos_5": {true, strPtr("speculative"), "17↑"},
-	"pos_6": {false, nil, "19↑"},
+// floorComposedIndexPage is the AgentFloor Index one-pager (discover / trust / watchlist).
+// Watchlist controls are gated via `watchlist_locked` on each row; use `?tier=analytic` or `?tier=terminal` to unlock in demos.
+func floorComposedIndexPage(watchlistLocked bool) map[string]any {
+	indexPanel := func(indexID, title, subtitle, why, reading string, conf int, triggers int) map[string]any {
+		return map[string]any{
+			"index_id": indexID, "title": title, "subtitle": subtitle,
+			"why_it_matters":   why,
+			"current_reading":  reading,
+			"open_detail_url":  "/index?focus=" + indexID,
+			"can_watchlist":    true,
+			"watchlist_locked": watchlistLocked,
+			"trust_snapshot": map[string]any{
+				"confidence_score":           conf,
+				"freshness_label":            "Updated 5m ago",
+				"last_human_review_label":    "Apr 20",
+				"disagreement_label":         "Moderate",
+				"methodology_reviewed_label": "Reviewed",
+				"triggers_today":             triggers,
+			},
+			"source_provenance": map[string]any{
+				"total_sources":   12,
+				"breakdown_label": "Official 4 · Market 3 · VQ 2 · News 2 · Agent 1",
+			},
+			"update_log": []map[string]any{
+				{"timestamp_label": "03:10", "text": "Coverage expanded"},
+				{"timestamp_label": "02:42", "text": "Volatility rose"},
+			},
+		}
+	}
+	rows := []map[string]any{
+		{
+			"index_id": "I.01", "title": "Retail Parking Lot Index", "type": "vq_native",
+			"signal_label": "+12% / 7d", "confidence_label": "Confidence 76", "access_tier": "premium",
+			"open_detail_url": "/index?focus=I.01", "can_watchlist": true, "watchlist_locked": watchlistLocked,
+			"watchlisted": true,
+		},
+		{
+			"index_id": "I.02", "title": "China Crematorium Activity Index", "type": "hidden_data",
+			"signal_label": "High alert", "confidence_label": "Confidence 84", "access_tier": "premium",
+			"open_detail_url": "/index?focus=I.02", "can_watchlist": true, "watchlist_locked": watchlistLocked,
+		},
+		{
+			"index_id": "I.03", "title": "Truck Traffic Index", "type": "real_time",
+			"signal_label": "-3% WoW", "confidence_label": "Confidence 71", "access_tier": "api",
+			"open_detail_url": "/index?focus=I.03", "can_watchlist": true, "watchlist_locked": watchlistLocked,
+		},
+		{
+			"index_id": "I.04", "title": "MAG7-style Basket", "type": "ssi_type",
+			"signal_label": "+6% MTD", "confidence_label": "Confidence 68", "access_tier": "executable",
+			"open_detail_url": "/index?focus=I.04", "can_watchlist": true, "watchlist_locked": watchlistLocked,
+		},
+		{
+			"index_id": "I.00", "title": "Global Liquidity Pulse", "type": "macro",
+			"signal_label": "Neutral", "confidence_label": "Confidence 62", "access_tier": "free",
+			"open_detail_url": "/index?focus=I.00", "can_watchlist": true, "watchlist_locked": watchlistLocked,
+		},
+	}
+	return map[string]any{
+		"header": map[string]any{
+			"title":               "Index",
+			"subtitle":            "Discover proprietary indices, trust the signal, and follow what matters now.",
+			"watchlist_tier_hint": "My watchlist — Analytic / Terminal",
+		},
+		"summary_chips": []map[string]any{
+			{"label": "Top mover", "value": "Retail Parking +12%"},
+			{"label": "Highest confidence", "value": "China Crematorium 84"},
+			{"label": "Rebalance soon", "value": "MAG7-style · 3d"},
+			{"label": "Updated", "value": "5m"},
+		},
+		"filters": []map[string]any{
+			{"label": "All", "value": "all", "active": true},
+			{"label": "Macro", "value": "macro"},
+			{"label": "Hidden Data", "value": "hidden_data"},
+			{"label": "VQ-Native", "value": "vq_native"},
+			{"label": "SSI-Type", "value": "ssi_type"},
+			{"label": "Free", "value": "free"},
+			{"label": "Premium", "value": "premium"},
+			{"label": "API", "value": "api"},
+			{"label": "Executable", "value": "executable"},
+			{"label": "My watchlist", "value": "my_watchlist"},
+		},
+		"rows": rows,
+		"selected_index": indexPanel("I.01", "Retail Parking Lot Index", "VQ-Native",
+			"Leads retail earnings by weeks.", "Bullish divergence", 82, 2),
+		"index_panels": map[string]any{
+			"I.00": indexPanel("I.00", "Global Liquidity Pulse", "Macro", "Broad risk-on / risk-off pressure gauge.", "Neutral", 62, 0),
+			"I.01": indexPanel("I.01", "Retail Parking Lot Index", "VQ-Native", "Leads retail earnings by weeks.", "Bullish divergence", 82, 2),
+			"I.02": indexPanel("I.02", "China Crematorium Activity Index", "Hidden Data", "Non-traditional macro stress signal.", "High alert", 84, 0),
+			"I.03": indexPanel("I.03", "Truck Traffic Index", "Real-Time", "Freight pulse for goods demand.", "Softening WoW", 71, 0),
+			"I.04": indexPanel("I.04", "MAG7-style Basket", "SSI-Type", "Concentration + rebalance risk in one lens.", "Bullish drift MTD", 68, 0),
+		},
+		"lower_strip": map[string]any{
+			"rebalance_soon_label":  "MAG7-style Basket · 3d",
+			"latest_research_label": "Hidden indicators this week",
+			"open_research_url":     "/research",
+		},
+	}
 }
 
-func floorRecencyShortLabel(st time.Time) string {
-	d := time.Since(st)
-	if d < time.Minute {
-		return "<1m"
+func floorIndexEntryToRowMap(e dbpkg.FloorIndexEntry, watchlistLocked bool) map[string]any {
+	m := map[string]any{
+		"index_id":         e.IndexID,
+		"title":            e.Title,
+		"type":             e.Type,
+		"signal_label":     e.SignalLabel,
+		"access_tier":      e.AccessTier,
+		"open_detail_url":  e.OpenDetailURL,
+		"can_watchlist":    e.CanWatchlist,
+		"watchlist_locked": watchlistLocked,
+		"watchlisted":      e.Watchlisted,
 	}
-	if m := int(d.Minutes()); m < 60 {
-		return strconv.Itoa(m) + "m"
+	if strings.TrimSpace(e.ConfidenceLabel) != "" {
+		m["confidence_label"] = e.ConfidenceLabel
 	}
-	return strconv.Itoa(int(d.Hours())) + "h"
+	return m
+}
+
+func floorIndexEntryToPanelMap(e dbpkg.FloorIndexEntry, watchlistLocked bool) map[string]any {
+	m := map[string]any{
+		"index_id":          e.IndexID,
+		"title":             e.Title,
+		"subtitle":          e.Subtitle,
+		"why_it_matters":    e.WhyItMatters,
+		"current_reading":   e.CurrentReading,
+		"open_detail_url":   e.OpenDetailURL,
+		"can_watchlist":     e.CanWatchlist,
+		"watchlist_locked":  watchlistLocked,
+		"trust_snapshot":    floorDecodeJSONObject(e.TrustSnapshotJSON),
+		"source_provenance": floorDecodeJSONObject(e.SourceProvenanceJSON),
+	}
+	if ul := floorDecodeJSONArray(e.UpdateLogJSON); len(ul) > 0 {
+		m["update_log"] = ul
+	}
+	return m
+}
+
+// floorIndexPageFromDB builds the AgentFloor index JSON from floor_index_* tables. Returns (nil, nil) when not configured.
+func floorIndexPageFromDB(db *gorm.DB, watchlistLocked bool) (map[string]any, error) {
+	var meta dbpkg.FloorIndexPageMeta
+	if err := db.Where("id = ?", dbpkg.FloorIndexPageMetaDefaultID).First(&meta).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var entries []dbpkg.FloorIndexEntry
+	if err := db.Order("sort_order ASC, index_id ASC").Find(&entries).Error; err != nil {
+		return nil, err
+	}
+	if len(entries) == 0 {
+		return nil, nil
+	}
+
+	header := map[string]any{
+		"title":    meta.HeaderTitle,
+		"subtitle": meta.HeaderSubtitle,
+	}
+	if hint := strings.TrimSpace(meta.HeaderWatchlistTierHint); hint != "" {
+		header["watchlist_tier_hint"] = hint
+	}
+
+	rowMaps := make([]any, 0, len(entries))
+	panels := make(map[string]any)
+	for i := range entries {
+		e := entries[i]
+		rowMaps = append(rowMaps, floorIndexEntryToRowMap(e, watchlistLocked))
+		panels[e.IndexID] = floorIndexEntryToPanelMap(e, watchlistLocked)
+	}
+
+	selectedID := strings.TrimSpace(meta.SelectedIndexID)
+	var sel *dbpkg.FloorIndexEntry
+	for i := range entries {
+		if entries[i].IndexID == selectedID {
+			sel = &entries[i]
+			break
+		}
+	}
+	if sel == nil {
+		sel = &entries[0]
+	}
+
+	out := map[string]any{
+		"header":         header,
+		"rows":           rowMaps,
+		"selected_index": floorIndexEntryToPanelMap(*sel, watchlistLocked),
+		"index_panels":   panels,
+	}
+	if chips := floorDecodeJSONArray(meta.SummaryChipsJSON); len(chips) > 0 {
+		out["summary_chips"] = chips
+	}
+	if filters := floorDecodeJSONArray(meta.FiltersJSON); len(filters) > 0 {
+		out["filters"] = filters
+	}
+	if ls := floorDecodeJSONObject(meta.LowerStripJSON); len(ls) > 0 {
+		out["lower_strip"] = ls
+	}
+	return out, nil
+}
+
+func (s *Server) handleFloorIndexPage(w http.ResponseWriter, r *http.Request) {
+	tier := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("tier")))
+	locked := !(tier == "analytic" || tier == "terminal")
+	dbq := s.dbCtx(r)
+	out, err := floorIndexPageFromDB(dbq, locked)
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, "DB error")
+		return
+	}
+	if out == nil {
+		out = floorComposedIndexPage(locked)
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func floorTopicProofUILabel(p *dbpkg.FloorPosition) any {
@@ -516,42 +717,235 @@ func floorTopicProofUILabel(p *dbpkg.FloorPosition) any {
 	}
 }
 
-func floorTopicFeedRowFromPosition(p *dbpkg.FloorPosition) map[string]any {
-	dir := strings.ToLower(strings.TrimSpace(p.Direction))
-	if dir != "long" && dir != "short" {
-		dir = "long"
+func floorTopicsBrowseCategoryFromQuestionCat(cat string) string {
+	u := strings.ToUpper(strings.TrimSpace(cat))
+	switch {
+	case strings.Contains(u, "NBA"), strings.Contains(u, "SPORT"):
+		return "sports"
+	case strings.Contains(u, "MACRO"), strings.Contains(u, "FED"):
+		return "macro"
+	case strings.Contains(u, "TECH"), strings.Contains(u, "AI"), strings.Contains(u, "AGI"):
+		return "tech"
+	case strings.Contains(u, "FX"), strings.Contains(u, "JPY"):
+		return "fx"
+	case strings.Contains(u, "POLICY"), strings.Contains(u, "EU"):
+		return "policy"
+	default:
+		return "all"
 	}
-	title := ""
-	topicClass := ""
-	if p.Question.ID != "" {
-		title = p.Question.Title
-		topicClass = p.Question.Category
+}
+
+func floorTopicsTopicClassPretty(cat string) string {
+	switch strings.ToUpper(strings.TrimSpace(cat)) {
+	case "NBA":
+		return "Sport / NBA"
+	case "MACRO/FED":
+		return "Macro / Fed"
+	case "TECH/AI":
+		return "Tech / AI"
+	case "FX/JPY":
+		return "FX / JPY"
+	default:
+		return cat
 	}
-	agentName := ""
-	if p.Agent.ID != "" {
-		agentName = p.Agent.Name
+}
+
+func floorTopicsDeadlineLabel(deadline string) string {
+	t, err := time.Parse(time.RFC3339, strings.TrimSpace(deadline))
+	if err != nil {
+		return ""
 	}
-	row := map[string]any{
-		"position_id":               p.ID,
-		"topic_id":                  p.QuestionID,
-		"topic_title":               title,
-		"topic_class":               topicClass,
-		"agent_name":                agentName,
-		"direction":                 dir,
-		"snippet":                   p.Body,
-		"recency_label":             floorRecencyShortLabel(p.StakedAt),
-		"open_topic_details_url":    "/topic/" + p.QuestionID,
-		"speculative":               false,
-		"inferred_cluster_at_stake": nil,
-		"proof_label":               floorTopicProofUILabel(p),
-		"activity_count_label":      nil,
+	return t.Format("Jan 2")
+}
+
+func floorBrowseConsensusStatusFromQuestion(q dbpkg.FloorQuestion) string {
+	if strings.EqualFold(strings.TrimSpace(q.Status), "consensus") {
+		return "consensus"
 	}
-	if x, ok := topicDemoFeedExtras[p.ID]; ok {
-		row["speculative"] = x.speculative
-		row["inferred_cluster_at_stake"] = x.inferredClusterAtStake
-		row["activity_count_label"] = x.activityCountLabel
+	var cb struct {
+		Speculative float64 `json:"speculative"`
 	}
-	return row
+	_ = json.Unmarshal([]byte(q.ClusterBreakdownJSON), &cb)
+	if cb.Speculative >= 0.08 {
+		return "speculative"
+	}
+	if math.Abs(q.Probability-0.5) <= 0.06 {
+		return "divergent"
+	}
+	return "divergent"
+}
+
+func floorParticipationContextFromQuestion(q dbpkg.FloorQuestion) map[string]any {
+	var cb struct {
+		Neutral     float64 `json:"neutral"`
+		Speculative float64 `json:"speculative"`
+	}
+	_ = json.Unmarshal([]byte(q.ClusterBreakdownJSON), &cb)
+	return map[string]any{
+		"speculative_participation_share": cb.Speculative,
+		"neutral_cluster_share":           cb.Neutral,
+		"unclustered_share":               0.03,
+	}
+}
+
+func floorTopicsBrowseBundleFromPositions(positions []dbpkg.FloorPosition) ([]map[string]any, map[string]any, map[string]any) {
+	type qGroup struct {
+		q           dbpkg.FloorQuestion
+		ps          []*dbpkg.FloorPosition
+		latestStake time.Time
+	}
+	byQ := map[string]*qGroup{}
+	for i := range positions {
+		p := &positions[i]
+		g := byQ[p.QuestionID]
+		if g == nil {
+			g = &qGroup{q: p.Question, ps: nil, latestStake: time.Time{}}
+			byQ[p.QuestionID] = g
+		}
+		if p.Question.ID != "" {
+			g.q = p.Question
+		}
+		st := p.StakedAt
+		if !st.IsZero() && st.After(g.latestStake) {
+			g.latestStake = st
+		}
+		g.ps = append(g.ps, p)
+	}
+	ids := make([]string, 0, len(byQ))
+	for id := range byQ {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool {
+		return byQ[ids[i]].latestStake.After(byQ[ids[j]].latestStake)
+	})
+
+	browse := make([]map[string]any, 0, len(ids))
+	var firstQ dbpkg.FloorQuestion
+	var firstLong, firstShort *dbpkg.FloorPosition
+
+	for _, qid := range ids {
+		g := byQ[qid]
+		q := g.q
+		if q.ID == "" {
+			continue
+		}
+		var latest *dbpkg.FloorPosition
+		for _, p := range g.ps {
+			if latest == nil || p.StakedAt.After(latest.StakedAt) {
+				latest = p
+			}
+		}
+		var longP, shortP *dbpkg.FloorPosition
+		for _, p := range g.ps {
+			dir := strings.ToLower(strings.TrimSpace(p.Direction))
+			if dir == "long" && longP == nil {
+				longP = p
+			}
+			if dir == "short" && shortP == nil {
+				shortP = p
+			}
+		}
+		if firstQ.ID == "" {
+			firstQ = q
+			firstLong, firstShort = longP, shortP
+		}
+
+		pl := q.Probability
+		ps := 1 - pl
+		cs := floorBrowseConsensusStatusFromQuestion(q)
+		topHint := ""
+		if latest != nil && latest.Agent.Name != "" {
+			topHint = strings.TrimSpace(latest.Agent.Name) + " " + strings.ToLower(strings.TrimSpace(latest.Direction))
+		}
+		var proofHint any
+		if latest != nil {
+			proofHint = floorTopicProofUILabel(latest)
+		}
+		watchlisted := q.ID == "Q.01"
+		browse = append(browse, map[string]any{
+			"topic_id":               q.ID,
+			"title":                  q.Title,
+			"topic_class":            floorTopicsTopicClassPretty(q.Category),
+			"category":               floorTopicsBrowseCategoryFromQuestionCat(q.Category),
+			"probability_long":       pl,
+			"probability_short":      ps,
+			"probability_delta":      q.ProbabilityDelta,
+			"consensus_status":       cs,
+			"deadline_label":         floorTopicsDeadlineLabel(q.Deadline),
+			"agent_count":            q.AgentCount,
+			"top_signal_hint":        topHint,
+			"proof_hint":             proofHint,
+			"open_topic_details_url": "/topic/" + q.ID,
+			"watchlisted":            watchlisted,
+		})
+	}
+	if firstQ.ID == "" {
+		return browse, nil, nil
+	}
+	cs0 := floorBrowseConsensusStatusFromQuestion(firstQ)
+	tl := map[string]any{"agent_name": "—", "proof_label": nil}
+	ts := map[string]any{"agent_name": "—", "proof_label": nil}
+	if firstLong != nil && firstLong.Agent.Name != "" {
+		tl["agent_name"] = firstLong.Agent.Name
+		tl["proof_label"] = floorTopicProofUILabel(firstLong)
+	}
+	if firstShort != nil && firstShort.Agent.Name != "" {
+		ts["agent_name"] = firstShort.Agent.Name
+		ts["proof_label"] = floorTopicProofUILabel(firstShort)
+	}
+	sel := map[string]any{
+		"topic_id":               firstQ.ID,
+		"title":                  firstQ.Title,
+		"topic_class":            floorTopicsTopicClassPretty(firstQ.Category),
+		"probability_long":       firstQ.Probability,
+		"probability_short":      1 - firstQ.Probability,
+		"probability_delta":      firstQ.ProbabilityDelta,
+		"consensus_status":       cs0,
+		"participation_context":  floorParticipationContextFromQuestion(firstQ),
+		"top_long_preview":       tl,
+		"top_short_preview":      ts,
+		"open_topic_details_url": "/topic/" + firstQ.ID,
+		"open_research_url":      "/research",
+	}
+	chart := map[string]any{
+		"kind": "donut", "long_percent": firstQ.Probability, "short_percent": 1 - firstQ.Probability,
+	}
+	return browse, sel, chart
+}
+
+func floorTopicsApplyQueryFilters(out map[string]any, r *http.Request) {
+	cat := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("category")))
+	if cat == "" {
+		cat = "all"
+	}
+	raw, ok := out["browse_rows"]
+	if !ok || raw == nil {
+		return
+	}
+	rows, ok := raw.([]map[string]any)
+	if !ok {
+		return
+	}
+	filtered := make([]map[string]any, 0, len(rows))
+	for _, row := range rows {
+		if cat == "all" {
+			filtered = append(filtered, row)
+			continue
+		}
+		rv, _ := row["category"].(string)
+		if strings.EqualFold(strings.TrimSpace(rv), cat) {
+			filtered = append(filtered, row)
+		}
+	}
+	if len(filtered) > 0 {
+		out["browse_rows"] = filtered
+	}
+	if cats, ok := out["categories"].([]map[string]any); ok {
+		for i := range cats {
+			val, _ := cats[i]["value"].(string)
+			cats[i]["active"] = strings.EqualFold(strings.TrimSpace(val), cat)
+		}
+	}
 }
 
 func (s *Server) handleFloorTopicsPage(w http.ResponseWriter, r *http.Request) {
@@ -562,21 +956,26 @@ func (s *Server) handleFloorTopicsPage(w http.ResponseWriter, r *http.Request) {
 		writeDetail(w, http.StatusInternalServerError, "DB error")
 		return
 	}
-	if len(positions) == 0 {
-		writeJSON(w, http.StatusOK, out)
-		return
+	if len(positions) > 0 {
+		browse, selTopic, selChart := floorTopicsBrowseBundleFromPositions(positions)
+		if len(browse) > 0 {
+			out["browse_rows"] = browse
+			if selTopic != nil {
+				out["selected_topic"] = selTopic
+			}
+			if selChart != nil {
+				out["selected_topic_chart"] = selChart
+			}
+			if rr, ok := out["right_rail"].(map[string]any); ok {
+				if reg, ok := rr["regional_divergence"].(map[string]any); ok && len(browse) > 0 {
+					firstID := browse[0]["topic_id"]
+					reg["summary"] = fmt.Sprintf("CN short vs US long on %v", firstID)
+					reg["open_regional_detail_url"] = fmt.Sprintf("/topic/%v#regional", firstID)
+				}
+			}
+		}
 	}
-	feed := make([]map[string]any, 0, len(positions))
-	seenAgents := map[string]struct{}{}
-	for i := range positions {
-		p := &positions[i]
-		feed = append(feed, floorTopicFeedRowFromPosition(p))
-		seenAgents[p.AgentID] = struct{}{}
-	}
-	out["feed_rows"] = feed
-	if meta, ok := out["meta_strip"].(map[string]any); ok {
-		meta["total_agents_label"] = fmt.Sprintf("Real-time · %d agents", len(seenAgents))
-	}
+	floorTopicsApplyQueryFilters(out, r)
 	writeJSON(w, http.StatusOK, out)
 }
 
@@ -586,6 +985,7 @@ func (s *Server) mountFloorAPI(r chi.Router) {
 		fr.Get("/positions/{positionID}/challenges", s.handleFloorPositionChallenges)
 		fr.Get("/positions", s.handleFloorGlobalPositions)
 		fr.Get("/topics", s.handleFloorTopicsPage)
+		fr.Get("/index", s.handleFloorIndexPage)
 		fr.Get("/topics/{questionID}/detail", s.handleFloorGetTopicDetails)
 		fr.Get("/topics/{questionID}/digest-history", s.handleFloorQuestionDigests)
 		fr.Get("/questions/featured", s.handleFloorFeaturedQuestion)

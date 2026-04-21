@@ -30,21 +30,21 @@ type FloorPosition struct {
 	Question              FloorQuestion `gorm:"foreignKey:QuestionID;references:ID"`
 	AgentID               string        `gorm:"column:agent_id;index;not null;type:text"`
 	Agent                 Agent         `gorm:"foreignKey:AgentID;references:ID"`
-	Direction             string    `gorm:"not null;type:text"`
-	StakedAt              time.Time `gorm:"column:staked_at"`
-	Body                  string    `gorm:"not null;type:text;default:''"`
-	Language              string    `gorm:"not null;type:text;default:'EN'"`
-	AccuracyScoreAtStake  *float64  `gorm:"column:accuracy_score_at_stake"`
-	InferenceProof        *string   `gorm:"column:inference_proof;type:text"`
-	ProofType             *string   `gorm:"column:proof_type;type:text"`
-	RegionalCluster       *string   `gorm:"column:regional_cluster;type:text"`
-	Resolved              bool      `gorm:"not null"`
-	Outcome               string    `gorm:"not null;type:text;default:pending"`
-	ChallengeOpen         bool      `gorm:"column:challenge_open;not null"`
-	SourcePostID          *string   `gorm:"column:source_post_id;type:text"`
-	SourceCommentID       *string   `gorm:"column:source_comment_id;type:text"`
-	ExternalSignalIDsJSON string    `gorm:"column:external_signal_ids_json;not null;type:text;default:'[]'"`
-	CreatedAt             time.Time `gorm:"column:created_at"`
+	Direction             string        `gorm:"not null;type:text"`
+	StakedAt              time.Time     `gorm:"column:staked_at"`
+	Body                  string        `gorm:"not null;type:text;default:''"`
+	Language              string        `gorm:"not null;type:text;default:'EN'"`
+	AccuracyScoreAtStake  *float64      `gorm:"column:accuracy_score_at_stake"`
+	InferenceProof        *string       `gorm:"column:inference_proof;type:text"`
+	ProofType             *string       `gorm:"column:proof_type;type:text"`
+	RegionalCluster       *string       `gorm:"column:regional_cluster;type:text"`
+	Resolved              bool          `gorm:"not null"`
+	Outcome               string        `gorm:"not null;type:text;default:pending"`
+	ChallengeOpen         bool          `gorm:"column:challenge_open;not null"`
+	SourcePostID          *string       `gorm:"column:source_post_id;type:text"`
+	SourceCommentID       *string       `gorm:"column:source_comment_id;type:text"`
+	ExternalSignalIDsJSON string        `gorm:"column:external_signal_ids_json;not null;type:text;default:'[]'"`
+	CreatedAt             time.Time     `gorm:"column:created_at"`
 }
 
 func (FloorPosition) TableName() string { return "floor_positions" }
@@ -205,3 +205,42 @@ type FloorBroadcast struct {
 }
 
 func (FloorBroadcast) TableName() string { return "floor_broadcasts" }
+
+// FloorIndexPageMeta is a singleton row (id FloorIndexPageMetaDefaultID) for AgentFloor GET /floor/index header, chips, filters, and lower strip.
+type FloorIndexPageMeta struct {
+	ID                      string `gorm:"primaryKey;type:text"`
+	HeaderTitle             string `gorm:"column:header_title;not null;type:text"`
+	HeaderSubtitle          string `gorm:"column:header_subtitle;not null;type:text"`
+	HeaderWatchlistTierHint string `gorm:"column:header_watchlist_tier_hint;type:text"`
+	SummaryChipsJSON        string `gorm:"column:summary_chips_json;not null;type:text;default:'[]'"`
+	FiltersJSON             string `gorm:"column:filters_json;not null;type:text;default:'[]'"`
+	LowerStripJSON          string `gorm:"column:lower_strip_json;not null;type:text;default:'{}'"`
+	SelectedIndexID         string `gorm:"column:selected_index_id;not null;type:text"`
+}
+
+func (FloorIndexPageMeta) TableName() string { return "floor_index_page_meta" }
+
+// FloorIndexPageMetaDefaultID is the primary key for the composed index page configuration row.
+const FloorIndexPageMetaDefaultID = "default"
+
+// FloorIndexEntry is one directory row plus its detail panel payload for GET /floor/index.
+type FloorIndexEntry struct {
+	IndexID              string `gorm:"column:index_id;primaryKey;type:text"`
+	SortOrder            int    `gorm:"column:sort_order;not null"`
+	Title                string `gorm:"not null;type:text"`
+	Type                 string `gorm:"not null;type:text"`
+	SignalLabel          string `gorm:"column:signal_label;not null;type:text"`
+	ConfidenceLabel      string `gorm:"column:confidence_label;type:text"`
+	AccessTier           string `gorm:"column:access_tier;not null;type:text"`
+	OpenDetailURL        string `gorm:"column:open_detail_url;not null;type:text"`
+	CanWatchlist         bool   `gorm:"column:can_watchlist;not null"`
+	Watchlisted          bool   `gorm:"column:watchlisted;not null"`
+	Subtitle             string `gorm:"type:text"`
+	WhyItMatters         string `gorm:"column:why_it_matters;type:text"`
+	CurrentReading       string `gorm:"column:current_reading;type:text"`
+	TrustSnapshotJSON    string `gorm:"column:trust_snapshot_json;not null;type:text;default:'{}'"`
+	SourceProvenanceJSON string `gorm:"column:source_provenance_json;not null;type:text;default:'{}'"`
+	UpdateLogJSON        string `gorm:"column:update_log_json;not null;type:text;default:'[]'"`
+}
+
+func (FloorIndexEntry) TableName() string { return "floor_index_entries" }

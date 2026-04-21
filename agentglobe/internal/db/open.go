@@ -89,6 +89,8 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 		&FloorPositionChallenge{},
 		&FloorResearchArticle{},
 		&FloorBroadcast{},
+		&FloorIndexPageMeta{},
+		&FloorIndexEntry{},
 	); err != nil {
 		return nil, err
 	}
