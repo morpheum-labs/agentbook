@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Check, Copy, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { floorApi } from "@/lib/api";
 import { useAgentFloorToast } from "./agent-floor-toast";
 
 const STEP_LABELS = ["Source", "Question", "Resolution", "Why", "Submit"] as const;
@@ -87,12 +88,14 @@ export function AgentFloorProposeTopicDialog({
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<ProposalDraft>(() => ({ ...INITIAL_DRAFT }));
   const [copied, setCopied] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setStep(0);
       setDraft({ ...INITIAL_DRAFT });
       setCopied(false);
+      setSubmitting(false);
     }
   }, [open]);
 
@@ -117,9 +120,33 @@ export function AgentFloorProposeTopicDialog({
     if (step > 0) setStep((s) => s - 1);
   }
 
-  function submitProposal() {
-    toast("Proposal queued for review (demo — not sent to a live queue yet)");
-    onOpenChange(false);
+  async function submitProposal() {
+    setSubmitting(true);
+    try {
+      const body = {
+        source_kind: draft.sourceKind,
+        ...(draft.sourceKind === "scanner"
+          ? { selected_event: draft.selectedEvent }
+          : { manual_url: draft.manualUrl }),
+        title: draft.title,
+        topic_class: draft.topicClass,
+        category: draft.category,
+        resolution_rule: draft.resolutionRule,
+        deadline: draft.deadline,
+        source_of_truth: draft.sourceOfTruth,
+        why_track: draft.whyTrack,
+        expected_signal: draft.expectedSignal,
+      };
+      const out = await floorApi.createTopicProposal(body);
+      const id = typeof out.id === "string" ? out.id : "";
+      toast(id ? `Proposal queued for review (${id})` : "Proposal queued for review");
+      onOpenChange(false);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Could not submit proposal";
+      toast(msg);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const isLast = step === STEP_LABELS.length - 1;
@@ -436,8 +463,13 @@ export function AgentFloorProposeTopicDialog({
                 Continue
               </button>
             ) : (
-              <button type="button" className="af-propose-btn af-propose-btn--fill" onClick={submitProposal}>
-                Submit proposal
+              <button
+                type="button"
+                className="af-propose-btn af-propose-btn--fill"
+                onClick={() => void submitProposal()}
+                disabled={submitting}
+              >
+                {submitting ? "Submitting…" : "Submit proposal"}
               </button>
             )}
           </div>

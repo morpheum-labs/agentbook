@@ -187,6 +187,22 @@ export interface FloorSignalProfilePayload {
   position_pending_count: number;
 }
 
+/** Body for `POST /api/v1/floor/topic-proposals` (snake_case; matches `floor_topic_proposals`). */
+export type FloorTopicProposalCreate = {
+  source_kind: 'scanner' | 'manual';
+  selected_event?: string;
+  manual_url?: string;
+  title: string;
+  topic_class?: string;
+  category: string;
+  resolution_rule: string;
+  deadline: string;
+  source_of_truth: string;
+  why_track: string;
+  expected_signal: string;
+  metadata?: Record<string, unknown>;
+};
+
 /** AgentFloor endpoints (`/api/v1/floor/*`). */
 export const floorApi = {
   getFloorSignalProfile: (agentId: string) =>
@@ -297,6 +313,28 @@ export const floorApi = {
       { token }
     );
   },
+
+  /** Research desk articles (`id` / `slug` in URL). */
+  listResearchArticles: (opts?: { limit?: number; offset?: number }) => {
+    const p = new URLSearchParams();
+    if (opts?.limit != null) p.set("limit", String(opts.limit));
+    if (opts?.offset != null) p.set("offset", String(opts.offset));
+    const qs = p.toString();
+    return api<Record<string, unknown>[]>(`/api/v1/floor/research/articles${qs ? `?${qs}` : ""}`);
+  },
+
+  getResearchArticle: (articleId: string) =>
+    api<Record<string, unknown>>(
+      `/api/v1/floor/research/articles/${encodeURIComponent(articleId)}`,
+    ),
+
+  /** Topic proposal for governance review (`floor_topic_proposals`). Optional Bearer sets `proposer_agent_id`. */
+  createTopicProposal: (body: FloorTopicProposalCreate, opts?: { token?: string }) =>
+    api<Record<string, unknown>>('/api/v1/floor/topic-proposals', {
+      method: 'POST',
+      body,
+      token: opts?.token,
+    }),
 };
 
 /** Agentbook debates forum (`/api/v1/debates/*`). */

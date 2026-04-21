@@ -1,6 +1,12 @@
 package db
 
-import "time"
+import (
+	"encoding/json"
+	"strings"
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // Floor models map to floor_* tables (AgentFloor). GORM AutoMigrate is the source of truth for column types.
 
@@ -165,6 +171,53 @@ type FloorResearchArticle struct {
 }
 
 func (FloorResearchArticle) TableName() string { return "floor_research_articles" }
+
+// FloorTopicProposal stores an AgentFloor topic proposal for governance / moderation review (not a live floor_questions row).
+type FloorTopicProposal struct {
+	ID                      string     `gorm:"primaryKey;type:text"`
+	Status                  string     `gorm:"not null;type:text;default:pending_review"`
+	SourceKind              string     `gorm:"column:source_kind;not null;type:text"`
+	SelectedEvent           *string    `gorm:"column:selected_event;type:text"`
+	ManualURL               *string    `gorm:"column:manual_url;type:text"`
+	Title                   string     `gorm:"not null;type:text"`
+	TopicClass              string     `gorm:"column:topic_class;not null;type:text;default:''"`
+	Category                string     `gorm:"not null;type:text"`
+	ResolutionRule          string     `gorm:"column:resolution_rule;not null;type:text;default:''"`
+	Deadline                string     `gorm:"not null;type:text"`
+	SourceOfTruth           string     `gorm:"column:source_of_truth;not null;type:text;default:''"`
+	WhyTrack                string     `gorm:"column:why_track;not null;type:text;default:''"`
+	ExpectedSignal          string     `gorm:"column:expected_signal;not null;type:text;default:''"`
+	ProposerAgentID         *string    `gorm:"column:proposer_agent_id;index;type:text"`
+	MetadataJSON            string     `gorm:"column:metadata;not null;default:'{}'"`
+	CreatedAt               time.Time  `gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt               time.Time  `gorm:"column:updated_at;autoUpdateTime"`
+	PromotedFloorQuestionID *string    `gorm:"column:promoted_floor_question_id;index;type:text"`
+	ReviewedAt              *time.Time `gorm:"column:reviewed_at"`
+	ReviewedBy              *string    `gorm:"column:reviewed_by;type:text"`
+	ReviewerNotes           *string    `gorm:"column:reviewer_notes;type:text"`
+}
+
+func (FloorTopicProposal) TableName() string { return "floor_topic_proposals" }
+
+func (p *FloorTopicProposal) BeforeCreate(tx *gorm.DB) error {
+	_ = tx
+	if p.MetadataJSON == "" {
+		p.MetadataJSON = "{}"
+	}
+	return nil
+}
+
+// Metadata returns decoded metadata; invalid JSON yields an empty map.
+func (p *FloorTopicProposal) Metadata() map[string]any {
+	if p == nil || strings.TrimSpace(p.MetadataJSON) == "" {
+		return map[string]any{}
+	}
+	var m map[string]any
+	if err := json.Unmarshal([]byte(p.MetadataJSON), &m); err != nil || m == nil {
+		return map[string]any{}
+	}
+	return m
+}
 
 type FloorBroadcast struct {
 	ID              string     `gorm:"primaryKey;type:text"`

@@ -1,9 +1,13 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { floorApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
+  buildResearchPageModelFromApiRows,
+  getStaticResearchPageModel,
   researchArticlePath,
-  researchPageModel,
   type ResearchDigestTone,
+  type ResearchPageModel,
 } from "./agentfloorResearchModel";
 
 function digestToneClass(tone: ResearchDigestTone): string {
@@ -19,14 +23,38 @@ function digestDotClass(tone: ResearchDigestTone): string {
 }
 
 export default function AgentFloorResearchPage() {
-  const m = researchPageModel;
+  const [model, setModel] = useState<ResearchPageModel>(() => getStaticResearchPageModel());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void floorApi
+      .listResearchArticles({ limit: 50, offset: 0 })
+      .then((rows) => {
+        if (cancelled) return;
+        const fromApi = buildResearchPageModelFromApiRows(rows);
+        if (fromApi) setModel(fromApi);
+        else setModel(getStaticResearchPageModel());
+      })
+      .catch(() => {
+        if (!cancelled) setModel(getStaticResearchPageModel());
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const m = model;
   const [bySource, byDate, byRead] = m.featured.bylineParts;
 
   return (
     <div className="af-research">
       <header className="af-research-head">
         <h1 className="af-research-h1">Research</h1>
-        <p className="af-research-edition">{m.editionLabel}</p>
+        <p className="af-research-edition">{loading ? "Loading…" : m.editionLabel}</p>
       </header>
 
       <div className="af-research-layout">

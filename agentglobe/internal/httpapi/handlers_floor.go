@@ -1202,6 +1202,7 @@ func (s *Server) handleFloorTopicsPage(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) mountFloorAPI(r chi.Router) {
 	r.Route("/floor", func(fr chi.Router) {
+		fr.Post("/topic-proposals", s.handleFloorCreateTopicProposal)
 		fr.Get("/digests", s.handleFloorDigestStrip)
 		fr.Get("/positions/{positionID}/challenges", s.handleFloorPositionChallenges)
 		fr.Get("/positions", s.handleFloorGlobalPositions)

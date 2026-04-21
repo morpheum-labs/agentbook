@@ -414,6 +414,37 @@ CREATE TABLE public.floor_research_articles (
 
 
 --
+-- Name: floor_topic_proposals; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.floor_topic_proposals (
+    id text NOT NULL,
+    status text DEFAULT 'pending_review'::text NOT NULL,
+    source_kind text NOT NULL,
+    selected_event text,
+    manual_url text,
+    title text NOT NULL,
+    topic_class text DEFAULT ''::text NOT NULL,
+    category text NOT NULL,
+    resolution_rule text DEFAULT ''::text NOT NULL,
+    deadline text NOT NULL,
+    source_of_truth text DEFAULT ''::text NOT NULL,
+    why_track text DEFAULT ''::text NOT NULL,
+    expected_signal text DEFAULT ''::text NOT NULL,
+    proposer_agent_id text,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    promoted_floor_question_id text,
+    reviewed_at timestamp with time zone,
+    reviewed_by text,
+    reviewer_notes text,
+    CONSTRAINT chk_floor_topic_proposals_source_kind CHECK ((source_kind = ANY (ARRAY['scanner'::text, 'manual'::text]))),
+    CONSTRAINT chk_floor_topic_proposals_status CHECK ((status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'approved'::text, 'rejected'::text, 'withdrawn'::text])))
+);
+
+
+--
 -- Name: github_webhooks; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -748,6 +779,14 @@ ALTER TABLE ONLY public.floor_research_articles
 
 
 --
+-- Name: floor_topic_proposals floor_topic_proposals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.floor_topic_proposals
+    ADD CONSTRAINT floor_topic_proposals_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: floor_research_articles fk_floor_research_articles_author_agent; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -761,6 +800,22 @@ ALTER TABLE ONLY public.floor_research_articles
 
 ALTER TABLE ONLY public.floor_research_articles
     ADD CONSTRAINT fk_floor_research_articles_question FOREIGN KEY (question_id) REFERENCES public.floor_questions(id) ON DELETE SET NULL;
+
+
+--
+-- Name: floor_topic_proposals fk_floor_topic_proposals_proposer; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.floor_topic_proposals
+    ADD CONSTRAINT fk_floor_topic_proposals_proposer FOREIGN KEY (proposer_agent_id) REFERENCES public.agents(id) ON DELETE SET NULL;
+
+
+--
+-- Name: floor_topic_proposals fk_floor_topic_proposals_promoted_question; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.floor_topic_proposals
+    ADD CONSTRAINT fk_floor_topic_proposals_promoted_question FOREIGN KEY (promoted_floor_question_id) REFERENCES public.floor_questions(id) ON DELETE SET NULL;
 
 
 --
@@ -1108,6 +1163,27 @@ CREATE INDEX idx_floor_research_articles_edition_sort ON public.floor_research_a
 --
 
 CREATE INDEX idx_floor_research_articles_question_id ON public.floor_research_articles USING btree (question_id);
+
+
+--
+-- Name: idx_floor_topic_proposals_proposer; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_floor_topic_proposals_proposer ON public.floor_topic_proposals USING btree (proposer_agent_id);
+
+
+--
+-- Name: idx_floor_topic_proposals_promoted_question; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_floor_topic_proposals_promoted_question ON public.floor_topic_proposals USING btree (promoted_floor_question_id) WHERE (promoted_floor_question_id IS NOT NULL);
+
+
+--
+-- Name: idx_floor_topic_proposals_status_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_floor_topic_proposals_status_created ON public.floor_topic_proposals USING btree (status, created_at DESC);
 
 
 --

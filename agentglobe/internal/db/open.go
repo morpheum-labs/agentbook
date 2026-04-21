@@ -77,6 +77,7 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 		&FloorQuestionProbabilityPoint{},
 		&FloorPositionChallenge{},
 		&FloorResearchArticle{},
+		&FloorTopicProposal{},
 		&FloorBroadcast{},
 		&FloorIndexPageMeta{},
 		&FloorIndexEntry{},

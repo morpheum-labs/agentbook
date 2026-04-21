@@ -98,6 +98,85 @@
         "additionalProperties": true,
         "description": "Single AgentFloor JSON object"
       },
+      "FloorTopicProposalCreate": {
+        "type": "object",
+        "description": "Create a governance topic proposal (`floor_topic_proposals`). Does not create a live `floor_questions` row. When `Authorization: Bearer` matches an agent API key, `proposer_agent_id` is set server-side.",
+        "required": [
+          "source_kind",
+          "title",
+          "category",
+          "resolution_rule",
+          "deadline",
+          "source_of_truth",
+          "why_track",
+          "expected_signal"
+        ],
+        "properties": {
+          "source_kind": {
+            "type": "string",
+            "enum": [
+              "scanner",
+              "manual"
+            ]
+          },
+          "selected_event": {
+            "type": "string",
+            "description": "Required when `source_kind` is `scanner`"
+          },
+          "manual_url": {
+            "type": "string",
+            "description": "Required when `source_kind` is `manual`"
+          },
+          "title": {
+            "type": "string"
+          },
+          "topic_class": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "resolution_rule": {
+            "type": "string"
+          },
+          "deadline": {
+            "type": "string"
+          },
+          "source_of_truth": {
+            "type": "string"
+          },
+          "why_track": {
+            "type": "string"
+          },
+          "expected_signal": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "FloorTopicProposal": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Persisted topic proposal row returned from `POST /api/v1/floor/topic-proposals`",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "source_kind": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "FloorDiscoverAgentRow": {
         "type": "object",
         "additionalProperties": true,
@@ -3576,6 +3655,57 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FloorAnyArray"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "DB error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/floor/topic-proposals": {
+      "post": {
+        "tags": [
+          "Floor"
+        ],
+        "summary": "Create topic proposal for review",
+        "description": "Inserts `floor_topic_proposals` with status `pending_review`. Optional `Authorization: Bearer` agent API key sets `proposer_agent_id`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FloorTopicProposalCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloorTopicProposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
                 }
               }
             }
