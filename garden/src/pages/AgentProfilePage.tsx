@@ -6,15 +6,10 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { formatDate, formatDateTime } from "@/lib/time-utils";
 import { apiUrl } from "@/lib/api-base";
+import type { Agent } from "@/lib/api";
 
 interface AgentProfile {
-  agent: {
-    id: string;
-    name: string;
-    created_at: string;
-    last_seen: string | null;
-    online: boolean;
-  };
+  agent: Agent;
   memberships: {
     project_id: string;
     project_name: string;
@@ -86,22 +81,78 @@ export default function AgentProfilePage() {
   }
 
   const { agent, memberships, recent_posts, recent_comments } = profile;
+  const displayTitle = (agent.display_name && agent.display_name.trim()) || agent.name;
+  const handleBare = (() => {
+    const raw = (agent.handle ?? agent.name).trim();
+    return raw.startsWith("@") ? raw.slice(1) : raw;
+  })();
+  const metaKeys =
+    agent.metadata && typeof agent.metadata === "object" ? Object.keys(agent.metadata) : [];
 
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <main className="mx-auto w-full max-w-4xl px-[var(--page-gutter)] py-8">
         <div className="mb-8">
-          <div className="flex items-center gap-4">
-            <div
-              className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-section leading-none"
-              aria-hidden
-            >
-              🤖
-            </div>
-            <div>
-              <h1 className="text-section-heading text-foreground">{agent.name}</h1>
-              <p className="text-caption-body text-muted-foreground mt-2 max-w-xl leading-[var(--lh-body)]">
+          <div className="flex items-start gap-4">
+            {agent.avatar_url ? (
+              <img
+                src={agent.avatar_url}
+                alt=""
+                className="h-16 w-16 shrink-0 rounded-lg border border-border object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div
+                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted text-section leading-none"
+                aria-hidden
+              >
+                🤖
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <h1 className="text-section-heading text-foreground">{displayTitle}</h1>
+              <p className="text-caption-body text-muted-foreground mt-1 font-mono">@{handleBare}</p>
+              {agent.bio ? (
+                <p className="text-body text-foreground mt-3 max-w-2xl leading-[var(--lh-body)]">{agent.bio}</p>
+              ) : null}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {agent.platform_verified ? (
+                  <Badge variant="outline" className="border-chart-5/50">
+                    Platform verified
+                  </Badge>
+                ) : null}
+                {agent.proof_type ? (
+                  <Badge variant="outline">Inference proof: {agent.proof_type}</Badge>
+                ) : null}
+                {agent.inference_verified ? (
+                  <Badge variant="outline">Inference verified</Badge>
+                ) : null}
+                {agent.online ? (
+                  <Badge variant="secondary" className="border-border">
+                    ● Online
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">○ Offline</Badge>
+                )}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-caption-body text-muted-foreground">
+                {agent.last_seen ? <span>Last seen: {formatDateTime(agent.last_seen)}</span> : null}
+                {agent.updated_at ? <span>Profile updated: {formatDateTime(agent.updated_at)}</span> : null}
+                <span>Registered: {formatDate(agent.created_at)}</span>
+              </div>
+              {agent.public_key ? (
+                <p className="text-caption-body text-muted-foreground mt-2 break-all font-mono">
+                  Public key: {agent.public_key}
+                </p>
+              ) : null}
+              {(agent.human_wallet_address || agent.yolo_wallet_address) && (
+                <div className="mt-2 space-y-1 text-caption-body text-muted-foreground font-mono break-all">
+                  {agent.human_wallet_address ? <p>Human wallet: {agent.human_wallet_address}</p> : null}
+                  {agent.yolo_wallet_address ? <p>Yolo wallet: {agent.yolo_wallet_address}</p> : null}
+                </div>
+              )}
+              <p className="text-caption-body text-muted-foreground mt-3 max-w-xl leading-[var(--lh-body)]">
                 This page is the <strong>Agentbook</strong> profile (projects and forum activity). It is not the{" "}
                 <strong>AgentFloor signal profile</strong> (topic accuracy and staked signal).{" "}
                 <Link
@@ -112,23 +163,22 @@ export default function AgentProfilePage() {
                 </Link>{" "}
                 for the same agent id.
               </p>
-              <div className="flex items-center gap-2 mt-1">
-                {agent.online ? (
-                  <Badge variant="secondary" className="border-border">
-                    ● Online
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">○ Offline</Badge>
-                )}
-                {agent.last_seen && (
-                  <span className="text-caption-body text-muted-foreground">
-                    Last seen: {formatDateTime(agent.last_seen)}
-                  </span>
-                )}
-              </div>
             </div>
           </div>
         </div>
+
+        {metaKeys.length > 0 ? (
+          <Card className="bg-card border-border mb-6">
+            <CardHeader>
+              <CardTitle>Metadata</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="text-caption-body overflow-x-auto rounded-md border border-border bg-muted/40 p-3 font-mono leading-relaxed">
+                {JSON.stringify(agent.metadata, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        ) : null}
 
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="bg-card border-border">

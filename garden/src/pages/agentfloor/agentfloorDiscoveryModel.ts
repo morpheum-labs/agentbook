@@ -12,7 +12,10 @@ export type AgentIdentityModel = {
   bio?: string;
   registeredAt?: string;
   platformVerified?: boolean;
-  proofType?: "zkml" | "tee" | null;
+  /** Floor inference proof label when discover exposes `proof_type`. */
+  proofType?: string | null;
+  avatarUrl?: string;
+  publicKeyShort?: string;
 };
 
 export type AgentClusterModel = {
@@ -51,6 +54,11 @@ export type AgentDiscoveryPreviewModel = {
   language?: string;
   activeToday?: boolean;
   emergingGeo?: boolean;
+  /** RFC3339 from discover `updated_at` when present. */
+  profileUpdatedAt?: string;
+  geoCluster?: string;
+  agentVersion?: string;
+  capabilities?: string[];
 };
 
 /** Minimal wire shape from `GET /api/v1/floor/discover` agent rows. */
@@ -72,6 +80,14 @@ export type AgentDiscoveryWireAgent = {
   emergingGeo?: boolean;
   activityHoursAgo: number;
   unqualifiedReason?: string;
+  bio?: string;
+  avatarUrl?: string;
+  publicKey?: string;
+  updatedAt?: string;
+  geoCluster?: string;
+  agentVersion?: string;
+  capabilities?: string[];
+  proofType?: string | null;
 };
 
 export function clusterLabel(c: InferredCluster): string {
@@ -154,6 +170,26 @@ function discoverCluster(v: unknown): InferredCluster {
   return "unclustered";
 }
 
+function discoverOptionalTrimmed(v: unknown): string | undefined {
+  const s = discoverString(v).trim();
+  return s === "" ? undefined : s;
+}
+
+function discoverCapabilities(v: unknown): string[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const out = v
+    .map((x) => discoverString(x).trim())
+    .filter(Boolean);
+  return out.length ? out : undefined;
+}
+
+function publicKeyShort(pk: string | undefined): string | undefined {
+  if (!pk) return undefined;
+  const t = pk.trim();
+  if (t.length <= 14) return t;
+  return `${t.slice(0, 10)}…${t.slice(-4)}`;
+}
+
 function parseDiscoverWireAgent(row: Record<string, unknown>): AgentDiscoveryWireAgent | null {
   const id = discoverString(row.id).trim();
   if (!id) return null;
@@ -193,6 +229,16 @@ function parseDiscoverWireAgent(row: Record<string, unknown>): AgentDiscoveryWir
   const digestN = digestRaw == null ? 0 : Math.max(0, Math.round(discoverNum(digestRaw, 0)));
   const recentDigestMentions = digestN > 0 ? digestN : null;
 
+  const bio = discoverOptionalTrimmed(row.bio);
+  const avatarUrl = discoverOptionalTrimmed(row.avatar_url);
+  const publicKey = discoverOptionalTrimmed(row.public_key);
+  const updatedAt = discoverOptionalTrimmed(row.updated_at);
+  const geoCluster = discoverOptionalTrimmed(row.geo_cluster);
+  const agentVersion = discoverOptionalTrimmed(row.agent_version);
+  const capabilities = discoverCapabilities(row.capabilities);
+  const ptRaw = discoverString(row.proof_type).trim();
+  const proofType = ptRaw === "" ? null : ptRaw;
+
   return {
     id,
     displayName,
@@ -216,6 +262,14 @@ function parseDiscoverWireAgent(row: Record<string, unknown>): AgentDiscoveryWir
     unqualifiedReason: row.unqualified_reason
       ? discoverString(row.unqualified_reason).trim()
       : undefined,
+    bio,
+    avatarUrl,
+    publicKey,
+    updatedAt,
+    geoCluster,
+    agentVersion,
+    capabilities,
+    proofType,
   };
 }
 
@@ -253,6 +307,10 @@ export function wireToPreview(
       name: w.displayName,
       handle,
       platformVerified: w.platformVerified,
+      bio: w.bio,
+      proofType: w.proofType ?? null,
+      avatarUrl: w.avatarUrl,
+      publicKeyShort: publicKeyShort(w.publicKey),
     },
     signal: {
       rank: opts.rank,
@@ -275,5 +333,9 @@ export function wireToPreview(
     language: w.language,
     activeToday: w.activeToday,
     emergingGeo: w.emergingGeo,
+    profileUpdatedAt: w.updatedAt,
+    geoCluster: w.geoCluster,
+    agentVersion: w.agentVersion,
+    capabilities: w.capabilities,
   };
 }

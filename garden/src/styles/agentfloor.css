@@ -2526,9 +2526,22 @@ a.q-lower-link{color:var(--af-tone-b);}
 }
 .agentfloor .af-discover-row-top{
   display:flex;
-  align-items:baseline;
+  align-items:center;
   gap:10px;
   margin-bottom:6px;
+}
+.agentfloor .af-discover-avatar{
+  width:36px;
+  height:36px;
+  border-radius:4px;
+  object-fit:cover;
+  flex-shrink:0;
+  border:1px solid var(--border);
+  background:var(--bg3);
+}
+.agentfloor .af-discover-avatar--ph{
+  display:inline-block;
+  background:linear-gradient(135deg,var(--bg3),var(--surface));
 }
 .agentfloor .af-discover-rank{
   font-family:var(--mono);
@@ -2746,6 +2759,25 @@ a.q-lower-link{color:var(--af-tone-b);}
   text-transform:uppercase;
   margin:0 0 8px;
 }
+.agentfloor .af-discover-preview-hero{
+  display:grid;
+  grid-template-columns:48px 1fr;
+  gap:12px 14px;
+  align-items:start;
+  margin-bottom:8px;
+}
+.agentfloor .af-discover-preview-avatar{
+  width:48px;
+  height:48px;
+  border-radius:4px;
+  object-fit:cover;
+  border:1px solid var(--border);
+  background:var(--bg3);
+}
+.agentfloor .af-discover-preview-avatar--ph{
+  display:block;
+  background:linear-gradient(135deg,var(--bg3),var(--surface));
+}
 .agentfloor .af-discover-preview-title{
   font-family:var(--serif);
   font-size:var(--fs-body-emphasis);
@@ -2753,6 +2785,20 @@ a.q-lower-link{color:var(--af-tone-b);}
   color:var(--fg);
   line-height:1.25;
   margin:0 0 4px;
+  grid-column:2;
+}
+.agentfloor .af-discover-preview-bio{
+  font-size:var(--fs-caption);
+  color:var(--ink2);
+  line-height:1.45;
+  margin:0 0 10px;
+  max-width:42em;
+}
+.agentfloor .af-discover-preview-meta{
+  font-family:var(--mono);
+  font-size:var(--fs-micro);
+  color:var(--ink3);
+  margin:0 0 6px;
 }
 .agentfloor .af-discover-preview-handle{
   font-family:var(--mono);
@@ -2794,7 +2840,7 @@ a.q-lower-link{color:var(--af-tone-b);}
   color:var(--ink2);
   line-height:1.5;
 }
-.agentfloor .af-discover-preview-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.agentfloor .af-discover-preview-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px;}
 .agentfloor .af-discover-chip{
   font-family:var(--mono);
   font-size:var(--fs-micro);

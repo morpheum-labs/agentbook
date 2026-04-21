@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Link } from "react-router-dom";
 import { floorApi } from "@/lib/api";
+import { formatDateTime } from "@/lib/time-utils";
 import { cn } from "@/lib/utils";
 import {
   clusterLabel,
@@ -59,6 +60,10 @@ function trustProofList(preview: AgentDiscoveryPreviewModel): string[] {
   const lines: string[] = [];
   if (preview.identity.platformVerified) {
     lines.push("Platform verified");
+  }
+  const pt = preview.identity.proofType;
+  if (pt) {
+    lines.push(`Floor inference proof: ${pt}`);
   }
   const n = preview.trust.proofLinkedPositions;
   if (n != null && n > 0) {
@@ -143,7 +148,17 @@ export default function AgentFloorDiscoverPage() {
     const q = search.trim().toLowerCase();
     let list = rankedWire.filter((a) => {
       if (q) {
-        const hay = `${a.displayName} ${a.handle}`.toLowerCase();
+        const hay = [
+          a.displayName,
+          a.handle,
+          a.bio ?? "",
+          a.publicKey ?? "",
+          a.geoCluster ?? "",
+          a.agentVersion ?? "",
+          ...(a.capabilities ?? []),
+        ]
+          .join(" ")
+          .toLowerCase();
         if (!hay.includes(q)) return false;
       }
       if (topicClass && !a.topicStrengths.includes(topicClass)) return false;
@@ -404,6 +419,17 @@ export default function AgentFloorDiscoverPage() {
                     onClick={() => onSelectAgent(w)}
                   >
                     <div className="af-discover-row-top">
+                      {w.avatarUrl ? (
+                        <img
+                          className="af-discover-avatar"
+                          src={w.avatarUrl}
+                          alt=""
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <span className="af-discover-avatar af-discover-avatar--ph" aria-hidden />
+                      )}
                       <span className="af-discover-rank">#{idx + 1}</span>
                       <div className="af-discover-id">
                         <span className="af-discover-name">{w.displayName}</span>
@@ -437,6 +463,9 @@ export default function AgentFloorDiscoverPage() {
                         <span className="af-discover-badge af-discover-badge--ok">
                           Platform verified
                         </span>
+                      ) : null}
+                      {w.proofType ? (
+                        <span className="af-discover-badge af-discover-badge--proof">proof: {w.proofType}</span>
                       ) : null}
                       {w.proofLinkedPositions != null && w.proofLinkedPositions > 0 ? (
                         <span className="af-discover-badge af-discover-badge--proof">
@@ -527,10 +556,26 @@ export default function AgentFloorDiscoverPage() {
             <>
               <div className="af-discover-preview-card">
                 <p className="af-discover-preview-label">Selected agent</p>
-                <h3 className="af-discover-preview-title">
-                  {selectedPreview.identity.name}{" "}
-                  <span className="af-discover-preview-handle">{selectedPreview.identity.handle}</span>
-                </h3>
+                <div className="af-discover-preview-hero">
+                  {selectedPreview.identity.avatarUrl ? (
+                    <img
+                      className="af-discover-preview-avatar"
+                      src={selectedPreview.identity.avatarUrl}
+                      alt=""
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <span className="af-discover-preview-avatar af-discover-preview-avatar--ph" aria-hidden />
+                  )}
+                  <h3 className="af-discover-preview-title">
+                    {selectedPreview.identity.name}{" "}
+                    <span className="af-discover-preview-handle">{selectedPreview.identity.handle}</span>
+                  </h3>
+                </div>
+                {selectedPreview.identity.bio ? (
+                  <p className="af-discover-preview-bio">{selectedPreview.identity.bio}</p>
+                ) : null}
                 {globalRankIdx >= 0 ? (
                   <p className="af-discover-preview-rank">
                     {filteredRankIdx >= 0
@@ -552,6 +597,31 @@ export default function AgentFloorDiscoverPage() {
                 <p className="af-discover-preview-activity">
                   Recent activity: {selectedPreview.signal.recentActivityLabel}
                 </p>
+                {selectedPreview.profileUpdatedAt ? (
+                  <p className="af-discover-preview-meta">
+                    Profile updated {formatDateTime(selectedPreview.profileUpdatedAt)}
+                  </p>
+                ) : null}
+                {selectedPreview.identity.publicKeyShort ? (
+                  <p className="af-discover-preview-meta">Public key {selectedPreview.identity.publicKeyShort}</p>
+                ) : null}
+                {(selectedPreview.geoCluster ||
+                  selectedPreview.agentVersion ||
+                  (selectedPreview.capabilities?.length ?? 0) > 0) && (
+                  <div className="af-discover-preview-chips" aria-label="Agent metadata">
+                    {selectedPreview.geoCluster ? (
+                      <span className="af-discover-chip">GEO {selectedPreview.geoCluster}</span>
+                    ) : null}
+                    {selectedPreview.agentVersion ? (
+                      <span className="af-discover-chip">v{selectedPreview.agentVersion}</span>
+                    ) : null}
+                    {(selectedPreview.capabilities ?? []).map((c) => (
+                      <span key={c} className="af-discover-chip">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 <div className="af-discover-preview-block">
                   <h4 className="af-discover-preview-h">Topic strengths</h4>

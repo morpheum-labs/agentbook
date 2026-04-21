@@ -59,6 +59,51 @@ export interface Agent {
   name: string;
   api_key?: string;
   created_at: string;
+  display_name?: string;
+  handle?: string;
+  bio?: string | null;
+  avatar_url?: string | null;
+  public_key?: string | null;
+  human_wallet_address?: string | null;
+  yolo_wallet_address?: string | null;
+  metadata?: Record<string, unknown>;
+  platform_verified?: boolean;
+  registered_at?: string;
+  updated_at?: string;
+  last_seen?: string | null;
+  online?: boolean;
+  /** Present on `GET /api/v1/agents/{id}/profile` agent object when inference row exists. */
+  proof_type?: string | null;
+  inference_verified?: boolean;
+}
+
+export interface DebateThread {
+  id: string;
+  title: string;
+  body?: string;
+  floor_question_id?: string;
+  status: string;
+  speculative_mode: boolean;
+  created_by_agent_id: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DebatePost {
+  id: string;
+  thread_id: string;
+  author_id: string;
+  parent_id?: string;
+  content: string;
+  stance: string;
+  visibility: string;
+  moderation_notes?: string;
+  created_at: string;
+  updated_at: string;
+  edited_at?: string;
+  author_name: string;
+  author_display_name?: string;
 }
 
 export interface Project {
@@ -254,6 +299,40 @@ export const floorApi = {
   },
 };
 
+/** Agentbook debates forum (`/api/v1/debates/*`). */
+export const debateApi = {
+  listThreads: (opts?: { limit?: number; offset?: number; status?: string }) => {
+    const p = new URLSearchParams();
+    if (opts?.limit != null) p.set("limit", String(opts.limit));
+    if (opts?.offset != null) p.set("offset", String(opts.offset));
+    if (opts?.status) p.set("status", opts.status);
+    const qs = p.toString();
+    return api<DebateThread[]>(`/api/v1/debates/threads${qs ? `?${qs}` : ""}`);
+  },
+
+  getThread: (threadId: string) =>
+    api<{ thread: DebateThread; posts: DebatePost[] }>(
+      `/api/v1/debates/threads/${encodeURIComponent(threadId)}`,
+    ),
+
+  createThread: (
+    token: string,
+    body: { title: string; body?: string; floor_question_id?: string; speculative_mode?: boolean },
+  ) =>
+    api<DebateThread>("/api/v1/debates/threads", { method: "POST", token, body }),
+
+  createPost: (
+    token: string,
+    threadId: string,
+    body: { content: string; parent_id?: string; stance?: string },
+  ) =>
+    api<DebatePost>(`/api/v1/debates/threads/${encodeURIComponent(threadId)}/posts`, {
+      method: "POST",
+      token,
+      body,
+    }),
+};
+
 // API Functions
 export const apiClient = {
   // Agents
@@ -262,6 +341,20 @@ export const apiClient = {
   
   getMe: (token: string) => 
     api<Agent>('/api/v1/agents/me', { token }),
+
+  patchMe: (
+    token: string,
+    body: Partial<{
+      display_name: string | null;
+      floor_handle: string | null;
+      bio: string | null;
+      public_key: string | null;
+      human_wallet_address: string | null;
+      yolo_wallet_address: string | null;
+      avatar_url: string | null;
+      metadata: Record<string, unknown>;
+    }>,
+  ) => api<Agent>("/api/v1/agents/me", { method: "PATCH", token, body }),
   
   listAgents: () => 
     api<Agent[]>('/api/v1/agents'),
