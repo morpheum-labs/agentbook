@@ -3,8 +3,11 @@ package db
 import (
 	"encoding/json"
 	"log/slog"
+	"strings"
 	"time"
 	"unicode/utf8"
+
+	"gorm.io/gorm"
 )
 
 // Table and column names match SQLAlchemy minibook models.
@@ -13,18 +16,60 @@ type Agent struct {
 	ID        string     `gorm:"primaryKey;type:text"`
 	Name      string     `gorm:"uniqueIndex;not null;type:text"`
 	APIKey    string     `gorm:"column:api_key;uniqueIndex;not null;type:text"`
-	CreatedAt time.Time  `gorm:"column:created_at"`
-	LastSeen  *time.Time `gorm:"column:last_seen"`
+	CreatedAt time.Time  `gorm:"column:created_at;index"`
+	LastSeen  *time.Time `gorm:"column:last_seen;index"`
+
+	// Optional cryptographic identity (nil or empty = not enrolled).
+	PublicKey *string `gorm:"column:public_key;uniqueIndex:agents_public_key_key;type:text"`
+
+	// Human linkage (AgentFloor proof-of-humanity, optional hot wallet).
+	HumanWalletAddress *string `gorm:"column:human_wallet_address;index;type:text"`
+	YoloWalletAddress  *string `gorm:"column:yolo_wallet_address;type:text"`
 
 	// Optional AgentFloor / discovery identity (nil or empty = fall back to Name).
 	DisplayName *string `gorm:"column:display_name;type:text"`
 	FloorHandle *string `gorm:"column:floor_handle;type:text;uniqueIndex"`
 	Bio         *string `gorm:"type:text"`
+	AvatarURL   *string `gorm:"column:avatar_url;type:text"`
 	// PlatformVerified is profile-level trust, distinct from inference proof metadata.
 	PlatformVerified bool `gorm:"column:platform_verified;not null;default:false"`
+
+	// Extensible profile (capabilities, geo_cluster, endpoints, version, etc.) — JSON text (Postgres jsonb via migration).
+	MetadataJSON string `gorm:"column:metadata;not null;default:'{}'"`
+
+	UpdatedAt time.Time `gorm:"column:updated_at;autoCreateTime;autoUpdateTime"`
 }
 
 func (Agent) TableName() string { return "agents" }
+
+func (a *Agent) BeforeCreate(tx *gorm.DB) error {
+	_ = tx
+	if a.MetadataJSON == "" {
+		a.MetadataJSON = "{}"
+	}
+	return nil
+}
+
+// Metadata returns the decoded metadata blob; invalid JSON yields an empty map.
+func (a *Agent) Metadata() map[string]any {
+	if a == nil || strings.TrimSpace(a.MetadataJSON) == "" {
+		return map[string]any{}
+	}
+	var m map[string]any
+	if err := json.Unmarshal([]byte(a.MetadataJSON), &m); err != nil || m == nil {
+		return map[string]any{}
+	}
+	return m
+}
+
+// SetMetadata replaces the metadata column with JSON for m (nil becomes {}).
+func (a *Agent) SetMetadata(m map[string]any) {
+	if m == nil {
+		m = map[string]any{}
+	}
+	b, _ := json.Marshal(m)
+	a.MetadataJSON = string(b)
+}
 
 type Project struct {
 	ID                   string  `gorm:"primaryKey;type:text"`

@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,6 +14,45 @@ import (
 	"github.com/morpheumlabs/agentbook/agentglobe/internal/domain"
 	"gorm.io/gorm"
 )
+
+const (
+	maxAgentDisplayNameLen = 160
+	maxAgentFloorHandleLen = 160
+	maxAgentBioLen         = 16384
+	maxAgentAvatarURLLen   = 2048
+	maxAgentPublicKeyLen   = 8192
+	maxAgentWalletAddrLen  = 128
+)
+
+func optionalJSONStringField(body map[string]any, key string) (set bool, val *string, badType bool) {
+	v, ok := body[key]
+	if !ok {
+		return false, nil, false
+	}
+	if v == nil {
+		return true, nil, false
+	}
+	s, ok := v.(string)
+	if !ok {
+		return false, nil, true
+	}
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return true, nil, false
+	}
+	return true, &s, false
+}
+
+func applyOptionalStringPtr(updates map[string]any, col string, set bool, val *string) {
+	if !set {
+		return
+	}
+	if val == nil {
+		updates[col] = nil
+		return
+	}
+	updates[col] = *val
+}
 
 func (s *Server) handleRegisterAgent(w http.ResponseWriter, r *http.Request) {
 	var body struct {
@@ -55,6 +96,166 @@ func (s *Server) handleAgentsMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, agentMap(a, false))
 }
 
+// handlePatchAgentsMe updates profile fields for the authenticated agent.
+// JSON body may include any subset of: display_name, floor_handle, bio, public_key,
+// human_wallet_address, yolo_wallet_address, avatar_url, metadata (shallow-merged object).
+// Immutable: id, name, api_key, platform_verified. Null or empty string clears nullable scalars.
+func (s *Server) handlePatchAgentsMe(w http.ResponseWriter, r *http.Request) {
+	a := s.requireAgent(w, r)
+	if a == nil {
+		return
+	}
+	var body map[string]any
+	if err := readJSON(r, &body); err != nil {
+		writeDetail(w, http.StatusBadRequest, "Invalid body")
+		return
+	}
+	if len(body) == 0 {
+		writeDetail(w, http.StatusBadRequest, "No fields to update")
+		return
+	}
+	for k := range body {
+		switch k {
+		case "display_name", "floor_handle", "bio", "public_key",
+			"human_wallet_address", "yolo_wallet_address", "avatar_url", "metadata":
+		default:
+			writeDetail(w, http.StatusBadRequest, "Unsupported field: "+k)
+			return
+		}
+	}
+
+	db := s.dbCtx(r)
+	updates := map[string]any{}
+
+	if set, val, bad := optionalJSONStringField(body, "display_name"); bad {
+		writeDetail(w, http.StatusBadRequest, "display_name must be a string or null")
+		return
+	} else if set && val != nil && len(*val) > maxAgentDisplayNameLen {
+		writeDetail(w, http.StatusBadRequest, "display_name too long")
+		return
+	} else if set {
+		applyOptionalStringPtr(updates, "display_name", set, val)
+	}
+
+	if set, val, bad := optionalJSONStringField(body, "floor_handle"); bad {
+		writeDetail(w, http.StatusBadRequest, "floor_handle must be a string or null")
+		return
+	} else if set && val != nil && len(*val) > maxAgentFloorHandleLen {
+		writeDetail(w, http.StatusBadRequest, "floor_handle too long")
+		return
+	} else if set && val != nil {
+		var other dbpkg.Agent
+		if err := db.Where("floor_handle = ? AND id <> ?", *val, a.ID).First(&other).Error; err == nil {
+			writeDetail(w, http.StatusConflict, "floor_handle already taken")
+			return
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			writeDetail(w, http.StatusInternalServerError, "Could not verify floor_handle")
+			return
+		}
+		applyOptionalStringPtr(updates, "floor_handle", set, val)
+	} else if set {
+		applyOptionalStringPtr(updates, "floor_handle", set, val)
+	}
+
+	if set, val, bad := optionalJSONStringField(body, "bio"); bad {
+		writeDetail(w, http.StatusBadRequest, "bio must be a string or null")
+		return
+	} else if set && val != nil && len(*val) > maxAgentBioLen {
+		writeDetail(w, http.StatusBadRequest, "bio too long")
+		return
+	} else if set {
+		applyOptionalStringPtr(updates, "bio", set, val)
+	}
+
+	if set, val, bad := optionalJSONStringField(body, "public_key"); bad {
+		writeDetail(w, http.StatusBadRequest, "public_key must be a string or null")
+		return
+	} else if set && val != nil && len(*val) > maxAgentPublicKeyLen {
+		writeDetail(w, http.StatusBadRequest, "public_key too long")
+		return
+	} else if set && val != nil {
+		var other dbpkg.Agent
+		if err := db.Where("public_key = ? AND id <> ?", *val, a.ID).First(&other).Error; err == nil {
+			writeDetail(w, http.StatusConflict, "public_key already registered")
+			return
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			writeDetail(w, http.StatusInternalServerError, "Could not verify public_key")
+			return
+		}
+		applyOptionalStringPtr(updates, "public_key", set, val)
+	} else if set {
+		applyOptionalStringPtr(updates, "public_key", set, val)
+	}
+
+	if set, val, bad := optionalJSONStringField(body, "human_wallet_address"); bad {
+		writeDetail(w, http.StatusBadRequest, "human_wallet_address must be a string or null")
+		return
+	} else if set && val != nil && len(*val) > maxAgentWalletAddrLen {
+		writeDetail(w, http.StatusBadRequest, "human_wallet_address too long")
+		return
+	} else if set {
+		applyOptionalStringPtr(updates, "human_wallet_address", set, val)
+	}
+
+	if set, val, bad := optionalJSONStringField(body, "yolo_wallet_address"); bad {
+		writeDetail(w, http.StatusBadRequest, "yolo_wallet_address must be a string or null")
+		return
+	} else if set && val != nil && len(*val) > maxAgentWalletAddrLen {
+		writeDetail(w, http.StatusBadRequest, "yolo_wallet_address too long")
+		return
+	} else if set {
+		applyOptionalStringPtr(updates, "yolo_wallet_address", set, val)
+	}
+
+	if set, val, bad := optionalJSONStringField(body, "avatar_url"); bad {
+		writeDetail(w, http.StatusBadRequest, "avatar_url must be a string or null")
+		return
+	} else if set && val != nil && len(*val) > maxAgentAvatarURLLen {
+		writeDetail(w, http.StatusBadRequest, "avatar_url too long")
+		return
+	} else if set {
+		applyOptionalStringPtr(updates, "avatar_url", set, val)
+	}
+
+	if raw, ok := body["metadata"]; ok {
+		patch, ok := raw.(map[string]any)
+		if !ok {
+			writeDetail(w, http.StatusBadRequest, "metadata must be an object")
+			return
+		}
+		cur := a.Metadata()
+		for k, v := range patch {
+			cur[k] = v
+		}
+		b, err := json.Marshal(cur)
+		if err != nil {
+			writeDetail(w, http.StatusBadRequest, "metadata could not be encoded")
+			return
+		}
+		if len(b) > 65536 {
+			writeDetail(w, http.StatusBadRequest, "metadata too large")
+			return
+		}
+		updates["metadata"] = string(b)
+	}
+
+	if len(updates) == 0 {
+		writeDetail(w, http.StatusBadRequest, "No fields to update")
+		return
+	}
+
+	updates["updated_at"] = time.Now().UTC()
+	if err := db.Model(a).Updates(updates).Error; err != nil {
+		writeDetail(w, http.StatusInternalServerError, "Could not update agent")
+		return
+	}
+	if err := db.First(a, "id = ?", a.ID).Error; err != nil {
+		writeDetail(w, http.StatusInternalServerError, "Could not load agent")
+		return
+	}
+	writeJSON(w, http.StatusOK, agentMap(a, false))
+}
+
 func (s *Server) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	a := s.requireAgent(w, r)
 	if a == nil {
@@ -62,7 +263,10 @@ func (s *Server) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	}
 	now := time.Now().UTC()
 	a.LastSeen = &now
-	if err := s.dbCtx(r).Model(a).Update("last_seen", now).Error; err != nil {
+	if err := s.dbCtx(r).Model(a).Updates(map[string]any{
+		"last_seen":  now,
+		"updated_at": now,
+	}).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not update")
 		return
 	}

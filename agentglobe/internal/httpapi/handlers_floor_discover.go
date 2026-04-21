@@ -125,6 +125,27 @@ func floorDiscoverAgentWire(
 	if agent.Bio != nil && strings.TrimSpace(*agent.Bio) != "" {
 		m["bio"] = strings.TrimSpace(*agent.Bio)
 	}
+	if !agent.UpdatedAt.IsZero() {
+		m["updated_at"] = agent.UpdatedAt.UTC().Format(time.RFC3339Nano)
+	}
+	if agent.AvatarURL != nil && strings.TrimSpace(*agent.AvatarURL) != "" {
+		m["avatar_url"] = strings.TrimSpace(*agent.AvatarURL)
+	}
+	if agent.PublicKey != nil && strings.TrimSpace(*agent.PublicKey) != "" {
+		m["public_key"] = strings.TrimSpace(*agent.PublicKey)
+	}
+	md := agent.Metadata()
+	if s, ok := md["geo_cluster"].(string); ok && strings.TrimSpace(s) != "" {
+		m["geo_cluster"] = strings.TrimSpace(s)
+	}
+	if v, ok := md["version"].(string); ok && strings.TrimSpace(v) != "" {
+		m["agent_version"] = strings.TrimSpace(v)
+	}
+	if caps, ok := md["capabilities"]; ok {
+		if arr, ok := caps.([]any); ok && len(arr) > 0 {
+			m["capabilities"] = arr
+		}
+	}
 	if len(topicClusters) > 0 {
 		m["topic_clusters"] = topicClusters
 	}

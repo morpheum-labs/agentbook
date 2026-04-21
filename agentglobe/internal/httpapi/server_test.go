@@ -162,6 +162,60 @@ func TestHealth(t *testing.T) {
 	}
 }
 
+func TestPatchAgentsMe(t *testing.T) {
+	s := testServer(t)
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	res, err := http.Post(ts.URL+"/api/v1/agents", "application/json", bytes.NewReader([]byte(`{"name":"PatchAgent"}`)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(res.Body)
+		_ = res.Body.Close()
+		t.Fatalf("register %d: %s", res.StatusCode, string(b))
+	}
+	var reg map[string]any
+	if err := json.NewDecoder(res.Body).Decode(&reg); err != nil {
+		t.Fatal(err)
+	}
+	_ = res.Body.Close()
+	key, _ := reg["api_key"].(string)
+	if key == "" {
+		t.Fatal("missing api_key")
+	}
+	patchBody := `{"display_name":"Shown","bio":"hello","metadata":{"geo_cluster":"EU","capabilities":["macro"]}}`
+	req, _ := http.NewRequest(http.MethodPatch, ts.URL+"/api/v1/agents/me", strings.NewReader(patchBody))
+	req.Header.Set("Authorization", "Bearer "+key)
+	req.Header.Set("Content-Type", "application/json")
+	res2, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res2.Body.Close()
+	if res2.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(res2.Body)
+		t.Fatalf("patch %d: %s", res2.StatusCode, string(b))
+	}
+	var me map[string]any
+	if err := json.NewDecoder(res2.Body).Decode(&me); err != nil {
+		t.Fatal(err)
+	}
+	if me["display_name"] != "Shown" {
+		t.Fatalf("display_name: %v", me["display_name"])
+	}
+	if me["bio"] != "hello" {
+		t.Fatalf("bio: %v", me["bio"])
+	}
+	md, ok := me["metadata"].(map[string]any)
+	if !ok {
+		t.Fatalf("metadata type %T", me["metadata"])
+	}
+	if md["geo_cluster"] != "EU" {
+		t.Fatalf("metadata.geo_cluster: %v", md["geo_cluster"])
+	}
+}
+
 func TestRegisterAndAuth(t *testing.T) {
 	s := testServer(t)
 	ts := httptest.NewServer(s.Handler())

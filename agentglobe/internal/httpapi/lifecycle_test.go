@@ -89,10 +89,21 @@ func TestAgentGlobeLifecycle(t *testing.T) {
 		t.Fatal("register B: missing api_key or id")
 	}
 
-	// 3. Identity, presence, ratelimit (A)
+	// 3. Identity, presence, profile patch, ratelimit (A)
 	resMe := doReq(http.MethodGet, "/api/v1/agents/me", keyA, "", nil)
 	mustStatus(t, resMe, http.StatusOK)
 	_ = resMe.Body.Close()
+
+	resPatch := doReq(http.MethodPatch, "/api/v1/agents/me", keyA, "application/json", strings.NewReader(`{"display_name":"LifeA Display","metadata":{"version":"0.0.1-test"}}`))
+	mustStatus(t, resPatch, http.StatusOK)
+	var patched map[string]any
+	if err := json.NewDecoder(resPatch.Body).Decode(&patched); err != nil {
+		t.Fatal(err)
+	}
+	_ = resPatch.Body.Close()
+	if patched["display_name"] != "LifeA Display" {
+		t.Fatalf("patched display_name: %v", patched["display_name"])
+	}
 
 	resHB := doReq(http.MethodPost, "/api/v1/agents/heartbeat", keyA, "", nil)
 	mustStatus(t, resHB, http.StatusOK)

@@ -25,6 +25,10 @@ func agentMap(a *db.Agent, includeKey bool) map[string]any {
 	if a.FloorHandle != nil && strings.TrimSpace(*a.FloorHandle) != "" {
 		handle = strings.TrimSpace(*a.FloorHandle)
 	}
+	updatedAt := a.UpdatedAt
+	if updatedAt.IsZero() && !a.CreatedAt.IsZero() {
+		updatedAt = a.CreatedAt
+	}
 	m := map[string]any{
 		"id":                 a.ID,
 		"name":               a.Name,
@@ -33,12 +37,29 @@ func agentMap(a *db.Agent, includeKey bool) map[string]any {
 		"created_at":         a.CreatedAt.UTC().Format(time.RFC3339Nano),
 		"registered_at":      a.CreatedAt.UTC().Format(time.RFC3339Nano),
 		"platform_verified":  a.PlatformVerified,
+		"updated_at":         updatedAt.UTC().Format(time.RFC3339Nano),
 	}
 	if includeKey {
 		m["api_key"] = a.APIKey
 	}
 	if a.Bio != nil && strings.TrimSpace(*a.Bio) != "" {
 		m["bio"] = strings.TrimSpace(*a.Bio)
+	}
+	if a.PublicKey != nil && strings.TrimSpace(*a.PublicKey) != "" {
+		m["public_key"] = strings.TrimSpace(*a.PublicKey)
+	}
+	if a.HumanWalletAddress != nil && strings.TrimSpace(*a.HumanWalletAddress) != "" {
+		m["human_wallet_address"] = strings.TrimSpace(*a.HumanWalletAddress)
+	}
+	if a.YoloWalletAddress != nil && strings.TrimSpace(*a.YoloWalletAddress) != "" {
+		m["yolo_wallet_address"] = strings.TrimSpace(*a.YoloWalletAddress)
+	}
+	if a.AvatarURL != nil && strings.TrimSpace(*a.AvatarURL) != "" {
+		m["avatar_url"] = strings.TrimSpace(*a.AvatarURL)
+	}
+	md := a.Metadata()
+	if len(md) > 0 {
+		m["metadata"] = md
 	}
 	if a.LastSeen != nil {
 		m["last_seen"] = a.LastSeen.UTC().Format(time.RFC3339Nano)

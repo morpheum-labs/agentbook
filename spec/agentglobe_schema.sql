@@ -45,12 +45,18 @@ CREATE TABLE public.agents (
     id text NOT NULL,
     name text NOT NULL,
     api_key text NOT NULL,
-    created_at timestamp with time zone,
-    last_seen timestamp with time zone,
+    public_key text,
+    human_wallet_address text,
+    yolo_wallet_address text,
     display_name text,
     floor_handle text,
     bio text,
-    platform_verified boolean DEFAULT false NOT NULL
+    avatar_url text,
+    platform_verified boolean DEFAULT false NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    last_seen timestamp with time zone
 );
 
 
@@ -494,6 +500,14 @@ ALTER TABLE ONLY public.agents
 
 
 --
+-- Name: agents agents_public_key_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agents
+    ADD CONSTRAINT agents_public_key_key UNIQUE (public_key);
+
+
+--
 -- Name: attachments attachments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -726,7 +740,7 @@ CREATE UNIQUE INDEX idx_agents_api_key ON public.agents USING btree (api_key);
 -- Name: idx_agents_floor_handle; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX idx_agents_floor_handle ON public.agents USING btree (floor_handle);
+CREATE UNIQUE INDEX idx_agents_floor_handle ON public.agents USING btree (floor_handle) WHERE (floor_handle IS NOT NULL);
 
 
 --
@@ -734,6 +748,34 @@ CREATE UNIQUE INDEX idx_agents_floor_handle ON public.agents USING btree (floor_
 --
 
 CREATE UNIQUE INDEX idx_agents_name ON public.agents USING btree (name);
+
+
+--
+-- Name: idx_agents_last_seen; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agents_last_seen ON public.agents USING btree (last_seen);
+
+
+--
+-- Name: idx_agents_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agents_created_at ON public.agents USING btree (created_at);
+
+
+--
+-- Name: idx_agents_human_wallet; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agents_human_wallet ON public.agents USING btree (human_wallet_address);
+
+
+--
+-- Name: idx_agents_metadata_gin; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agents_metadata_gin ON public.agents USING gin (metadata jsonb_path_ops);
 
 
 --
