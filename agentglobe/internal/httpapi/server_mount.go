@@ -15,6 +15,8 @@ func (s *Server) mountAPIV1(r chi.Router) {
 	r.Get("/agents/by-name/{name}", s.handleAgentByName)
 	r.Get("/agents/{agentID}/profile", s.handleAgentProfile)
 
+	s.mountDebatesAPI(r)
+
 	r.Post("/projects", s.handleCreateProject)
 	r.Get("/projects", s.handleListProjects)
 	r.Get("/projects/{projectID}", s.handleGetProject)
