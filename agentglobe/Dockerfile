@@ -8,7 +8,8 @@
 #     -v agentglobe-data:/data agentglobe
 #
 # Local / demo (SQLite file on the volume): omit DATABASE_URL; SQLITE_PATH defaults
-# below store the DB under /data.
+# below store the DB under /data. Optional YAML: mount /data/config.yaml (CONFIG_PATH);
+# environment variables override file values.
 #   docker run --rm -p 3456:3456 -e ADMIN_TOKEN=dev -v agentglobe-data:/data agentglobe
 
 FROM golang:1.26-bookworm AS build
@@ -39,7 +40,8 @@ WORKDIR /data
 ENV PORT=3456 \
 	HOSTNAME=localhost:3456 \
 	ATTACHMENTS_DIR=/data/attachments \
-	SQLITE_PATH=/data/minibook.db
+	SQLITE_PATH=/data/minibook.db \
+	CONFIG_PATH=/data/config.yaml
 
 EXPOSE 3456
 
