@@ -103,6 +103,242 @@ export type TopicDetailsPageModel = {
   digestTrail?: TopicDetailsDigestTrailModel;
 };
 
+const INFERRED_CLUSTER = new Set<string>(["long", "short", "neutral", "speculative", "unclustered"]);
+const MAIN_POSITIONS_PER_SIDE = 3;
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return v != null && typeof v === "object" && !Array.isArray(v);
+}
+
+function apiStr(v: unknown): string | undefined {
+  return typeof v === "string" ? v : undefined;
+}
+
+function apiNum(v: unknown): number | undefined {
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+}
+
+/** Maps floor `consensus_level` (incl. `mixed`) to topic digest status chips. */
+function mapTopicDetailsConsensusLevel(v: unknown): TopicDetailsDigestStatus | undefined {
+  const s = typeof v === "string" ? v.toLowerCase().replace(/-/g, "_") : "";
+  if (s === "consensus" || s === "divergent" || s === "low_signal" || s === "speculative") {
+    return s as TopicDetailsDigestStatus;
+  }
+  if (s === "mixed") return "divergent";
+  if (s === "lowsignal") return "low_signal";
+  return undefined;
+}
+
+function parseInferredClusterAtStake(v: unknown): InferredClusterAtStake {
+  const s = typeof v === "string" ? v.trim().toLowerCase() : "";
+  if (!s || !INFERRED_CLUSTER.has(s)) return null;
+  return s as InferredClusterAtStake;
+}
+
+function proofLabelFromPosition(row: Record<string, unknown>): string | null {
+  const pt = apiStr(row.proof_type ?? row.proofType)?.trim();
+  if (pt) return pt;
+  const inf = apiStr(row.inference_proof ?? row.inferenceProof)?.trim();
+  if (!inf) return null;
+  return inf.length > 48 ? `${inf.slice(0, 45)}…` : inf;
+}
+
+function topicDetailsPositionFromApi(
+  row: Record<string, unknown>,
+  topicClass?: string,
+): TopicDetailsPositionCardModel | null {
+  const positionId = apiStr(row.id);
+  const agentName = apiStr(row.agent_name ?? row.agentName)?.trim();
+  const dirRaw = (apiStr(row.direction) ?? "").toLowerCase();
+  if (!positionId || !agentName) return null;
+  if (dirRaw !== "long" && dirRaw !== "short") return null;
+  const snippet = apiStr(row.body) ?? "";
+  const glyphSource = agentName.replace(/^agent-/i, "").slice(0, 1) || "?";
+  return {
+    positionId,
+    agentName,
+    topicClass,
+    topicAccuracy: apiNum(row.accuracy_score_at_stake ?? row.accuracyScoreAtStake),
+    direction: dirRaw,
+    speculative: Boolean(row.speculative),
+    inferredClusterAtStake: parseInferredClusterAtStake(row.inferred_cluster_at_stake ?? row.inferredClusterAtStake),
+    proofLabel: proofLabelFromPosition(row),
+    snippet,
+    avatarGlyph: glyphSource.toUpperCase(),
+  };
+}
+
+function participationFromClusterBreakdown(raw: unknown): TopicDetailsStateModel["participationContext"] {
+  if (!isRecord(raw)) return undefined;
+  const spec = apiNum(raw.speculative);
+  const neu = apiNum(raw.neutral);
+  const uncl = apiNum(raw.unclustered);
+  const out: NonNullable<TopicDetailsStateModel["participationContext"]> = {};
+  if (spec != null) out.speculativeParticipationShare = spec;
+  if (neu != null) out.neutralClusterShare = neu;
+  if (uncl != null) out.unclusteredShare = uncl;
+  return Object.keys(out).length ? out : undefined;
+}
+
+function splitMainAndExtra(
+  cards: TopicDetailsPositionCardModel[],
+): { main: TopicDetailsPositionCardModel[]; extra: TopicDetailsPositionCardModel[] } {
+  if (cards.length <= MAIN_POSITIONS_PER_SIDE) {
+    return { main: cards, extra: [] };
+  }
+  return {
+    main: cards.slice(0, MAIN_POSITIONS_PER_SIDE),
+    extra: cards.slice(MAIN_POSITIONS_PER_SIDE),
+  };
+}
+
+function truncateTitle(title: string, max: number): string {
+  const t = title.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 1)}…`;
+}
+
+/**
+ * Builds the Topic Details view model from agentglobe floor payloads:
+ * `GET .../topics/{id}/detail?include=digest`, positions array, digest-history array.
+ */
+export function topicDetailsPageFromApi(
+  question: Record<string, unknown>,
+  positions: unknown,
+  digestRows: unknown,
+): TopicDetailsPageModel | null {
+  const questionId = apiStr(question.id)?.trim();
+  const title = apiStr(question.title)?.trim();
+  if (!questionId || !title) return null;
+
+  const posList: Record<string, unknown>[] = Array.isArray(positions)
+    ? (positions as Record<string, unknown>[])
+    : [];
+  const histList: Record<string, unknown>[] = Array.isArray(digestRows)
+    ? (digestRows as Record<string, unknown>[])
+    : [];
+
+  const category = apiStr(question.category)?.trim() ?? "";
+  const resolutionCondition =
+    apiStr(question.resolution_condition ?? question.resolutionCondition)?.trim() ?? undefined;
+  const deadline = apiStr(question.deadline)?.trim() ?? undefined;
+  const stakedCount = apiNum(question.staked_count ?? question.stakedCount);
+  const agentCount = apiNum(question.agent_count ?? question.agentCount);
+  const probability = apiNum(question.probability);
+  const probabilityDelta = apiNum(question.probability_delta ?? question.probabilityDelta);
+  const latestDigest = question.latest_digest ?? question.latestDigest;
+  const digestRec = isRecord(latestDigest) ? latestDigest : null;
+
+  const longCards: TopicDetailsPositionCardModel[] = [];
+  const shortCards: TopicDetailsPositionCardModel[] = [];
+  let anyChallengeOpen = false;
+  for (const raw of posList) {
+    if (!isRecord(raw)) continue;
+    if (raw.challenge_open === true || raw.challengeOpen === true) anyChallengeOpen = true;
+    const card = topicDetailsPositionFromApi(raw, category || undefined);
+    if (!card) continue;
+    if (card.direction === "long") longCards.push(card);
+    else shortCards.push(card);
+  }
+
+  const longSplit = splitMainAndExtra(longCards);
+  const shortSplit = splitMainAndExtra(shortCards);
+
+  const pLong = probability != null && probability >= 0 && probability <= 1 ? probability : undefined;
+  const pShort = pLong != null ? Math.max(0, Math.min(1, 1 - pLong)) : undefined;
+
+  const consensusFromDigest = digestRec
+    ? mapTopicDetailsConsensusLevel(digestRec.consensus_level ?? digestRec.consensusLevel)
+    : undefined;
+
+  const pc = participationFromClusterBreakdown(question.cluster_breakdown ?? question.clusterBreakdown);
+  const state: TopicDetailsStateModel = {
+    consensusStatus: consensusFromDigest,
+    probability: pLong,
+    probabilityDelta,
+    callDirectionSummary: {
+      longPercent: pLong,
+      shortPercent: pShort,
+    },
+    participationContext: pc
+      ? {
+          ...pc,
+          positionChallengeOpen: anyChallengeOpen || pc.positionChallengeOpen,
+        }
+      : anyChallengeOpen
+        ? { positionChallengeOpen: true }
+        : undefined,
+  };
+
+  const digestEntries: TopicDetailsDigestTrailModel["entries"] = [];
+  for (const row of histList) {
+    if (!isRecord(row)) continue;
+    const dateLabel =
+      apiStr(row.digest_date ?? row.digestDate) ??
+      apiStr(row.date) ??
+      apiStr(row.created_at ?? row.createdAt)?.slice(0, 10) ??
+      "—";
+    const st = mapTopicDetailsConsensusLevel(row.consensus_level ?? row.consensusLevel);
+    if (!st) continue;
+    digestEntries.push({
+      dateLabel,
+      status: st,
+      probabilityDelta: apiNum(row.probability_delta ?? row.probabilityDelta),
+    });
+  }
+  if (digestEntries.length === 0 && digestRec) {
+    const st = mapTopicDetailsConsensusLevel(digestRec.consensus_level ?? digestRec.consensusLevel);
+    if (st) {
+      digestEntries.push({
+        dateLabel:
+          apiStr(digestRec.digest_date ?? digestRec.digestDate) ??
+          apiStr(digestRec.date) ??
+          "Latest",
+        status: st,
+        probabilityDelta: apiNum(digestRec.probability_delta ?? digestRec.probabilityDelta),
+      });
+    }
+  }
+
+  const titleShort = truncateTitle(title, 36);
+  const actionBox: TopicDetailsActionBoxModel = {
+    longLabel: `Long · ${titleShort}`,
+    shortLabel: `Short · ${titleShort}`,
+    longPercent: pLong,
+    shortPercent: pShort,
+    terminalOnly: true,
+    speculativeToggleAvailable: true,
+  };
+
+  return {
+    header: {
+      breadcrumb: ["Floor", questionId, "Topic Details"],
+      questionId,
+      title,
+      category,
+      resolutionCondition,
+      deadline,
+      digestMention: digestRec != null,
+      positionCount: stakedCount,
+      agentCount,
+    },
+    state,
+    leftLongPositions: longSplit.main,
+    leftLongExtraPositions: longSplit.extra.length ? longSplit.extra : undefined,
+    rightShortPositions: shortSplit.main,
+    rightShortExtraPositions: shortSplit.extra.length ? shortSplit.extra : undefined,
+    actionBox,
+    relatedResearch: [],
+    digestTrail:
+      digestEntries.length > 0
+        ? {
+            entries: digestEntries,
+            openHistoryUrl: `/topic/${encodeURIComponent(questionId)}/digest-history`,
+          }
+        : undefined,
+  };
+}
+
 function esc(s: string): string {
   return s
     .replace(/&/g, "&amp;")

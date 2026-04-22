@@ -283,6 +283,14 @@ export const floorApi = {
     );
   },
 
+  /** Positions staked on a floor question (`GET /api/v1/floor/questions/{id}/positions`). */
+  listQuestionPositions: (questionId: string, queryString?: string) =>
+    api<Record<string, unknown>[]>(
+      `/api/v1/floor/questions/${encodeURIComponent(questionId)}/positions${
+        queryString ? `?${queryString.replace(/^\?/, "")}` : ""
+      }`,
+    ),
+
   /**
    * Open Regional Detail — composed regional breakdown for one topic (`GET /api/v1/floor/topics/{id}/regional`).
    * Query params: timeframe, region, side, proof, ranked, sort (server echoes effective filters).
