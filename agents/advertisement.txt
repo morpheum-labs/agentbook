@@ -1,0 +1,198 @@
+these are the most attention grabbed starting lines
+template:
+
+
+THIS BOT IS FARMING $12K/DAY ON POLYMARKET
+
++$211K in 17 days
+Same setup. Same markets. Over and over
+
+It doesn’t predict
+
+It reacts faster than you
+
+Copytrade → https://t.me/KreoPolyBot?st
+art=ref-53blg718p7
+
+
+Wallet::https://polymarket.com/@0x04283f2fef4
+9d70d8c55ab240450d17a65bf85b
+
+
+Bayesian = faster probability updates
+Kelly = max aggression when edge appears
+Stoikov = never blows up inventory
+
+While you click buy…
+it has already repriced the market
+
+This is not gambling
+
+It’s micro-arbitrage at scale
+
+Trades:
+
+$8.3K → $34.9K
+$5.7K → $22.4K
+$26.4K → $41.7K
+
+One rule behind everything:
+
+YES + NO < 100¢
+
+
+-----------------------
+
+
+I lost my job yesterday.
+
+Rent is due.
+No backup plan.
+
+Then I remembered I still had Claude.
+
+I gave it one line:
+“Analyze the top Polymarket wallets from the last 90 days and build something from it.”
+
+Automated copytrading:https://t.me/KreoPolyBot?st
+art=ref-discov
+
+
+Overnight: $25 → $4,237.
+It scanned 10,000 wallets.
+
+Cross-referenced win rates, sizing, entries.
+Found 7 traders with real edge — not luck.
+
+Then it built an autonomous agent.
+
+Not a script.
+Not an if-then bot.
+
+An agent that reads live news, maps it to markets, spots mispricing, and executes arbitrage across outcomes.
+
+Every position sized with Kelly.
+
+I deployed it at 11:47 PM.
+
+Closed the laptop.
+Went to sleep.
+
+Woke up to:
+
+$25 → $4,237
+94 trades while I slept
+
+No charts.
+No вмешательства.
+No second-guessing.
+
+The entire game comes down to one thing:
+Using machine speed to exploit information gaps.
+
+Wall Street pays millions for this.
+Now it costs almost nothing.
+
+---------------------------
+
+一个21岁的上海交大学生展示了他用Claude Code撸的自动交易机器人。
+
+Claude包揽了大部分苦力活。
+
+这个机器人监控着Polymarket上50多个盘口的价差，同时用OpenClaw同步币安数据来分析BTC的超短线走势。
+
+这就是暴利的来源。
+
+他只用了2天就把脚本干出来了，期间只拿个iPad当副屏。
+
+系统架构：
+Claude Code负责生成策略，并死盯Polymarket上的定价失效。
+OpenClaw负责执行交易并同步币安进行BTC分析。
+0人工干预，全自动执行。
+
+业绩快照：
+一夜之间：开了3单，自动平了2单。
+交易案例：BTC 15分钟级别做空，0.31进，0.79出。
+单晚净赚：+$1,940
+
+策略逻辑：
+专门收割跨市场的定价失效漏洞。
+高频执行，每笔只吃微小的盈亏比优势。
+纯靠交易量把利润滚大。
+
+对标参考：
+planktonXD
+年交易量约61,000笔
+利润约106,000刀
+策略：套利
+
+进化过程：
+几百刀起家
+一开始只会玩简单的无脑跟单
+后来直接自己撸了一套定制化的监控和执行系统
+
+风控管理：
+流动性异常时自动停机保护
+紧急清仓需人工确认
+亏损案例：在一波砸盘中回撤约3%
+
+当前运行状态：
+完全自主托管的系统
+纯靠消息推送监控
+几乎不需要人为干预
+
+启动资金：约1,400刀
+
+-------------------------------
+
+Hermes Agent from Nous Research - new standard of AI-trading on Polymarket
+
+In the guide, the author beautifully showed how in just 30 minutes to turn the foundation of my Weather Bot into a fully alive, self-learning weather trader
+
+It scans 20 cities, calculates EV + Kelly Criterion and trades 24/7 without stopping and without emotions.
+
+What is Hermes Agent and why is it currently the best on the market:
+
+This is not just another chatbot
+
+This is an open self-hosted agent from the Nous Research team (YaRN, Nomos, Psyche), which:
+
+• Self-learns - after every complex task it automatically writes itself a skill
+
+• Has persistent memory (MEMORY.md + USER.md + SQLite) - never forgets anything
+
+• Works 24/7 on a VPS and sends alerts to Telegram
+
+OpenClaw is static
+
+Hermes has a closed learning loop: every ~15 tool calls it analyzes what worked and improves itself
+
+Result? The agent becomes noticeably smarter with every week exactly for your tasks
+
+Want exactly the same weather trader that learns from your trades:
+
+• Install Hermes (instructions in the article)
+• Copy 7 prompts
+• Launch on VPS
+
+-----------------------------------
+
+你猜一个18岁中国学生拿Vision Pro干嘛？打游戏？看电影？
+
+人家在床上躺着敲了几天代码，直接震翻了整个开发者圈。
+
+事情是这样的：生日收到Vision Pro，自己搞了个应用把VS Code和Claude Code接上去，卧室里飘着六个巨大的悬浮屏幕，人窝在被子里就开始干活。录了个29秒的视频，展示Claude实时改网站——输一句“把网站颜色改成红色”，Claude自动扫文件，找globals.css，改完。视频标题叫“躺在床上氛围编码，谢谢Claude”，发B站。
+
+然后推特炸了。一天40万浏览。西方那边还在吵AI会不会抢工作，中国小孩已经用六个屏躺赚了？
+
+但真正让全网扒了一整夜的，是视频第18秒那一下暂停。
+
+主屏幕在改网站，但后面五个浮动窗口里，只有一个在跑网站代码。剩下那四个还是五个？有人慢放到0.25倍，一帧一帧截背景窗口，拼出了一个完整的钱包界面。
+
+gabagool22，利润86万美金，28,620个仓位，全是BTC，全是15分钟窗口，全是绿的。入场价两分钱到一毛钱，赔付款项全是上千，没一个红的。
+
+那个网站改色只是演示。真正跑的是五个Claude Code代理，每个盯一个15分钟窗口，全覆盖，24小时连轴转。卧室是工位，头显是显示器，床就是办公桌。
+
+4小时后他把视频删了。但早就被人录屏存下来了。Discord、Telegram、开发者论坛到处传。原视频8000多播放，背景扒出来的那几张截图看了40万次。
+
+现在有72万人在盯着那个钱包地址。他爸妈买Vision Pro是让他玩游戏的，他直接改成了每15分钟结算一次的交易农场。

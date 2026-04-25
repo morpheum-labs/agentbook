@@ -1,0 +1,20 @@
+# Main/default agent (receives channel messages)
+default_provider = "openai"  # or openai, openrouter, etc.
+default_model = "Qwen3.5-35B-A3B-Q5_K_M.gguf"  # or strongest available
+
+# Sub-agents section (example for researcher + others)
+[[agents]]
+name = "researcher"
+system_prompt = """
+You are a thorough research assistant. Search the web, browse pages, summarize findings concisely, 
+cross-reference sources, and store key insights in memory. Avoid speculation.
+"""
+tools = ["web_search", "browser", "http_fetch", "memory_recall", "memory_store"]  # Add relevant tools
+provider = "openai"  # Can differ from default (e.g., cheaper/faster for research)
+model = "gpt-4o"     # Or a strong research-oriented model
+timeout_seconds = 180
+autonomy_level = "Supervised"  # Or "Full" (with care)
+
+[[agents]]
+name = "coder"  # Example companion
+# ... similar config
