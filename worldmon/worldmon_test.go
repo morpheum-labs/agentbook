@@ -90,3 +90,47 @@ func TestServiceEmptyName(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
+
+func TestCacheTierForPath(t *testing.T) {
+	t.Parallel()
+	if t1, ok := CacheTierForPath("/api/intelligence/v1/get-risk-scores/"); !ok || t1 != CacheTierSlow {
+		t.Fatalf("get-risk-scores: got %q %v", t1, ok)
+	}
+	if t2, ok := CacheTierForPath("/api/v2/shipping/webhooks"); !ok || t2 != CacheTierSlowBrowser {
+		t.Fatalf("v2 webhooks: got %q %v", t2, ok)
+	}
+}
+
+func TestServiceMethodCacheTier(t *testing.T) {
+	t.Parallel()
+	cl := New("k")
+	if t1, ok := cl.Intelligence().MethodCacheTier("get-risk-scores"); !ok || t1 != CacheTierSlow {
+		t.Fatalf("Intelligence: got %q %v", t1, ok)
+	}
+	if t2, ok := cl.ShippingV2().MethodCacheTier("list-webhooks"); !ok || t2 != CacheTierSlowBrowser {
+		t.Fatalf("ShippingV2: got %q %v", t2, ok)
+	}
+}
+
+func TestAPIPath(t *testing.T) {
+	t.Parallel()
+	if p := APIPath("intelligence", "v1", "get-risk-scores"); p != "/api/intelligence/v1/get-risk-scores" {
+		t.Fatalf("path = %q", p)
+	}
+	if p := APIPath("intelligence", "", "m"); p != "/api/intelligence/v1/m" {
+		t.Fatalf("empty version = %q", p)
+	}
+	if p := APIPath(" ", "v1", "m"); p != "" {
+		t.Fatalf("expected empty, got %q", p)
+	}
+}
+
+func TestParseErrorBody(t *testing.T) {
+	t.Parallel()
+	if s := ParseErrorBody([]byte(`{"error":"nope"}`)); s != "nope" {
+		t.Fatalf("error field: %q", s)
+	}
+	if s := ParseErrorBody([]byte(`{"message":"m"}`)); s != "m" {
+		t.Fatalf("message field: %q", s)
+	}
+}

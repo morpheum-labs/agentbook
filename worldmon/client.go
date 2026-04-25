@@ -1,9 +1,13 @@
 // Package worldmon is a Go client for the World Monitor HTTP APIs. Method paths
 // follow the public server under server/worldmonitor on
 // [World Monitor on GitHub] (e.g. GET /api/intelligence/v1/get-risk-scores).
+// RPC cache tiers and gateway error JSON shapes are mirrored from
+// [server/gateway] and [server/error-mapper]; see [CacheTierForPath] and [ParseErrorBody].
 // See [worldmonitor.app] for auth and product documentation.
 //
 // [World Monitor on GitHub]: https://github.com/koala73/worldmonitor/tree/main/server/worldmonitor
+// [server/gateway]: https://github.com/koala73/worldmonitor/blob/main/server/gateway.ts
+// [server/error-mapper]: https://github.com/koala73/worldmonitor/blob/main/server/error-mapper.ts
 // [worldmonitor.app]: https://worldmonitor.app
 package worldmon
 
@@ -22,8 +26,13 @@ import (
 
 const defaultBaseURL = "https://worldmonitor.app"
 
-// Header for upstream authentication (set when you have a World Monitor key).
+// Header for upstream authentication (set when you have a World Monitor key). The
+// public edge gateway also accepts [HeaderAPIKeyAlt].
 const HeaderAPIKey = "X-WorldMonitor-Key"
+
+// HeaderAPIKeyAlt is the legacy/alternate name for the key header; see server/gateway.ts
+// (validateApiKey) which checks both.
+const HeaderAPIKeyAlt = "X-Api-Key"
 
 // DefaultWorldMonitorKeyEnv is the environment variable the upstream team documents for API keys.
 const DefaultWorldMonitorKeyEnv = "WORLDMONITOR_API_KEY"
