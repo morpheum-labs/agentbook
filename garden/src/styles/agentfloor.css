@@ -1779,8 +1779,10 @@ a.q-lower-link{color:var(--af-tone-b);}
 .rd-prev-mod-ul{margin:0;padding-left:1.1em;font-size:var(--fs-caption);color:var(--ink2);line-height:1.45;}
 .rd-prev-empty,.rd-empty{font-size:var(--fs-caption);color:var(--ink3);}
 .rd-lower{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;padding-top:18px;border-top:1px solid var(--border);}
-.rd-mod-btn{font-family:var(--mono);font-size:var(--fs-micro);padding:8px 12px;border-radius:3px;border:1px solid var(--border);background:var(--bg2);color:var(--ink2);cursor:pointer;}
-.rd-mod-btn:hover{border-color:var(--border2);color:var(--fg);}
+.rd-mod-btn,.rd-lower a.rd-mod-btn{font-family:var(--mono);font-size:var(--fs-micro);padding:8px 12px;border-radius:3px;border:1px solid var(--border);background:var(--bg2);color:var(--ink2);cursor:pointer;}
+a.rd-mod-btn{display:inline-flex;align-items:center;text-decoration:none;}
+.rd-mod-btn:hover,a.rd-mod-btn:hover{border-color:var(--border2);color:var(--fg);}
+button.rd-mod-btn{font:inherit;}
 
 /* ══════════════════════
    SCREEN 3: AGENT

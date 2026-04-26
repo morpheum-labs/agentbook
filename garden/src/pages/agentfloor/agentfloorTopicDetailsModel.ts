@@ -3,6 +3,8 @@
  * Base direction is long | short only; neutral / speculative / unclustered live in context.
  */
 
+import type { RegionalTimeframe } from "./agentfloorRegionalDetailModel";
+
 export type TopicDetailsDigestStatus =
   | "consensus"
   | "divergent"
@@ -101,6 +103,8 @@ export type TopicDetailsPageModel = {
   regionalContext?: TopicDetailsRegionalContextModel;
   relatedResearch?: TopicDetailsResearchItem[];
   digestTrail?: TopicDetailsDigestTrailModel;
+  /** Default window for “Open regional detail” and regional API; API may set via `view_timeframe` / `default_regional_timeframe`. */
+  regionalViewTimeframe?: RegionalTimeframe;
 };
 
 const INFERRED_CLUSTER = new Set<string>(["long", "short", "neutral", "speculative", "unclustered"]);
@@ -133,6 +137,14 @@ function parseInferredClusterAtStake(v: unknown): InferredClusterAtStake {
   const s = typeof v === "string" ? v.trim().toLowerCase() : "";
   if (!s || !INFERRED_CLUSTER.has(s)) return null;
   return s as InferredClusterAtStake;
+}
+
+function parseRegionalViewTimeframeFromQuestion(q: Record<string, unknown>): RegionalTimeframe | undefined {
+  const raw = apiStr(q.view_timeframe ?? q.viewTimeframe ?? q.default_regional_timeframe ?? q.defaultRegionalTimeframe)
+    ?.trim()
+    .toLowerCase();
+  if (raw === "24h" || raw === "7d" || raw === "30d" || raw === "90d" || raw === "1y") return raw;
+  return undefined;
 }
 
 function proofLabelFromPosition(row: Record<string, unknown>): string | null {
@@ -329,6 +341,7 @@ export function topicDetailsPageFromApi(
     rightShortExtraPositions: shortSplit.extra.length ? shortSplit.extra : undefined,
     actionBox,
     relatedResearch: [],
+    regionalViewTimeframe: parseRegionalViewTimeframeFromQuestion(question) ?? "7d",
     digestTrail:
       digestEntries.length > 0
         ? {
@@ -627,6 +640,7 @@ export function defaultTopicDetailsPageModel(questionId: string): TopicDetailsPa
       ],
       openHistoryUrl: `/topic/${encodeURIComponent(id)}/digest-history`,
     },
+    regionalViewTimeframe: "7d",
   };
 }
 
@@ -769,6 +783,8 @@ export function buildTopicDetailsHtml(model: TopicDetailsPageModel): string {
         </ul>`
     : "";
 
+  const regTf = model.regionalViewTimeframe ?? "7d";
+
   const leftCards = model.leftLongPositions.map(renderPositionCard).join("");
   const rightCards = model.rightShortPositions.map(renderPositionCard).join("");
   const leftExtra = renderExtraBlock(
@@ -891,7 +907,7 @@ export function buildTopicDetailsHtml(model: TopicDetailsPageModel): string {
       <section class="q-lower-block" id="qd-regional">
         <h2 class="q-lower-h">Regional context</h2>
         <p class="q-lower-line">${regionalLine ? regionalLine : esc("Regional scores load when available.")}</p>
-        <a class="q-lower-link" href="/topic/${encodeURIComponent(h.questionId)}?view=regional&timeframe=7d">Open regional detail</a>
+        <a class="q-lower-link" href="${esc(`/topic/${encodeURIComponent(h.questionId)}?view=regional&timeframe=${encodeURIComponent(regTf)}`)}">Open regional detail</a>
       </section>
       <section class="q-lower-block" id="qd-research">
         <h2 class="q-lower-h">Related research</h2>

@@ -492,6 +492,19 @@ function tfChip(label: string, tf: RegionalTimeframe, topicId: string, f: Region
   return `<a class="rd-tf${active ? " rd-tf--active" : ""}" href="${esc(href)}">${esc(label)}</a>`;
 }
 
+/** Discover deep link for lower regional modules (topic + optional region + inert `regional` hint). */
+export function buildDiscoverRegionalModuleHref(
+  topicId: string,
+  regionCode: string | undefined,
+  module: "supporters" | "evidence" | "clusters",
+): string {
+  const p = new URLSearchParams();
+  p.set("topic", topicId.trim());
+  if (regionCode) p.set("region", regionCode);
+  p.set("regional", module);
+  return `/discover?${p.toString()}`;
+}
+
 export function buildRegionalDetailHtml(model: RegionalDetailPageModel): string {
   const { context, summary, filters, rows, selectedRegion } = model;
   const tid = context.topicId;
@@ -626,6 +639,12 @@ export function buildRegionalDetailHtml(model: RegionalDetailPageModel): string 
     ? `<span class="rd-pill">${esc(context.consensusLabel)}</span>`
     : "";
 
+  const lowerRegion = selectedRegion?.regionCode ?? rows[0]?.regionCode;
+  const researchLowerHref =
+    (selectedRegion?.openResearchUrl && selectedRegion.openResearchUrl.trim() !== "" ? selectedRegion.openResearchUrl : undefined) ??
+    rows.find((r) => r.openResearchUrl && r.openResearchUrl.trim() !== "")?.openResearchUrl ??
+    "/research";
+
   return `<div class="q-wrap rd-wrap" data-topic-question-id="${esc(tid)}">
     <div class="rd-routebar">
       <a class="q-bc-link rd-back" href="${esc(context.backToTopicUrl)}">Back to Topic Detail</a>
@@ -669,10 +688,10 @@ export function buildRegionalDetailHtml(model: RegionalDetailPageModel): string 
     </div>
 
     <footer class="rd-lower" role="region" aria-label="Regional modules">
-      <button type="button" class="rd-mod-btn" data-af="noop">Regional supporters</button>
-      <button type="button" class="rd-mod-btn" data-af="noop">Regional evidence</button>
-      <button type="button" class="rd-mod-btn" data-af="noop">Regional cluster mix</button>
-      <button type="button" class="rd-mod-btn" data-af="go-research">Regional research mentions</button>
+      <a class="rd-mod-btn" href="${esc(buildDiscoverRegionalModuleHref(tid, lowerRegion, "supporters"))}">Regional supporters</a>
+      <a class="rd-mod-btn" href="${esc(buildDiscoverRegionalModuleHref(tid, lowerRegion, "evidence"))}">Regional evidence</a>
+      <a class="rd-mod-btn" href="${esc(buildDiscoverRegionalModuleHref(tid, lowerRegion, "clusters"))}">Regional cluster mix</a>
+      <a class="rd-mod-btn" href="${esc(researchLowerHref)}">Regional research mentions</a>
     </footer>
   </div>`;
 }
