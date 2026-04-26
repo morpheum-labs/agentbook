@@ -1,6 +1,10 @@
 # Main/default agent (receives channel messages)
 default_provider = "openai"  # or openai, openrouter, etc.
-default_model = "Qwen3.5-35B-A3B-Q5_K_M.gguf"  # or strongest available
+default_model = "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf"  # or strongest available
+
+# =====================================================
+# Agent Definitions (Hands)
+# =====================================================
 
 # Sub-agents section (example for researcher + others)
 [[agents]]
@@ -15,6 +19,100 @@ model = "gpt-4o"     # Or a strong research-oriented model
 timeout_seconds = 180
 autonomy_level = "Supervised"  # Or "Full" (with care)
 
+
 [[agents]]
-name = "coder"  # Example companion
-# ... similar config
+name = "coder"
+system_prompt = """
+You are an expert software engineer. Write clean, well-documented code, 
+debug issues, and follow best practices. Always explain your changes.
+"""
+tools = ["shell", "file_read", "file_write", "git_operations", "memory_recall"]
+provider = "groq"                    # Using Groq for speed
+model = "llama-3.3-70b-versatile"
+timeout_seconds = 120
+autonomy_level = "Supervised"
+
+[[agents]]
+name = "news_curator"
+system_prompt = """
+You are a news and social media curator. Monitor trending topics, 
+summarize key stories, and deliver concise daily briefings.
+"""
+tools = ["get_hot_news", "web_search", "memory_store"]
+provider = "groq"                    # Fast & cheap for frequent runs
+model = "llama-3.3-70b-versatile"
+timeout_seconds = 90
+autonomy_level = "ReadOnly"
+
+
+[[agents]]
+name = "weekly_reporter"
+system_prompt = """
+You are a strategic analyst. Generate comprehensive weekly reports 
+based on memory, research, and key insights.
+"""
+tools = ["memory_recall", "web_search", "email"]
+provider = "claude"
+model = "claude-3-5-sonnet-20241022"
+timeout_seconds = 300
+autonomy_level = "Supervised"
+
+
+# =====================================================
+# Cron / Scheduled Jobs
+# =====================================================
+
+[[cron_jobs]]
+name = "daily_unique_news_research"
+agent = "news_curator"
+schedule = "0 8 * * *"                    # Every day at 8:00 AM
+timeout_seconds = 120
+prompt = """
+You are the News Curator.
+
+Step 1: Use the `get_hot_news` tool to fetch today's latest news (focus on AI, Technology, Crypto, Business).
+Step 2: Use `memory_recall` with this query: 
+"List the last 30 topics we have already discussed in the past 30 days. Only return topic titles."
+Step 3: Compare today's news with the existing topics from memory.
+Step 4: Select **3–5 completely new and unique topics** that have NOT appeared before.
+Step 5: For each new topic, write a short summary (2-3 sentences) + why it matters.
+Step 6: Use `memory_store` to save the new topics with today's date.
+Important: Only discuss topics that are genuinely new. Do not repeat anything from memory.
+"""
+
+[[cron_jobs]]
+name = "evening_critical_debate"
+agent = "researcher"
+schedule = "0 20 * * *"                   # Every day at 8:00 PM
+timeout_seconds = 180
+prompt = """
+You are the Researcher.
+
+1. Retrieve the most important or controversial topic from today's news (use memory_recall).
+2. Conduct a deep analysis and debate the **critical points** from multiple perspectives:
+   - Pros and Cons
+   - Potential risks and opportunities
+   - Different stakeholder viewpoints
+3. Present a balanced, well-reasoned debate.
+4. Store the key debate points and conclusions in memory.
+5. Do not repeat topics that have already been debated in the past.
+"""
+
+[[cron_jobs]]
+name = "weekly_topic_review"
+agent = "weekly_reporter"
+schedule = "0 9 * * MON"                  # Every Monday at 9:00 AM
+timeout_seconds = 300
+prompt = """
+You are the Weekly Reporter.
+
+1. Review all topics discussed in the past 7 days from memory.
+2. Identify the most important or trending topics.
+3. Create a weekly summary highlighting:
+   - Top 5 unique topics of the week
+   - Key debates and critical points
+   - Emerging patterns or shifts
+4. Suggest 3 new unique topics worth exploring next week.
+5. Store the weekly review in memory.
+"""
+
