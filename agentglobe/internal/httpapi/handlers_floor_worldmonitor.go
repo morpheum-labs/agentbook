@@ -11,7 +11,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	dbpkg "github.com/morpheumlabs/agentbook/agentglobe/internal/db"
-	"github.com/morpheumlabs/agentbook/agentglobe/internal/worldmonitor"
 	"gorm.io/gorm"
 )
 
@@ -130,7 +129,7 @@ func (s *Server) handleFloorQuestionWorldMonitorContext(w http.ResponseWriter, r
 		}
 	}
 
-	key := worldmonitor.APIKey()
+	key := wmAPIKey()
 	if key == "" {
 		writeJSON(w, http.StatusOK, map[string]any{
 			"question_id":      q.ID,
@@ -149,9 +148,9 @@ func (s *Server) handleFloorQuestionWorldMonitorContext(w http.ResponseWriter, r
 
 	ctx, cancel := context.WithTimeout(r.Context(), 14*time.Second)
 	defer cancel()
-	wm := worldmonitor.NewClient()
-	riskB, errR := wm.FetchRiskScores(ctx, region)
-	fcB, errF := wm.FetchForecasts(ctx, "", region)
+	wm := newWMClient()
+	riskB, errR := wm.fetchRiskScores(ctx, region)
+	fcB, errF := wm.fetchForecasts(ctx, "", region)
 	if errR != nil && errF != nil {
 		if prev, perr := floorLatestWorldMonitorSignal(db, qid); perr == nil && prev != nil {
 			writeJSON(w, http.StatusOK, floorWorldMonitorResponse(&q, region, prev, true, true))
@@ -160,7 +159,7 @@ func (s *Server) handleFloorQuestionWorldMonitorContext(w http.ResponseWriter, r
 		writeDetail(w, http.StatusBadGateway, "WorldMonitor upstream error: "+errR.Error())
 		return
 	}
-	bundle, normErr := worldmonitor.NormalizeBundle(riskB, fcB)
+	bundle, normErr := wmNormalizeBundle(riskB, fcB)
 	if normErr != nil {
 		writeDetail(w, http.StatusBadGateway, "WorldMonitor normalize error")
 		return

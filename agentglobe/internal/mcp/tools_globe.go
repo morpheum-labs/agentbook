@@ -36,15 +36,15 @@ type SearchCapabilitiesArgs struct {
 	Status   string `json:"status" jsonschema:"description=Filter by status (active, degraded, inactive)"`
 }
 
-// GetWorldContextArgs calls the worldmon HTTP proxy: GET {WORLDMON_BASE_URL}/v1/wm/{service}/{version}/{method}?...
+// GetWorldContextArgs calls the agentglobe public read API GET {public_url}/api/v1/public/world-context, which proxies
+// to worldmon (rss_lib and WORLDMON are applied on the main agentglobe server, not the MCP process).
 type GetWorldContextArgs struct {
 	Service string            `json:"service" jsonschema:"description=First path segment after /v1/wm, default news"`
 	Version string            `json:"version" jsonschema:"description=API version in path, default v1"`
 	Method  string            `json:"method" jsonschema:"required,description=Final path segment (kebab-case), e.g. list-feed-digest for RSS digest"`
-	// For list-feed-digest: set feeds (comma RSS URLs) and/or forge_categories (comma monitor-forge category keys like politics,tech);
-	// optional library_fresh or forge_fresh (true) to re-fetch the library JSON before resolving categories, optional limit. Other services forward to the worldmon client upstream when configured.
-	// When agentglobe config has rss_lib, the MCP adds rss_library (file path) or rss_library_url (https) unless the tool args override those keys.
-	Query   map[string]string `json:"query" jsonschema:"description=Query params forwarded to worldmon, e.g. feeds, forge_categories, rss_library, rss_library_url, library_fresh, limit, variant"`
+	// For list-feed-digest: set feeds (comma RSS URLs) and/or forge_categories, optional limit, etc. Same query keys
+	// as the worldmon /v1/wm/... endpoint; the server applies rss_lib before merging these (tool params can override).
+	Query   map[string]string `json:"query" jsonschema:"description=Query params forwarded to worldmon, e.g. feeds, forge_categories, library_fresh, limit, variant"`
 }
 
 // SaveToMemoryArgs upserts a row in mcp_memories.
@@ -220,35 +220,40 @@ func (s *State) searchCapabilities(_ context.Context, args SearchCapabilitiesArg
 }
 
 func (s *State) getWorldContext(ctx context.Context, args GetWorldContextArgs) (*mcpg.ToolResponse, error) {
-	base, err := s.resolveWorldmonBase()
-	if err != nil {
-		return nil, err
-	}
 	if strings.TrimSpace(args.Method) == "" {
 		return nil, fmt.Errorf("method is required (e.g. list-feed-digest)")
 	}
-	svc := strings.TrimSpace(args.Service)
-	if svc == "" {
-		svc = "news"
+	pub := strings.TrimSpace(os.Getenv("AGENTGLOBE_PUBLIC_BASE"))
+	if s.Cfg != nil && pub == "" {
+		pub = strings.TrimSpace(s.Cfg.PublicURL)
 	}
-	ver := strings.TrimSpace(args.Version)
-	if ver == "" {
-		ver = "v1"
+	if pub == "" {
+		return nil, fmt.Errorf("set public_url in config or AGENTGLOBE_PUBLIC_BASE for get_world_context")
 	}
-	rel := fmt.Sprintf("/v1/wm/%s/%s/%s", url.PathEscape(svc), url.PathEscape(ver), strings.TrimLeft(strings.TrimSpace(args.Method), "/"))
-	u, err := url.Parse(base + rel)
+	u, err := url.Parse(strings.TrimRight(pub, "/") + "/api/v1/public/world-context")
 	if err != nil {
 		return nil, err
 	}
 	q := u.Query()
-	applyMCPRssLibQuery(q, s.RssLibPath)
+	q.Set("method", strings.TrimSpace(args.Method))
+	if v := strings.TrimSpace(args.Service); v != "" {
+		q.Set("service", v)
+	}
+	if v := strings.TrimSpace(args.Version); v != "" {
+		q.Set("version", v)
+	}
 	if args.Query != nil {
 		for k, v := range args.Query {
+			if strings.EqualFold(k, "method") || strings.EqualFold(k, "service") || strings.EqualFold(k, "version") {
+				continue
+			}
+			if strings.TrimSpace(v) == "" {
+				continue
+			}
 			q.Set(k, v)
 		}
 	}
 	u.RawQuery = q.Encode()
-	client := s.httpClient()
 	if os.Getenv("MCP_DEBUG_URL") == "1" {
 		_, _ = fmt.Fprintf(os.Stderr, "agentglobe-mcp: get_world_context GET %s\n", u.String())
 	}
@@ -257,7 +262,7 @@ func (s *State) getWorldContext(ctx context.Context, args GetWorldContextArgs) (
 		return nil, err
 	}
 	req.Header.Set("User-Agent", s.userAgentHeader())
-	res, err := client.Do(req)
+	res, err := s.httpClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -267,46 +272,9 @@ func (s *State) getWorldContext(ctx context.Context, args GetWorldContextArgs) (
 		return nil, rerr
 	}
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return nil, fmt.Errorf("worldmon http %d: %s", res.StatusCode, strings.TrimSpace(string(b)))
+		return nil, fmt.Errorf("agentglobe public world-context %d: %s", res.StatusCode, strings.TrimSpace(string(b)))
 	}
 	return toolTextJSON(string(b))
-}
-
-// applyMCPRssLibQuery sets worldmon list-feed-digest defaults from config rss_lib. Tool query params are merged
-// after this and can override those keys.
-func applyMCPRssLibQuery(q url.Values, rss string) {
-	rss = strings.TrimSpace(rss)
-	if rss == "" {
-		return
-	}
-	low := strings.ToLower(rss)
-	if strings.HasPrefix(low, "http://") || strings.HasPrefix(low, "https://") {
-		q.Set("rss_library_url", rss)
-		return
-	}
-	q.Set("rss_library", rss)
-}
-
-func (s *State) resolveWorldmonBase() (string, error) {
-	if s.WorldmonBase != "" {
-		return strings.TrimRight(strings.TrimSpace(s.WorldmonBase), "/"), nil
-	}
-	var rows []db.CapabilityService
-	if s.DB == nil {
-		return "", fmt.Errorf("database not available")
-	}
-	_ = s.DB.Where("LOWER(category) = LOWER(?)", "world_monitor").Order("name ASC, base_url ASC").Find(&rows).Error
-	for i := range rows {
-		if rows[i].IsHealthy(2 * time.Minute) {
-			return strings.TrimRight(strings.TrimSpace(rows[i].BaseURL), "/"), nil
-		}
-	}
-	for i := range rows {
-		if bu := strings.TrimSpace(rows[i].BaseURL); bu != "" {
-			return strings.TrimRight(bu, "/"), nil
-		}
-	}
-	return "", fmt.Errorf("set WORLDMON_BASE_URL (or register a world_monitor service in the capability registry)")
 }
 
 func (s *State) saveToMemory(ctx context.Context, args SaveToMemoryArgs) (*mcpg.ToolResponse, error) {

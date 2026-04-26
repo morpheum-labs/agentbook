@@ -1103,6 +1103,47 @@
         }
       }
     },
+    "/api/v1/public/world-context": {
+      "get": {
+        "tags": [
+          "Meta"
+        ],
+        "summary": "Worldmon proxy (public read, no auth)",
+        "description": "Forwards to the local worldmon service `GET /v1/wm/{service}/{version}/{method}`; applies `rss_lib` from server config, then client query string (client may override). Worldmon base: `WORLDMON_BASE_URL` on the `agentglobe` process, or a `world_monitor` row in the capability registry. The MCP `get_world_context` tool uses `GET {public_url}/api/v1/public/world-context?...` instead of calling worldmon directly.",
+        "parameters": [
+          {
+            "name": "method",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Worldmon path tail, e.g. list-feed-digest"
+          },
+          {
+            "name": "service",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Default: news"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Default: v1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response body and Content-Type are passed through from worldmon",
+            "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } }
+          },
+          "400": { "description": "Missing or invalid `method`", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorDetail" } } } },
+          "503": { "description": "Worldmon not configured (see response detail)" },
+          "502": { "description": "Cannot reach worldmon" }
+        }
+      }
+    },
     "/api/v1/capability-services": {
       "get": {
         "tags": [

@@ -1,18 +1,118 @@
-package worldmonitor
+package httpapi
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"math"
+	"net/http"
+	"net/url"
+	"os"
 	"strings"
+	"time"
 )
 
-// Bundle is the normalized AgentFloor-facing slice of WorldMonitor data (F7-friendly JSON shapes).
-type Bundle struct {
+const defaultWMBaseURL = "https://worldmonitor.app"
+
+func wmAPIBase() string {
+	v := strings.TrimSpace(os.Getenv("WORLDMONITOR_API_BASE"))
+	if v == "" {
+		return defaultWMBaseURL
+	}
+	return strings.TrimRight(v, "/")
+}
+
+func wmAPIKey() string {
+	return strings.TrimSpace(os.Getenv("WORLDMONITOR_API_KEY"))
+}
+
+type wmClient struct {
+	baseURL string
+	key     string
+	http    *http.Client
+}
+
+func newWMClient() *wmClient {
+	return &wmClient{
+		baseURL: wmAPIBase(),
+		key:     wmAPIKey(),
+		http: &http.Client{
+			Timeout: 12 * time.Second,
+		},
+	}
+}
+
+func (c *wmClient) getJSON(ctx context.Context, path string, query url.Values) (json.RawMessage, int, error) {
+	u, err := url.Parse(c.baseURL + path)
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(query) > 0 {
+		u.RawQuery = query.Encode()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	if strings.TrimSpace(c.key) != "" {
+		req.Header.Set("X-WorldMonitor-Key", c.key)
+	}
+	req.Header.Set("Accept", "application/json")
+	res, err := c.http.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer res.Body.Close()
+	b, err := io.ReadAll(io.LimitReader(res.Body, 8<<20))
+	if err != nil {
+		return nil, res.StatusCode, err
+	}
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return b, res.StatusCode, fmt.Errorf("worldmonitor: HTTP %d", res.StatusCode)
+	}
+	return json.RawMessage(b), res.StatusCode, nil
+}
+
+func (c *wmClient) fetchRiskScores(ctx context.Context, region string) (json.RawMessage, error) {
+	q := url.Values{}
+	if strings.TrimSpace(region) != "" {
+		q.Set("region", strings.TrimSpace(region))
+	}
+	body, code, err := c.getJSON(ctx, "/api/intelligence/v1/get-risk-scores", q)
+	if err != nil {
+		return nil, err
+	}
+	if code != http.StatusOK {
+		return nil, fmt.Errorf("worldmonitor get-risk-scores: status %d body=%s", code, string(body))
+	}
+	return body, nil
+}
+
+func (c *wmClient) fetchForecasts(ctx context.Context, domain, region string) (json.RawMessage, error) {
+	q := url.Values{}
+	if strings.TrimSpace(domain) != "" {
+		q.Set("domain", strings.TrimSpace(domain))
+	}
+	if strings.TrimSpace(region) != "" {
+		q.Set("region", strings.TrimSpace(region))
+	}
+	body, code, err := c.getJSON(ctx, "/api/forecast/v1/get-forecasts", q)
+	if err != nil {
+		return nil, err
+	}
+	if code != http.StatusOK {
+		return nil, fmt.Errorf("worldmonitor get-forecasts: status %d body=%s", code, string(body))
+	}
+	return body, nil
+}
+
+type wmBundle struct {
 	Instability   map[string]int                `json:"instability"`
 	Convergence   map[string]map[string]float64 `json:"convergence"`
 	Forecast      map[string]any                `json:"forecast"`
-	RawEnvelope   map[string]json.RawMessage    `json:"-"` // not serialized in API; stored in DB raw_data
-	UpstreamSigMs int64                         `json:"-"` // max computedAt / generatedAt from payloads
+	RawEnvelope   map[string]json.RawMessage    `json:"-"`
+	UpstreamSigMs int64                         `json:"-"`
 }
 
 type riskScoresPayload struct {
@@ -50,9 +150,8 @@ type wmForecastRow struct {
 	Scenario    string  `json:"scenario"`
 }
 
-// NormalizeBundle parses WorldMonitor JSON bodies into the digest/UI-friendly context.worldmonitor shape.
-func NormalizeBundle(riskJSON, forecastJSON []byte) (*Bundle, error) {
-	b := &Bundle{
+func wmNormalizeBundle(riskJSON, forecastJSON []byte) (*wmBundle, error) {
+	b := &wmBundle{
 		Instability: make(map[string]int),
 		Convergence: make(map[string]map[string]float64),
 		Forecast:    map[string]any{},

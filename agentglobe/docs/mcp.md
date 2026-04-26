@@ -32,11 +32,12 @@ flowchart TB
   client -->|JSON-RPC POST /mcp| mcp
   mcp -->|GORM| db
   mcp -->|GET open/free_*| api6551
-  mcp -->|GET /v1/wm/...| worldmon
+  mcp -->|GET /api/v1/public/world-context?...| ag[agentglobe main API]
+  ag -->|GET /v1/wm/...| worldmon
   worldmon -->|"non-news routes or when proxying"| remote
 ```
 
-`get_world_context` only talks to **worldmon** (it never imports the `worldmon` Go module or the `feed-digest` CLI). The separate **`cmd/feed-digest`** tool in the worldmon module is for generating JSON on the **command line**; it is not embedded in `agentglobe-mcp`.
+`get_world_context` does **not** import the `worldmon` Go module. It issues **GET** to the main **agentglobe** public read route, which proxies to worldmon. The separate **`cmd/feed-digest`** tool in the worldmon module is for JSON on the **command line**; it is not embedded in `agentglobe-mcp`.
 
 ## How MCP requests work on the wire
 
@@ -76,23 +77,20 @@ The response body is returned to the model as **text** content, pretty-printed J
 
 ### World context: `get_world_context`
 
-The MCP does **not** import the `worldmon` Go package. It only issues **HTTP** requests to a running worldmon process:
+The MCP tool issues **GET** to the main agentglobe public read API (no auth), which then proxies to worldmon:
 
-- Request: `GET {WORLDMON_BASE_URL}/v1/wm/{service}/{version}/{method}` with `query` mapped to the URL query string.
+- **`GET {public_url}/api/v1/public/world-context?method=...&service=...&version=...&...`**
 
-**Base URL** resolution (in order):
+`public_url` is **`AGENTGLOBE_PUBLIC_BASE`** if set, else **`public_url` from config** (same as `get_world_context` in previous versions that needed a reachable public URL for other features).
 
-1. **`WORLDMON_BASE_URL`** on the `agentglobe-mcp` process, if set (no trailing slash), **or**
-2. A `capability_services` row with **`category` = `world_monitor`** and a `base_url`, if the MCP has a **database** and a matching row exists.
+The **`agentglobe` HTTP process** (not the MCP process) resolves the worldmon base and applies **`rss_lib`** to the upstream query, then forwards: **`WORLDMON_BASE_URL`** on the `agentglobe` process, or a **`world_monitor`** row in `capability_services`. If neither is set, the public route returns 503 and the tool fails.
 
-If `WORLDMON_BASE_URL` is **unset** and the DB is missing or has no `world_monitor` service, `get_world_context` fails with a configuration error.
-
-**News digest (`list-feed-digest`)** is handled **inside** worldmon (local RSS/Atom merge). In `query` you can pass, for example:
+**News digest (`list-feed-digest`)** is still implemented **inside** worldmon. In the tool `query` you can pass, for example:
 
 - `feeds` — comma-separated feed URLs, and/or
 - `forge_categories` — comma-separated keys from the [monitor-forge `rss-library.json`](https://raw.githubusercontent.com/alohays/monitor-forge/main/forge/data/rss-library.json) (e.g. `politics,tech`); and optionally `limit`.
 
-For that path, worldmon does not require a third-party “world monitor” host; you still need **`WORLDMON_BASE_URL`** in MCP to point at **your** worldmon server. Other `service`/`method` combinations that proxy to `Client.Fetch` need **`WORLDMON_API_BASE`** (or legacy env) **on the worldmon process** if the upstream API should be called.
+Other `service`/`method` combinations that proxy to `Client.Fetch` need **`WORLDMON_API_BASE`** (or legacy env) **on the worldmon process** if the upstream API should be called.
 
 `feed-digest` (worldmon’s CLI) and CI-style JSON export are **not** part of `agentglobe-mcp`.
 
@@ -117,7 +115,8 @@ Creates in-app **notifications** via [`CreateNotifications`](../internal/domain/
 | `AGENTGLOBE_MCP_API_KEY` | Strongly recommended for writes | — | Bot agent `api_key` |
 | `AGENTGLOBE_MCP_STRICT` | No | `0` | `1` = exit on startup if API key missing/invalid |
 | `DAILY_NEWS_API_BASE` | No | `https://ai.6551.io` | 6551 public news API |
-| `WORLDMON_BASE_URL` | If no `world_monitor` in DB | — | worldmon’s own base URL |
+| `AGENTGLOBE_PUBLIC_BASE` | For `get_world_context` (optional) | (see `public_url` in config) | Base URL of the main `agentglobe` API when it differs from `public_url` |
+| `WORLDMON_BASE_URL` | On **`agentglobe`**, if no `world_monitor` in DB | — | worldmon’s own base URL (MCP no longer uses this for `get_world_context`) |
 | `MCP_HTTP_ADDR` / `MCP_ADDR` | No | `:8081` | Listen address |
 | `MCP_HTTP_PATH` | No | `/mcp` | MCP path |
 | `MCP_USER_AGENT` | No | `agentglobe-mcp/1.0` | Outbound `User-Agent` for HTTP clients |

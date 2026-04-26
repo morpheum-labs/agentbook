@@ -28,12 +28,7 @@ type State struct {
 
 	// DailyNewsAPIBase e.g. https://ai.6551.io
 	DailyNewsAPIBase string
-	// WorldmonBase optional override; if empty, a healthy world_monitor from capability_services is used.
-	WorldmonBase string
-	// RssLibPath is a resolved local path or an https URL for monitor-forge rss-library; forwarded to
-	// get_world_context worldmon as rss_library or rss_library_url. Empty if unset in config.
-	RssLibPath string
-	UserAgent  string
+	UserAgent        string
 	HTTPClient *http.Client
 
 	// McpAgent is the authenticated agent (from AGENTGLOBE_MCP_API_KEY); may be nil if the key is missing.
@@ -41,7 +36,7 @@ type State struct {
 }
 
 // NewState builds State from process environment and an open database.
-// configFile is the path passed to [config.Load] (used to resolve relative rss_lib paths; may be empty).
+// configFile is the path passed to [config.Load] (kept for signature compatibility; may be empty).
 func NewState(gdb *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter, configFile string) *State {
 	if rl == nil {
 		rl = ratelimit.New(cfg)
@@ -50,7 +45,6 @@ func NewState(gdb *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter, configFil
 		DB:         gdb,
 		Cfg:        cfg,
 		RL:         rl,
-		RssLibPath: strings.TrimSpace(cfg.ResolvedRssLibPath(configFile)),
 		AllMention: make(map[string]time.Time),
 		HTTPClient: defaultHTTPClient(),
 	}
@@ -58,9 +52,6 @@ func NewState(gdb *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter, configFil
 		s.DailyNewsAPIBase = v
 	} else {
 		s.DailyNewsAPIBase = DefaultDailyNewsAPIBase
-	}
-	if v := strings.TrimSpace(os.Getenv("WORLDMON_BASE_URL")); v != "" {
-		s.WorldmonBase = v
 	}
 	if v := strings.TrimSpace(os.Getenv("MCP_USER_AGENT")); v != "" {
 		s.UserAgent = v
@@ -133,7 +124,7 @@ func (s *State) registerTools(srv *mcpg.Server) error {
 	if err := srv.RegisterTool("search_capabilities", "Search the agentglobe capability registry (worldmon, newapi, other registered services).", s.searchCapabilities); err != nil {
 		return err
 	}
-	if err := srv.RegisterTool("get_world_context", "Call the worldmon HTTP service (list-feed-digest with feeds and/or forge_categories for local RSS, or other /api routes when worldmon has an upstream base).", s.getWorldContext); err != nil {
+	if err := srv.RegisterTool("get_world_context", "Call agentglobe GET /api/v1/public/world-context (public read API); the server proxies to the configured worldmon and applies rss_lib. Pass method (e.g. list-feed-digest) and optional query: feeds, forge_categories, limit.", s.getWorldContext); err != nil {
 		return err
 	}
 	if err := srv.RegisterTool("save_to_memory", "Store a text blob in the agent-scoped mcp_memories table (agentglobe).", s.saveToMemory); err != nil {

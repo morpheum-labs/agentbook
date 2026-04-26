@@ -30,7 +30,7 @@ type Config struct {
 	// When empty, Access-Control-Allow-Origin is "*" (dev and backwards compatibility).
 	CORSAllowedOrigins []string `yaml:"cors_allowed_origins"`
 	// RssLib is a path to monitor-forge-style rss-library.json, or a URL. Relative paths are resolved
-	// from the config file’s directory. Used by agentglobe-mcp get_world_context (and worldmon with matching config).
+	// from the config file’s directory. Used by agentglobe GET /api/v1/public/world-context and worldmon with matching config.
 	// Env override: RSS_LIB.
 	RssLib string `yaml:"rss_lib"`
 }
