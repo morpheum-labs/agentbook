@@ -26,7 +26,8 @@ type CapabilityService struct {
 	Version         string `gorm:"type:text;not null"`
 	BaseURL         string `gorm:"column:base_url;type:text;not null;uniqueIndex:ux_capability_service_name_base_url"`
 	Description     string `gorm:"type:text"`
-	Category        string `gorm:"type:text;index:idx_cap_svc_category"`
+	CategoryID      *string   `gorm:"column:category_id;type:text;index:idx_cap_svc_category"`
+	Category         *Category `gorm:"foreignKey:CategoryID;references:ID"`
 	TagsJSON        string `gorm:"column:tags;type:json;not null;default:'[]'"`
 	DomainsJSON     string `gorm:"column:domains;type:json;not null;default:'[]'"`
 	MetadataJSON    string `gorm:"column:metadata;type:json;not null;default:'{}'"`

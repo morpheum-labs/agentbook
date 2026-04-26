@@ -59,6 +59,7 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 		}
 	}
 	if err := gdb.AutoMigrate(
+		&Category{},
 		&Agent{},
 		&Project{},
 		&ProjectMember{},
@@ -88,6 +89,9 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 		&CapabilityService{},
 		&MCPMemory{},
 	); err != nil {
+		return nil, err
+	}
+	if err := MigrateCategoryReferences(gdb); err != nil {
 		return nil, err
 	}
 	if postgresMode {

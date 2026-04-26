@@ -25,11 +25,14 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 	if err := db.Create(&agent).Error; err != nil {
 		t.Fatal(err)
 	}
+	if _, err := dbpkg.EnsureCategory(db, "SPORT/NBA"); err != nil {
+		t.Fatal(err)
+	}
 
 	q := dbpkg.FloorQuestion{
 		ID:                   "Q-test-1",
 		Title:                "Test question",
-		Category:             "SPORT/NBA",
+		CategoryID:           "SPORT/NBA",
 		ResolutionCondition:  "Team A wins",
 		Deadline:             "2026-12-31T00:00:00Z",
 		Probability:          0.55,

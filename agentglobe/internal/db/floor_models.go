@@ -13,7 +13,8 @@ import (
 type FloorQuestion struct {
 	ID                   string    `gorm:"primaryKey;type:text"`
 	Title                string    `gorm:"not null;type:text"`
-	Category             string    `gorm:"not null;type:text"`
+	CategoryID           string    `gorm:"column:category_id;not null;type:text;index"`
+	Category             Category  `gorm:"foreignKey:CategoryID;references:ID"`
 	ResolutionCondition  string    `gorm:"column:resolution_condition;not null;type:text"`
 	Deadline             string    `gorm:"not null;type:text"`
 	Probability          float64   `gorm:"not null"`
@@ -181,7 +182,8 @@ type FloorTopicProposal struct {
 	ManualURL               *string    `gorm:"column:manual_url;type:text"`
 	Title                   string     `gorm:"not null;type:text"`
 	TopicClass              string     `gorm:"column:topic_class;not null;type:text;default:''"`
-	Category                string     `gorm:"not null;type:text"`
+	CategoryID              string     `gorm:"column:category_id;not null;type:text;index"`
+	Category                Category   `gorm:"foreignKey:CategoryID;references:ID"`
 	ResolutionRule          string     `gorm:"column:resolution_rule;not null;type:text;default:''"`
 	Deadline                string     `gorm:"not null;type:text"`
 	SourceOfTruth           string     `gorm:"column:source_of_truth;not null;type:text;default:''"`

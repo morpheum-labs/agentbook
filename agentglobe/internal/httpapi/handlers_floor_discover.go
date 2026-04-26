@@ -363,7 +363,7 @@ func (s *Server) handleFloorDiscoverPage(w http.ResponseWriter, r *http.Request)
 	db := s.dbCtx(r)
 
 	var positions []dbpkg.FloorPosition
-	if err := db.Preload("Question").Preload("Agent").Find(&positions).Error; err != nil {
+	if err := db.Preload("Question").Preload("Question.Category").Preload("Agent").Find(&positions).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "DB error")
 		return
 	}
@@ -431,7 +431,7 @@ func (s *Server) handleFloorDiscoverPage(w http.ResponseWriter, r *http.Request)
 		}
 		cat := ""
 		if p.Question.ID != "" {
-			cat = floorTopicsTopicClassPretty(p.Question.Category)
+			cat = floorTopicsTopicClassPretty(p.Question.FloorCategoryLabel())
 		}
 		if cat != "" {
 			if a.topicDirCounts[cat] == nil {

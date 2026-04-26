@@ -17,13 +17,19 @@ func TestSeedFloorDemoTopicsIdempotent(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := gdb.AutoMigrate(
+		&Category{},
 		&Agent{},
 		&FloorQuestion{},
+		&FloorTopicProposal{},
 		&FloorPosition{},
 		&FloorDigestEntry{},
 		&FloorAgentTopicStat{},
 		&FloorAgentInferenceProfile{},
+		&CapabilityService{},
 	); err != nil {
+		t.Fatal(err)
+	}
+	if err := MigrateCategoryReferences(gdb); err != nil {
 		t.Fatal(err)
 	}
 	if err := SeedFloorDemoTopics(gdb); err != nil {
@@ -79,12 +85,18 @@ func TestSeedFloorDemoAgentsWhenQuestionsAlreadyExist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := gdb.AutoMigrate(&Agent{}, &FloorQuestion{}); err != nil {
+	if err := gdb.AutoMigrate(&Category{}, &Agent{}, &FloorQuestion{}, &FloorTopicProposal{}, &CapabilityService{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := MigrateCategoryReferences(gdb); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := EnsureCategory(gdb, "NBA"); err != nil {
 		t.Fatal(err)
 	}
 	now := time.Now().UTC().Truncate(time.Second)
 	q := FloorQuestion{
-		ID: "Q.01", Title: "Existing", Category: "NBA", ResolutionCondition: "x",
+		ID: "Q.01", Title: "Existing", CategoryID: "NBA", ResolutionCondition: "x",
 		Deadline: "2026-01-01T00:00:00Z", Probability: 0.5, ProbabilityDelta: 0,
 		AgentCount: 1, StakedCount: 1, Status: "open",
 		ClusterBreakdownJSON: "{}", CreatedAt: now, UpdatedAt: now,

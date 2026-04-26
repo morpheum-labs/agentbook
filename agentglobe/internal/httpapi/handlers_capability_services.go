@@ -45,13 +45,13 @@ func capabilityServiceToMap(c *db.CapabilityService) map[string]any {
 		_ = json.Unmarshal([]byte(c.OpenapiSpecJSON), &openAPI)
 	}
 	grace := db.DefaultHeartbeatGrace
-	return map[string]any{
+	m := map[string]any{
 		"id":            c.ID,
 		"name":          c.Name,
 		"version":       c.Version,
 		"base_url":      c.BaseURL,
 		"description":   c.Description,
-		"category":      c.Category,
+		"category":      c.CapabilityCategoryLabel(),
 		"tags":          c.TagSlice(),
 		"domains":       c.DomainsFromJSON(),
 		"metadata":      c.MetadataMap(),
@@ -63,6 +63,12 @@ func capabilityServiceToMap(c *db.CapabilityService) map[string]any {
 		"created_at":    c.CreatedAt,
 		"updated_at":    c.UpdatedAt,
 	}
+	if c.CategoryID != nil {
+		m["category_id"] = *c.CategoryID
+	} else {
+		m["category_id"] = nil
+	}
+	return m
 }
 
 func (s *Server) handleCapabilityServicesList(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +78,7 @@ func (s *Server) handleCapabilityServicesList(w http.ResponseWriter, r *http.Req
 	}
 	qb := s.dbCtx(r).Model(&db.CapabilityService{}).Order("name ASC, base_url ASC")
 	if cat := strings.TrimSpace(r.URL.Query().Get("category")); cat != "" {
-		qb = qb.Where("category = ?", cat)
+		qb = qb.Where("category_id = ?", cat)
 	}
 	if st := strings.TrimSpace(r.URL.Query().Get("status")); st != "" {
 		qb = qb.Where("LOWER(status) = LOWER(?)", st)
@@ -83,15 +89,15 @@ func (s *Server) handleCapabilityServicesList(w http.ResponseWriter, r *http.Req
 		if s.dbCtx(r).Dialector.Name() == "postgres" {
 			// case-insensitive substring
 			qb = qb.Where(
-				"name ILIKE ? OR COALESCE(description, '') ILIKE ? OR COALESCE(category, '') ILIKE ?",
+				"name ILIKE ? OR COALESCE(description, '') ILIKE ? OR COALESCE(category_id, '') ILIKE ?",
 				like, like, like,
 			)
 		} else {
-			qb = qb.Where("instr(lower(COALESCE(name, '')), ?) > 0 OR instr(lower(COALESCE(description, '')), ?) > 0 OR instr(lower(COALESCE(category, '')), ?) > 0", needle, needle, needle)
+			qb = qb.Where("instr(lower(COALESCE(name, '')), ?) > 0 OR instr(lower(COALESCE(description, '')), ?) > 0 OR instr(lower(COALESCE(category_id, '')), ?) > 0", needle, needle, needle)
 		}
 	}
 	var rows []db.CapabilityService
-	if err := qb.Find(&rows).Error; err != nil {
+	if err := qb.Preload("Category").Find(&rows).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Database error")
 		return
 	}
@@ -116,7 +122,7 @@ func (s *Server) handleCapabilityServiceGetByID(w http.ResponseWriter, r *http.R
 		return
 	}
 	var row db.CapabilityService
-	if err := s.dbCtx(r).First(&row, "id = ?", id).Error; err != nil {
+	if err := s.dbCtx(r).Preload("Category").First(&row, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeDetail(w, http.StatusNotFound, "not found")
 			return
@@ -184,12 +190,21 @@ func (s *Server) handleCapabilityServicesRegister(w http.ResponseWriter, r *http
 		}
 	}
 	now := time.Now().UTC()
+	catID, errCat := db.EnsureCategory(s.dbCtx(r), body.Category)
+	if errCat != nil {
+		writeDetail(w, http.StatusInternalServerError, "Could not resolve category")
+		return
+	}
+	var catPtr *string
+	if catID != "" {
+		catPtr = &catID
+	}
 	rec := db.CapabilityService{
 		Name:            n,
 		Version:         ver,
 		BaseURL:         bu,
 		Description:     body.Description,
-		Category:        body.Category,
+		CategoryID:      catPtr,
 		TagsJSON:        string(tagsJSON),
 		DomainsJSON:     string(domJSON),
 		MetadataJSON:    string(mdJSON),
@@ -210,7 +225,7 @@ func (s *Server) handleCapabilityServicesRegister(w http.ResponseWriter, r *http
 			[]string{
 				"version",
 				"description",
-				"category",
+				"category_id",
 				"tags",
 				"domains",
 				"metadata",
@@ -226,7 +241,7 @@ func (s *Server) handleCapabilityServicesRegister(w http.ResponseWriter, r *http
 		return
 	}
 	// Re-load to get the stable id (insert path) and full row.
-	if err := s.dbCtx(r).Where("name = ? AND base_url = ?", n, bu).First(&rec).Error; err != nil {
+	if err := s.dbCtx(r).Preload("Category").Where("name = ? AND base_url = ?", n, bu).First(&rec).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "load after register failed")
 		return
 	}

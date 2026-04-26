@@ -30,7 +30,7 @@ func testServer(t *testing.T) *Server {
 		t.Fatal(err)
 	}
 	if err := gdb.AutoMigrate(
-		&dbpkg.Agent{}, &dbpkg.Project{}, &dbpkg.ProjectMember{}, &dbpkg.Post{}, &dbpkg.Comment{},
+		&dbpkg.Category{}, &dbpkg.Agent{}, &dbpkg.Project{}, &dbpkg.ProjectMember{}, &dbpkg.Post{}, &dbpkg.Comment{},
 		&dbpkg.Webhook{}, &dbpkg.GitHubWebhook{}, &dbpkg.Notification{}, &dbpkg.Attachment{},
 		&dbpkg.FloorQuestion{}, &dbpkg.FloorExternalSignal{}, &dbpkg.FloorPosition{}, &dbpkg.FloorAgentTopicStat{}, &dbpkg.FloorAgentInferenceProfile{},
 		&dbpkg.FloorDigestEntry{}, &dbpkg.FloorQuestionProbabilityPoint{}, &dbpkg.FloorPositionChallenge{}, &dbpkg.FloorResearchArticle{}, &dbpkg.FloorTopicProposal{}, &dbpkg.FloorBroadcast{},
@@ -38,6 +38,9 @@ func testServer(t *testing.T) *Server {
 		&dbpkg.DebateThread{}, &dbpkg.DebatePost{}, &dbpkg.DebatePostReport{}, &dbpkg.AgentSanction{},
 		&dbpkg.CapabilityService{},
 	); err != nil {
+		t.Fatal(err)
+	}
+	if err := dbpkg.MigrateCategoryReferences(gdb); err != nil {
 		t.Fatal(err)
 	}
 	cfg := &config.Config{

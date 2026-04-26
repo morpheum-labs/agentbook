@@ -21,11 +21,12 @@ func floorWMRegionForQuestion(q *dbpkg.FloorQuestion) string {
 	if q.WmContextID != nil && strings.TrimSpace(*q.WmContextID) != "" {
 		return strings.TrimSpace(*q.WmContextID)
 	}
-	parts := strings.Split(q.Category, "/")
+	cat := q.FloorCategoryLabel()
+	parts := strings.Split(cat, "/")
 	if len(parts) > 1 {
 		return strings.TrimSpace(parts[len(parts)-1])
 	}
-	return strings.TrimSpace(q.Category)
+	return strings.TrimSpace(cat)
 }
 
 func floorWMContextFromSignal(sig *dbpkg.FloorExternalSignal) map[string]any {
@@ -105,7 +106,7 @@ func (s *Server) handleFloorQuestionWorldMonitorContext(w http.ResponseWriter, r
 	}
 	db := s.dbCtx(r)
 	var q dbpkg.FloorQuestion
-	if err := db.First(&q, "id = ?", qid).Error; err != nil {
+	if err := db.Preload("Category").First(&q, "id = ?", qid).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeDetail(w, http.StatusNotFound, "Question not found")
 			return
@@ -184,7 +185,7 @@ func (s *Server) handleFloorQuestionWorldMonitorContext(w http.ResponseWriter, r
 		ms := bundle.UpstreamSigMs
 		upMs = &ms
 	}
-	topic := q.Category
+	topic := q.FloorCategoryLabel()
 	sig := dbpkg.FloorExternalSignal{
 		ID:                   uuid.NewString(),
 		QuestionID:           &q.ID,

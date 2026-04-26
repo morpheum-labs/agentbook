@@ -48,11 +48,14 @@ func TestFloorWorldMonitorContextMockUpstream(t *testing.T) {
 	if err := db.Create(&agent).Error; err != nil {
 		t.Fatal(err)
 	}
+	if _, err := dbpkg.EnsureCategory(db, "MACRO/MENA"); err != nil {
+		t.Fatal(err)
+	}
 
 	q := dbpkg.FloorQuestion{
 		ID:                   "Q-wm-1",
 		Title:                "MENA stress test",
-		Category:             "MACRO/MENA",
+		CategoryID:           "MACRO/MENA",
 		ResolutionCondition:  "Resolved by committee",
 		Deadline:             "2026-12-31T00:00:00Z",
 		Probability:          0.5,
@@ -144,10 +147,13 @@ func TestFloorWorldMonitorUnconfigured(t *testing.T) {
 	if err := db.Create(&agent).Error; err != nil {
 		t.Fatal(err)
 	}
+	if _, err := dbpkg.EnsureCategory(db, "TEST"); err != nil {
+		t.Fatal(err)
+	}
 	q := dbpkg.FloorQuestion{
 		ID:                   "Q-wm-u",
 		Title:                "Q",
-		Category:             "TEST",
+		CategoryID:           "TEST",
 		ResolutionCondition:  "x",
 		Deadline:             "2026-12-31T00:00:00Z",
 		Probability:          0.5,

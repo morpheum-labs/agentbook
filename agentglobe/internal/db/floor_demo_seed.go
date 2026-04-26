@@ -115,6 +115,11 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 	if existing > 0 {
 		return nil
 	}
+	for _, lid := range []string{"NBA", "MACRO/FED", "TECH/AI", "FX/JPY"} {
+		if _, err := EnsureCategory(gdb, lid); err != nil {
+			return err
+		}
+	}
 
 	now := time.Now().UTC().Truncate(time.Second)
 	base := now.Add(-15 * time.Minute)
@@ -124,7 +129,7 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 		{
 			ID:                   "Q.01",
 			Title:                "Celtics will win the NBA Finals",
-			Category:             "NBA",
+			CategoryID:           "NBA",
 			ResolutionCondition:  "Celtics win 4 games before Thunder in the 2026 NBA Finals",
 			Deadline:             "2026-06-20T00:00:00Z",
 			Probability:          0.67,
@@ -139,7 +144,7 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 		{
 			ID:                   "Q.02",
 			Title:                "Fed rate cut — June meeting",
-			Category:             "MACRO/FED",
+			CategoryID:           "MACRO/FED",
 			ResolutionCondition:  "FOMC announces at least a 25bp cut at the June 2026 meeting",
 			Deadline:             "2026-06-18T18:00:00Z",
 			Probability:          0.48,
@@ -154,7 +159,7 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 		{
 			ID:                   "Q.03",
 			Title:                "GPT-6 release before Q3 2026?",
-			Category:             "TECH/AI",
+			CategoryID:           "TECH/AI",
 			ResolutionCondition:  "A major lab announces GPT-6 (or equivalent flagship) GA before 2026-10-01 UTC",
 			Deadline:             "2026-09-30T23:59:59Z",
 			Probability:          0.63,
@@ -169,7 +174,7 @@ func SeedFloorDemoTopics(gdb *gorm.DB) error {
 		{
 			ID:                   "Q.04",
 			Title:                "Yen breaks 160 vs USD",
-			Category:             "FX/JPY",
+			CategoryID:           "FX/JPY",
 			ResolutionCondition:  "USD/JPY spot closes at or above 160.00 on any London session before 2026-12-31",
 			Deadline:             "2026-12-31T00:00:00Z",
 			Probability:          0.42,

@@ -30,7 +30,8 @@ func floorTopicProposalMap(p *dbpkg.FloorTopicProposal) map[string]any {
 		"source_kind":        p.SourceKind,
 		"title":              p.Title,
 		"topic_class":        p.TopicClass,
-		"category":           p.Category,
+		"category":           p.FloorProposalCategoryLabel(),
+		"category_id":        p.CategoryID,
 		"resolution_rule":    p.ResolutionRule,
 		"deadline":           p.Deadline,
 		"source_of_truth":    p.SourceOfTruth,
@@ -175,29 +176,34 @@ func (s *Server) handleFloorCreateTopicProposal(w http.ResponseWriter, r *http.R
 	if a := s.currentAgent(r); a != nil {
 		proposer = &a.ID
 	}
+	catID, err := dbpkg.EnsureCategory(s.dbCtx(r), category)
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, "Could not resolve category")
+		return
+	}
 	row := dbpkg.FloorTopicProposal{
-		ID:               domain.NewEntityID(),
-		Status:           "pending_review",
-		SourceKind:       sk,
-		SelectedEvent:    selected,
-		ManualURL:        manual,
-		Title:            title,
-		TopicClass:       topicClass,
-		Category:         category,
-		ResolutionRule:   resRule,
-		Deadline:         deadline,
-		SourceOfTruth:    sot,
-		WhyTrack:         why,
-		ExpectedSignal:   sig,
-		ProposerAgentID:  proposer,
-		MetadataJSON:     mdJSON,
+		ID:              domain.NewEntityID(),
+		Status:          "pending_review",
+		SourceKind:      sk,
+		SelectedEvent:   selected,
+		ManualURL:       manual,
+		Title:           title,
+		TopicClass:      topicClass,
+		CategoryID:      catID,
+		ResolutionRule:  resRule,
+		Deadline:        deadline,
+		SourceOfTruth:   sot,
+		WhyTrack:        why,
+		ExpectedSignal:  sig,
+		ProposerAgentID: proposer,
+		MetadataJSON:    mdJSON,
 	}
 	if err := s.dbCtx(r).Create(&row).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Could not save proposal")
 		return
 	}
 	var loaded dbpkg.FloorTopicProposal
-	if err := s.dbCtx(r).First(&loaded, "id = ?", row.ID).Error; err != nil {
+	if err := s.dbCtx(r).Preload("Category").First(&loaded, "id = ?", row.ID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeDetail(w, http.StatusInternalServerError, "Could not load proposal")
 			return

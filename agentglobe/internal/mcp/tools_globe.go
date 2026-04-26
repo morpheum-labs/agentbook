@@ -161,7 +161,7 @@ func (s *State) searchCapabilities(_ context.Context, args SearchCapabilitiesArg
 	gdb := s.DB
 	qb := gdb.Model(&db.CapabilityService{}).Order("name ASC, base_url ASC")
 	if cat := strings.TrimSpace(args.Category); cat != "" {
-		qb = qb.Where("category = ?", cat)
+		qb = qb.Where("category_id = ?", cat)
 	}
 	if st := strings.TrimSpace(args.Status); st != "" {
 		qb = qb.Where("LOWER(status) = LOWER(?)", st)
@@ -171,15 +171,15 @@ func (s *State) searchCapabilities(_ context.Context, args SearchCapabilitiesArg
 		like := "%" + search + "%"
 		if gdb.Dialector.Name() == "postgres" {
 			qb = qb.Where(
-				"name ILIKE ? OR COALESCE(description, '') ILIKE ? OR COALESCE(category, '') ILIKE ?",
+				"name ILIKE ? OR COALESCE(description, '') ILIKE ? OR COALESCE(category_id, '') ILIKE ?",
 				like, like, like,
 			)
 		} else {
-			qb = qb.Where("instr(lower(COALESCE(name, '')), ?) > 0 OR instr(lower(COALESCE(description, '')), ?) > 0 OR instr(lower(COALESCE(category, '')), ?) > 0", needle, needle, needle)
+			qb = qb.Where("instr(lower(COALESCE(name, '')), ?) > 0 OR instr(lower(COALESCE(description, '')), ?) > 0 OR instr(lower(COALESCE(category_id, '')), ?) > 0", needle, needle, needle)
 		}
 	}
 	var rows []db.CapabilityService
-	if err := qb.Find(&rows).Error; err != nil {
+	if err := qb.Preload("Category").Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	out := make([]map[string]any, 0, len(rows))
@@ -190,13 +190,13 @@ func (s *State) searchCapabilities(_ context.Context, args SearchCapabilitiesArg
 		if strings.TrimSpace(c.OpenapiSpecJSON) != "" {
 			_ = json.Unmarshal([]byte(c.OpenapiSpecJSON), &openAPI)
 		}
-		out = append(out, map[string]any{
+		row := map[string]any{
 			"id":         c.ID,
 			"name":       c.Name,
 			"version":    c.Version,
 			"base_url":   c.BaseURL,
 			"description": c.Description,
-			"category":   c.Category,
+			"category":   c.CapabilityCategoryLabel(),
 			"tags":       c.TagSlice(),
 			"domains":    c.DomainsFromJSON(),
 			"metadata":   c.MetadataMap(),
@@ -207,7 +207,13 @@ func (s *State) searchCapabilities(_ context.Context, args SearchCapabilitiesArg
 			"last_seen":  c.LastSeen,
 			"created_at": c.CreatedAt,
 			"updated_at": c.UpdatedAt,
-		})
+		}
+		if c.CategoryID != nil {
+			row["category_id"] = *c.CategoryID
+		} else {
+			row["category_id"] = nil
+		}
+		out = append(out, row)
 	}
 	return toolJSONMap(map[string]any{"count": len(out), "items": out})
 }
@@ -408,12 +414,20 @@ func (s *State) registerCapability(ctx context.Context, args RegisterCapabilityA
 		}
 	}
 	now := time.Now().UTC()
+	catID, errCat := db.EnsureCategory(gdb, args.Category)
+	if errCat != nil {
+		return nil, errCat
+	}
+	var catPtr *string
+	if catID != "" {
+		catPtr = &catID
+	}
 	rec := db.CapabilityService{
 		Name:            n,
 		Version:         ver,
 		BaseURL:         bu,
 		Description:     args.Description,
-		Category:        args.Category,
+		CategoryID:      catPtr,
 		TagsJSON:        string(tagsJSON),
 		DomainsJSON:     string(domJSON),
 		MetadataJSON:    string(mdJSON),
@@ -431,14 +445,14 @@ func (s *State) registerCapability(ctx context.Context, args RegisterCapabilityA
 		},
 		DoUpdates: clause.AssignmentColumns(
 			[]string{
-				"version", "description", "category", "tags", "domains", "metadata",
+				"version", "description", "category_id", "tags", "domains", "metadata",
 				"openapi_url", "openapi_spec", "status", "last_seen", "updated_at",
 			},
 		),
 	}).Create(&rec).Error; err != nil {
 		return nil, err
 	}
-	if err := gdb.Where("name = ? AND base_url = ?", n, bu).First(&rec).Error; err != nil {
+	if err := gdb.Preload("Category").Where("name = ? AND base_url = ?", n, bu).First(&rec).Error; err != nil {
 		return nil, err
 	}
 	return toolJSONMap(map[string]any{
@@ -454,13 +468,13 @@ func searchCapabilityRow(c *db.CapabilityService) map[string]any {
 		_ = json.Unmarshal([]byte(c.OpenapiSpecJSON), &openAPI)
 	}
 	grace := db.DefaultHeartbeatGrace
-	return map[string]any{
+	m := map[string]any{
 		"id":           c.ID,
 		"name":         c.Name,
 		"version":      c.Version,
 		"base_url":     c.BaseURL,
 		"description":  c.Description,
-		"category":     c.Category,
+		"category":     c.CapabilityCategoryLabel(),
 		"tags":         c.TagSlice(),
 		"domains":      c.DomainsFromJSON(),
 		"metadata":     c.MetadataMap(),
@@ -472,6 +486,12 @@ func searchCapabilityRow(c *db.CapabilityService) map[string]any {
 		"created_at":   c.CreatedAt,
 		"updated_at":   c.UpdatedAt,
 	}
+	if c.CategoryID != nil {
+		m["category_id"] = *c.CategoryID
+	} else {
+		m["category_id"] = nil
+	}
+	return m
 }
 
 func toolJSONMap(m map[string]any) (*mcpg.ToolResponse, error) {

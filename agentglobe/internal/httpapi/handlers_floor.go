@@ -63,7 +63,8 @@ func floorQuestionMap(q *dbpkg.FloorQuestion) map[string]any {
 	m := map[string]any{
 		"id":                   q.ID,
 		"title":                q.Title,
-		"category":             q.Category,
+		"category":             q.FloorCategoryLabel(),
+		"category_id":          q.CategoryID,
 		"resolution_condition": q.ResolutionCondition,
 		"deadline":             q.Deadline,
 		"probability":          q.Probability,
@@ -587,7 +588,7 @@ func (s *Server) handleFloorGetTopicRegional(w http.ResponseWriter, r *http.Requ
 	db := s.dbCtx(r)
 	id := chi.URLParam(r, "questionID")
 	var q dbpkg.FloorQuestion
-	if err := db.First(&q, "id = ?", id).Error; err != nil {
+	if err := db.Preload("Category").First(&q, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeDetail(w, http.StatusNotFound, "Question not found")
 			return
@@ -1083,11 +1084,12 @@ func floorTopicsBrowseBundleFromPositions(positions []dbpkg.FloorPosition) ([]ma
 			proofHint = floorTopicProofUILabel(latest)
 		}
 		watchlisted := q.ID == "Q.01"
+		catStr := q.FloorCategoryLabel()
 		browse = append(browse, map[string]any{
 			"topic_id":               q.ID,
 			"title":                  q.Title,
-			"topic_class":            floorTopicsTopicClassPretty(q.Category),
-			"category":               floorTopicsBrowseCategoryFromQuestionCat(q.Category),
+			"topic_class":            floorTopicsTopicClassPretty(catStr),
+			"category":               floorTopicsBrowseCategoryFromQuestionCat(catStr),
 			"probability_long":       pl,
 			"probability_short":      ps,
 			"probability_delta":      q.ProbabilityDelta,
@@ -1114,10 +1116,11 @@ func floorTopicsBrowseBundleFromPositions(positions []dbpkg.FloorPosition) ([]ma
 		ts["agent_name"] = firstShort.Agent.Name
 		ts["proof_label"] = floorTopicProofUILabel(firstShort)
 	}
+	fcat := firstQ.FloorCategoryLabel()
 	sel := map[string]any{
 		"topic_id":               firstQ.ID,
 		"title":                  firstQ.Title,
-		"topic_class":            floorTopicsTopicClassPretty(firstQ.Category),
+		"topic_class":            floorTopicsTopicClassPretty(fcat),
 		"probability_long":       firstQ.Probability,
 		"probability_short":      1 - firstQ.Probability,
 		"probability_delta":      firstQ.ProbabilityDelta,
@@ -1173,7 +1176,7 @@ func (s *Server) handleFloorTopicsPage(w http.ResponseWriter, r *http.Request) {
 	db := s.dbCtx(r)
 	out := floorComposedTopicsPage()
 	var positions []dbpkg.FloorPosition
-	if err := db.Preload("Agent").Preload("Question").Order("staked_at DESC, id DESC").Limit(50).Find(&positions).Error; err != nil {
+	if err := db.Preload("Agent").Preload("Question").Preload("Question.Category").Order("staked_at DESC, id DESC").Limit(50).Find(&positions).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "DB error")
 		return
 	}
@@ -1200,8 +1203,28 @@ func (s *Server) handleFloorTopicsPage(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+func (s *Server) handleFloorListCategories(w http.ResponseWriter, r *http.Request) {
+	db := s.dbCtx(r)
+	var rows []dbpkg.Category
+	if err := db.Where("is_active = ?", true).Order("sort_order ASC, id ASC").Find(&rows).Error; err != nil {
+		writeDetail(w, http.StatusInternalServerError, "DB error")
+		return
+	}
+	out := make([]map[string]any, 0, len(rows))
+	for i := range rows {
+		c := &rows[i]
+		out = append(out, map[string]any{
+			"id":           c.ID,
+			"display_name": c.DisplayName,
+			"sort_order":   c.SortOrder,
+		})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"count": len(out), "items": out})
+}
+
 func (s *Server) mountFloorAPI(r chi.Router) {
 	r.Route("/floor", func(fr chi.Router) {
+		fr.Get("/categories", s.handleFloorListCategories)
 		fr.Post("/topic-proposals", s.handleFloorCreateTopicProposal)
 		fr.Get("/digests", s.handleFloorDigestStrip)
 		fr.Get("/positions/{positionID}/challenges", s.handleFloorPositionChallenges)
@@ -1240,12 +1263,12 @@ func (s *Server) handleFloorListQuestions(w http.ResponseWriter, r *http.Request
 		sort = "staked_count"
 	}
 	limit, offset := floorParsePagination(r)
-	qry := db.Model(&dbpkg.FloorQuestion{})
+	qry := db.Model(&dbpkg.FloorQuestion{}).Preload("Category")
 	if status != "" {
 		qry = qry.Where("status = ?", status)
 	}
 	if category != "" {
-		qry = qry.Where("category = ?", category)
+		qry = qry.Where("category_id = ?", category)
 	}
 	switch sort {
 	case "deadline":
@@ -1272,7 +1295,7 @@ func (s *Server) handleFloorListQuestions(w http.ResponseWriter, r *http.Request
 func (s *Server) handleFloorFeaturedQuestion(w http.ResponseWriter, r *http.Request) {
 	db := s.dbCtx(r)
 	var q dbpkg.FloorQuestion
-	err := db.Order("staked_count DESC, agent_count DESC, id ASC").Limit(1).First(&q).Error
+	err := db.Preload("Category").Order("staked_count DESC, agent_count DESC, id ASC").Limit(1).First(&q).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeJSON(w, http.StatusOK, nil)
@@ -1288,7 +1311,7 @@ func (s *Server) handleFloorGetQuestion(w http.ResponseWriter, r *http.Request) 
 	db := s.dbCtx(r)
 	id := chi.URLParam(r, "questionID")
 	var q dbpkg.FloorQuestion
-	if err := db.First(&q, "id = ?", id).Error; err != nil {
+	if err := db.Preload("Category").First(&q, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeDetail(w, http.StatusNotFound, "Question not found")
 			return
