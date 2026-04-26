@@ -10,7 +10,7 @@ import (
 )
 
 // Service is a versioned /api/{name}/{version}/… service.
-// Obtain one with [Client.Service] or the helpers on [Client] (e.g. [Client.Intelligence]).
+// Obtain one with [Client.Service] (e.g. c.Service("news", "v1")).
 type Service struct {
 	client  *Client
 	name    string
@@ -24,7 +24,7 @@ func (s *Service) Fetch(ctx context.Context, method string, q url.Values) (json.
 		return nil, errors.New("worldmon: nil Service or Client")
 	}
 	if strings.TrimSpace(s.name) == "" {
-		return nil, errors.New("worldmon: empty service name; use Client.Service or a Client.*() helper")
+		return nil, errors.New("worldmon: empty service name; use [Client.Service]")
 	}
 	m := strings.Trim(strings.TrimSpace(method), "/")
 	if m == "" {
@@ -48,4 +48,19 @@ func (s *Service) Version() string { return s.version }
 func (s *Service) fetchURL(ctx context.Context, full string) (json.RawMessage, error) {
 	b, _, err := s.client.doGet(ctx, full)
 	return b, err
+}
+
+// APIPath is the request path the [Client] uses for GET
+// /api/{service}/{version}/{method} (version defaults to "v1" if empty).
+func APIPath(service, version, method string) string {
+	s := strings.Trim(strings.TrimSpace(service), "/")
+	m := strings.Trim(strings.TrimSpace(method), "/")
+	v := strings.TrimSpace(version)
+	if v == "" {
+		v = "v1"
+	}
+	if s == "" || m == "" {
+		return ""
+	}
+	return "/api/" + s + "/" + v + "/" + m
 }

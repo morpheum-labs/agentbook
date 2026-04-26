@@ -28,13 +28,15 @@ flowchart TB
   db[(agentglobe DB)]
   api6551[6551 ai.6551.io]
   worldmon[worldmon HTTP]
-  upstream[World Monitor upstream]
+  remote["Optional upstream /api/… only when WORLDMON API base is set on worldmon"]
   client -->|JSON-RPC POST /mcp| mcp
   mcp -->|GORM| db
   mcp -->|GET open/free_*| api6551
   mcp -->|GET /v1/wm/...| worldmon
-  worldmon --> upstream
+  worldmon -->|"non-news routes or when proxying"| remote
 ```
+
+`get_world_context` only talks to **worldmon** (it never imports the `worldmon` Go module or the `feed-digest` CLI). The separate **`cmd/feed-digest`** tool in the worldmon module is for generating JSON on the **command line**; it is not embedded in `agentglobe-mcp`.
 
 ## How MCP requests work on the wire
 
@@ -74,14 +76,25 @@ The response body is returned to the model as **text** content, pretty-printed J
 
 ### World context: `get_world_context`
 
-This tool **does not** talk to the World Monitor product directly from the MCP. It calls your **worldmon** HTTP service, which in turn uses its configured API key against the real upstream.
+The MCP does **not** import the `worldmon` Go package. It only issues **HTTP** requests to a running worldmon process:
 
-- Request shape: `GET {base}/v1/wm/{service}/{version}/{method}` with query parameters.
-- **Base URL** resolution:
-  1. `WORLDMON_BASE_URL` in the environment, if set; else
-  2. a row in `capability_services` with `category` matching **`world_monitor`**, preferring a row that is recently “healthy” (`last_seen` / status), else any registered base URL.
+- Request: `GET {WORLDMON_BASE_URL}/v1/wm/{service}/{version}/{method}` with `query` mapped to the URL query string.
 
-The worldmon process must be running and reachable. Upstream 401/502 behavior follows worldmon, not the MCP.
+**Base URL** resolution (in order):
+
+1. **`WORLDMON_BASE_URL`** on the `agentglobe-mcp` process, if set (no trailing slash), **or**
+2. A `capability_services` row with **`category` = `world_monitor`** and a `base_url`, if the MCP has a **database** and a matching row exists.
+
+If `WORLDMON_BASE_URL` is **unset** and the DB is missing or has no `world_monitor` service, `get_world_context` fails with a configuration error.
+
+**News digest (`list-feed-digest`)** is handled **inside** worldmon (local RSS/Atom merge). In `query` you can pass, for example:
+
+- `feeds` — comma-separated feed URLs, and/or
+- `forge_categories` — comma-separated keys from the [monitor-forge `rss-library.json`](https://raw.githubusercontent.com/alohays/monitor-forge/main/forge/data/rss-library.json) (e.g. `politics,tech`); and optionally `limit`.
+
+For that path, worldmon does not require a third-party “world monitor” host; you still need **`WORLDMON_BASE_URL`** in MCP to point at **your** worldmon server. Other `service`/`method` combinations that proxy to `Client.Fetch` need **`WORLDMON_API_BASE`** (or legacy env) **on the worldmon process** if the upstream API should be called.
+
+`feed-digest` (worldmon’s CLI) and CI-style JSON export are **not** part of `agentglobe-mcp`.
 
 ### Posting: `create_post`
 

@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestIntelligenceGetRiskScores(t *testing.T) {
+func TestServiceGetRiskScores(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/intelligence/v1/get-risk-scores" {
@@ -28,7 +28,7 @@ func TestIntelligenceGetRiskScores(t *testing.T) {
 	}))
 	defer srv.Close()
 	cl := New("k", WithBaseURL(srv.URL))
-	raw, err := cl.Intelligence().GetRiskScores(context.Background(), RiskScoresByRegion("MENA"))
+	raw, err := cl.Service("intelligence", "v1").Fetch(context.Background(), "get-risk-scores", RiskScoresByRegion("MENA"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestServiceFetchV1Generic(t *testing.T) {
 	}))
 	defer srv.Close()
 	cl := New("k", WithBaseURL(srv.URL))
-	_, err := cl.Maritime().GetVesselSnapshot(context.Background(), url.Values{})
+	_, err := cl.Service("maritime", "v1").Fetch(context.Background(), "get-vessel-snapshot", url.Values{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestShippingV2Path(t *testing.T) {
 	}))
 	defer srv.Close()
 	cl := New("x", WithBaseURL(srv.URL))
-	_, err := cl.ShippingV2().ListWebhooks(context.Background(), nil)
+	_, err := cl.Service("shipping", "v2").Fetch(context.Background(), "list-webhooks", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,27 +88,6 @@ func TestServiceEmptyName(t *testing.T) {
 	_, err := cl.Service("", "v1").Fetch(context.Background(), "m", nil)
 	if err == nil {
 		t.Fatal("expected error")
-	}
-}
-
-func TestCacheTierForPath(t *testing.T) {
-	t.Parallel()
-	if t1, ok := CacheTierForPath("/api/intelligence/v1/get-risk-scores/"); !ok || t1 != CacheTierSlow {
-		t.Fatalf("get-risk-scores: got %q %v", t1, ok)
-	}
-	if t2, ok := CacheTierForPath("/api/v2/shipping/webhooks"); !ok || t2 != CacheTierSlowBrowser {
-		t.Fatalf("v2 webhooks: got %q %v", t2, ok)
-	}
-}
-
-func TestServiceMethodCacheTier(t *testing.T) {
-	t.Parallel()
-	cl := New("k")
-	if t1, ok := cl.Intelligence().MethodCacheTier("get-risk-scores"); !ok || t1 != CacheTierSlow {
-		t.Fatalf("Intelligence: got %q %v", t1, ok)
-	}
-	if t2, ok := cl.ShippingV2().MethodCacheTier("list-webhooks"); !ok || t2 != CacheTierSlowBrowser {
-		t.Fatalf("ShippingV2: got %q %v", t2, ok)
 	}
 }
 

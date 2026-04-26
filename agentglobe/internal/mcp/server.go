@@ -128,7 +128,7 @@ func (s *State) registerTools(srv *mcpg.Server) error {
 	if err := srv.RegisterTool("search_capabilities", "Search the agentglobe capability registry (worldmon, newapi, other registered services).", s.searchCapabilities); err != nil {
 		return err
 	}
-	if err := srv.RegisterTool("get_world_context", "Call a worldmon proxy route for richer world context (news, market, unrest, etc.).", s.getWorldContext); err != nil {
+	if err := srv.RegisterTool("get_world_context", "Call the worldmon HTTP service (list-feed-digest with feeds and/or forge_categories for local RSS, or other /api routes when worldmon has an upstream base).", s.getWorldContext); err != nil {
 		return err
 	}
 	if err := srv.RegisterTool("save_to_memory", "Store a text blob in the agent-scoped mcp_memories table (agentglobe).", s.saveToMemory); err != nil {

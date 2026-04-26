@@ -36,12 +36,14 @@ type SearchCapabilitiesArgs struct {
 	Status   string `json:"status" jsonschema:"description=Filter by status (active, degraded, inactive)"`
 }
 
-// GetWorldContextArgs calls worldmon HTTP GET /v1/wm/{service}/{version}/{method}.
+// GetWorldContextArgs calls the worldmon HTTP proxy: GET {WORLDMON_BASE_URL}/v1/wm/{service}/{version}/{method}?...
 type GetWorldContextArgs struct {
-	Service string            `json:"service" jsonschema:"description=Service name, e.g. news, market, default news"`
-	Version string            `json:"version" jsonschema:"description=Version path segment, default v1"`
-	Method  string            `json:"method" jsonschema:"required,description=Method name (kebab-case), e.g. list-feed-digest"`
-	Query   map[string]string `json:"query" jsonschema:"description=Query string key-value pairs forwarded to the proxy"`
+	Service string            `json:"service" jsonschema:"description=First path segment after /v1/wm, default news"`
+	Version string            `json:"version" jsonschema:"description=API version in path, default v1"`
+	Method  string            `json:"method" jsonschema:"required,description=Final path segment (kebab-case), e.g. list-feed-digest for RSS digest"`
+	// For list-feed-digest: set feeds (comma RSS URLs) and/or forge_categories (comma monitor-forge category keys like politics,tech);
+	// optional library_fresh or forge_fresh (true) to re-fetch the library JSON before resolving categories, optional limit. Other services forward to the worldmon client upstream when configured.
+	Query   map[string]string `json:"query" jsonschema:"description=Query params forwarded to worldmon, e.g. feeds, forge_categories, library_fresh, limit, variant"`
 }
 
 // SaveToMemoryArgs upserts a row in mcp_memories.

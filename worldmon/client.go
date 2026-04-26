@@ -1,8 +1,10 @@
-// Package worldmon is a Go HTTP client for versioned JSON APIs of the form
-// GET /api/{service}/{version}/{method} with query parameters, optional
-// [HeaderAPIKey] and [StringFromEnv] configuration.
-// Error bodies are parsed with [ParseErrorBody]; [CacheTierForPath] and related
-// helpers follow common “gateway cache tier” conventions.
+// Package worldmon is a small HTTP client for GET /api/{service}/{version}/{method},
+// local RSS/Atom news aggregation, and feed lists from
+// [DefaultRSSLibraryURL] (Monitor Forge [forge/data/rss-library.json]).
+// Optional [HeaderAPIKey] and [StringFromEnv] configure the client; use
+// [ParseErrorBody] for upstream error JSON.
+//
+// [forge/data/rss-library.json]: https://raw.githubusercontent.com/alohays/monitor-forge/main/forge/data/rss-library.json
 package worldmon
 
 import (

@@ -1,40 +1,8 @@
 package httpserver
 
-// ServiceNames lists /api/{service}/... first path segment names (kebab-case) for
-// GET /capabilities and service registry metadata.
+// ServiceNames lists known /api/{service}/… first path segments for GET
+// /capabilities. The HTTP proxy still accepts any service name; this is only
+// for discovery metadata when registering with agentglobe.
 var ServiceNames = []string{
-	"aviation",
-	"climate",
-	"conflict",
-	"consumer-prices",
-	"cyber",
-	"displacement",
-	"economic",
-	"forecast",
-	"giving",
-	"health",
-	"imagery",
-	"infrastructure",
-	"intelligence",
-	"leads",
-	"maritime",
-	"market",
-	"military",
-	"natural",
 	"news",
-	"positive-events",
-	"prediction",
-	"radiation",
-	"research",
-	"resilience",
-	"sanctions",
-	"scenario",
-	"seismology",
-	"shipping",
-	"supply-chain",
-	"thermal",
-	"trade",
-	"unrest",
-	"webcam",
-	"wildfire",
 }

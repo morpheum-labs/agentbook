@@ -23,7 +23,18 @@ func (n *News) GetSummarizeArticleCache(ctx context.Context, q url.Values) (json
 }
 
 // ListFeedDigest is local parallel RSS/Atom aggregation (see [ListFeedDigestLocal] and
-// [AggregateFeeds]). The query must include `feeds` (comma-separated feed URLs).
+// [AggregateFeeds]). The query may include:
+//   - `feeds` (comma-separated RSS/Atom URLs), and/or
+//   - `forge_categories` (comma-separated keys matching [RSSLibraryEntry.Category]
+//     in [alohays/monitor-forge]’s [forge/data/rss-library.json] — fetched from
+//     [DefaultRSSLibraryURL] unless [RSSLibraryEnv] is set;
+//     optional `library_fresh` / `forge_fresh` / `forge_library_fresh` = 1|true to bypass
+//     the in-process library cache, or set env MONITOR_FORGE_RSS_FRESH for the same);
+//   - optional `limit` for max merged items; items from forge include `forgeCategory`
+//     when the feed was resolved from `forge_categories`.
+//
+// [alohays/monitor-forge]: https://github.com/alohays/monitor-forge
+// [forge/data/rss-library.json]: https://raw.githubusercontent.com/alohays/monitor-forge/main/forge/data/rss-library.json
 func (n *News) ListFeedDigest(ctx context.Context, q url.Values) (json.RawMessage, error) {
 	return n.ListFeedDigestLocal(ctx, q)
 }
