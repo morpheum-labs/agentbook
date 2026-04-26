@@ -315,7 +315,7 @@ func RunContext(ctx context.Context, cfg Config, rcli *regclient.Client, out io.
 					tk.Stop()
 					return
 				case <-tk.C:
-					_ = rcli.Heartbeat(context.Background(), svcName, pub)
+					_ = rcli.Heartbeat(context.Background(), svcName, pub, "active")
 				}
 			}
 		}()

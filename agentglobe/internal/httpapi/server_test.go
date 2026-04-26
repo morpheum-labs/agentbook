@@ -94,6 +94,15 @@ func TestCapabilityServicesRegisterListHeartbeat(t *testing.T) {
 		bb, _ := io.ReadAll(res2.Body)
 		t.Fatalf("register: %d %s", res2.StatusCode, string(bb))
 	}
+	var regOut struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(res2.Body).Decode(&regOut); err != nil {
+		t.Fatal(err)
+	}
+	if regOut.ID == "" {
+		t.Fatal("register response missing id")
+	}
 	hb, _ := json.Marshal(map[string]string{
 		"name": "testsvc", "base_url": "http://127.0.0.1:9",
 	})
@@ -123,6 +132,73 @@ func TestCapabilityServicesRegisterListHeartbeat(t *testing.T) {
 	_ = json.NewDecoder(res4.Body).Decode(&list1)
 	if list1.Count != 1 {
 		t.Fatalf("count want 1, got %d", list1.Count)
+	}
+	gr, err := http.Get(ts.URL + "/api/v1/capability-services/" + regOut.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer gr.Body.Close()
+	if gr.StatusCode != http.StatusOK {
+		t.Fatalf("get by id: %d", gr.StatusCode)
+	}
+	flt, err := http.Get(ts.URL + "/api/v1/capability-services?q=test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer flt.Body.Close()
+	if flt.StatusCode != http.StatusOK {
+		t.Fatalf("list with q: %d", flt.StatusCode)
+	}
+}
+
+func TestCapabilityServiceRegisterIDLookupAndListFilter(t *testing.T) {
+	s := testServer(t)
+	s.Cfg.ServiceRegistryToken = "regtest"
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	base := ts.URL + "/api/v1/capability-services"
+	body := `{"name":"f","version":"0.0.1","base_url":"http://127.0.0.1:7","category":"news","status":"degraded"}`
+	req, _ := http.NewRequest(http.MethodPost, base+"/register", strings.NewReader(body))
+	req.Header.Set("Authorization", "Bearer regtest")
+	req.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("register: %d", res.StatusCode)
+	}
+	res1, _ := http.Get(base + "?category=news&status=degraded")
+	if res1.StatusCode != http.StatusOK {
+		t.Fatalf("list filter: %d", res1.StatusCode)
+	}
+	defer res1.Body.Close()
+	var v struct {
+		Count int `json:"count"`
+	}
+	_ = json.NewDecoder(res1.Body).Decode(&v)
+	if v.Count != 1 {
+		t.Fatalf("filter count want 1 got %d", v.Count)
+	}
+}
+
+func TestCapabilityServiceRegisterBadBaseURL(t *testing.T) {
+	s := testServer(t)
+	s.Cfg.ServiceRegistryToken = "regtest"
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	body := `{"name":"x","version":"1","base_url":"ftp://a"}`
+	req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/v1/capability-services/register", strings.NewReader(body))
+	req.Header.Set("Authorization", "Bearer regtest")
+	req.Header.Set("Content-Type", "application/json")
+	res, _ := http.DefaultClient.Do(req)
+	if res == nil {
+		t.Fatal("nil res")
+	}
+	res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("want 400, got %d", res.StatusCode)
 	}
 }
 

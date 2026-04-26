@@ -89,6 +89,11 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 	); err != nil {
 		return nil, err
 	}
+	if postgresMode {
+		if err := createPostgresCapabilityServiceIndexes(gdb); err != nil {
+			return nil, err
+		}
+	}
 	return gdb, nil
 }
 

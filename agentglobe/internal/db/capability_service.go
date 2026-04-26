@@ -5,23 +5,35 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
+// Capability run states reported via registration or heartbeat.
+const (
+	CapabilityServiceStatusActive   = "active"
+	CapabilityServiceStatusDegraded = "degraded"
+	CapabilityServiceStatusInactive = "inactive"
+)
+
+// DefaultHeartbeatGrace is the window after last_seen in which a service is considered "healthy" for [CapabilityService.IsHealthy].
+const DefaultHeartbeatGrace = 5 * time.Minute
+
 // CapabilityService stores a registered API-first service (e.g. newapi, worldmon) for agent discovery.
 type CapabilityService struct {
-	ID              string  `gorm:"primaryKey;type:text"`
-	Name            string  `gorm:"not null;type:text;uniqueIndex:ux_capability_service_name_base_url"`
-	Version         string  `gorm:"type:text;not null"`
-	BaseURL         string  `gorm:"column:base_url;type:text;not null;uniqueIndex:ux_capability_service_name_base_url"`
-	Description     string  `gorm:"type:text"`
-	Category        string  `gorm:"type:text"`
-	TagsJSON        string  `gorm:"column:tags;type:text;not null;default:'[]'"`
-	DomainsJSON     string  `gorm:"column:domains;type:text;not null;default:'[]'"`
-	MetadataJSON    string  `gorm:"column:metadata;type:text;not null;default:'{}'"`
-	OpenapiURL      string  `gorm:"column:openapi_url;type:text"`
-	OpenapiSpecJSON string  `gorm:"column:openapi_spec;type:text;not null;default:''"`
-	LastSeen        *time.Time `gorm:"column:last_seen;index"`
+	ID              string `gorm:"primaryKey;type:text"`
+	Name            string `gorm:"not null;type:text;uniqueIndex:ux_capability_service_name_base_url"`
+	Version         string `gorm:"type:text;not null"`
+	BaseURL         string `gorm:"column:base_url;type:text;not null;uniqueIndex:ux_capability_service_name_base_url"`
+	Description     string `gorm:"type:text"`
+	Category        string `gorm:"type:text;index:idx_cap_svc_category"`
+	TagsJSON        string `gorm:"column:tags;type:json;not null;default:'[]'"`
+	DomainsJSON     string `gorm:"column:domains;type:json;not null;default:'[]'"`
+	MetadataJSON    string `gorm:"column:metadata;type:json;not null;default:'{}'"`
+	OpenapiURL      string `gorm:"column:openapi_url;type:text"`
+	OpenapiSpecJSON string `gorm:"column:openapi_spec;type:text;not null;default:''"`
+	Status          string `gorm:"type:text;not null;default:'active';index:idx_cap_svc_status"`
+	LastSeen        *time.Time `gorm:"column:last_seen;index:idx_cap_svc_last_seen"`
 	CreatedAt       time.Time  `gorm:"column:created_at"`
 	UpdatedAt       time.Time  `gorm:"column:updated_at"`
 }
@@ -30,6 +42,14 @@ func (CapabilityService) TableName() string { return "capability_services" }
 
 func (c *CapabilityService) BeforeCreate(tx *gorm.DB) error {
 	_ = tx
+	if c.ID == "" {
+		c.ID = uuid.NewString()
+	}
+	if strings.TrimSpace(c.Status) == "" {
+		c.Status = CapabilityServiceStatusActive
+	} else {
+		c.Status = strings.ToLower(strings.TrimSpace(c.Status))
+	}
 	if strings.TrimSpace(c.MetadataJSON) == "" {
 		c.MetadataJSON = "{}"
 	}
@@ -76,4 +96,28 @@ func (c *CapabilityService) MetadataMap() map[string]any {
 		return map[string]any{}
 	}
 	return m
+}
+
+// IsHealthy is true when status is not inactive, last_seen is set, and last_seen is within grace of now.
+func (c *CapabilityService) IsHealthy(grace time.Duration) bool {
+	if c == nil || c.LastSeen == nil {
+		return false
+	}
+	if strings.ToLower(c.Status) == CapabilityServiceStatusInactive {
+		return false
+	}
+	if grace <= 0 {
+		grace = DefaultHeartbeatGrace
+	}
+	return time.Since(*c.LastSeen) < grace
+}
+
+// KnownCapabilityServiceStatus returns true for allowed status values.
+func KnownCapabilityServiceStatus(s string) bool {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "", CapabilityServiceStatusActive, CapabilityServiceStatusDegraded, CapabilityServiceStatusInactive:
+		return true
+	default:
+		return false
+	}
 }

@@ -7,6 +7,7 @@ import (
 // mountAPIV1 registers HTTP API routes under /api/v1 (caller wraps with timeout middleware; WebSocket is separate).
 func (s *Server) mountAPIV1(r chi.Router) {
 	r.Get("/capability-services", s.handleCapabilityServicesList)
+	r.Get("/capability-services/{id}", s.handleCapabilityServiceGetByID)
 	r.Post("/capability-services/register", s.handleCapabilityServicesRegister)
 	r.Post("/capability-services/heartbeat", s.handleCapabilityServicesHeartbeat)
 

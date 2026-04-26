@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/go-chi/chi/v5"
 	"github.com/morpheumlabs/agentbook/agentglobe/internal/db"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // capabilityServiceRegisterRequest is the JSON body for POST .../register.
@@ -25,12 +26,43 @@ type capabilityServiceRegisterRequest struct {
 	Metadata     any      `json:"metadata"`
 	OpenapiURL   string   `json:"openapi_url"`
 	OpenapiSpec  any      `json:"openapi_spec"`
+	Status       string   `json:"status"`
 }
 
-// capabilityServiceHeartbeatRequest only needs identity for touch.
+// capabilityServiceHeartbeatRequest identifies a service and optional status.
 type capabilityServiceHeartbeatRequest struct {
 	Name    string `json:"name"`
 	BaseURL string `json:"base_url"`
+	Status  string `json:"status"`
+}
+
+func capabilityServiceToMap(c *db.CapabilityService) map[string]any {
+	if c == nil {
+		return nil
+	}
+	var openAPI any
+	if strings.TrimSpace(c.OpenapiSpecJSON) != "" {
+		_ = json.Unmarshal([]byte(c.OpenapiSpecJSON), &openAPI)
+	}
+	grace := db.DefaultHeartbeatGrace
+	return map[string]any{
+		"id":            c.ID,
+		"name":          c.Name,
+		"version":       c.Version,
+		"base_url":      c.BaseURL,
+		"description":   c.Description,
+		"category":      c.Category,
+		"tags":          c.TagSlice(),
+		"domains":       c.DomainsFromJSON(),
+		"metadata":      c.MetadataMap(),
+		"openapi_url":   c.OpenapiURL,
+		"openapi_spec":  openAPI,
+		"status":        c.Status,
+		"is_healthy":    c.IsHealthy(grace),
+		"last_seen":     c.LastSeen,
+		"created_at":    c.CreatedAt,
+		"updated_at":    c.UpdatedAt,
+	}
 }
 
 func (s *Server) handleCapabilityServicesList(w http.ResponseWriter, r *http.Request) {
@@ -38,38 +70,61 @@ func (s *Server) handleCapabilityServicesList(w http.ResponseWriter, r *http.Req
 		writeDetail(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
+	qb := s.dbCtx(r).Model(&db.CapabilityService{}).Order("name ASC, base_url ASC")
+	if cat := strings.TrimSpace(r.URL.Query().Get("category")); cat != "" {
+		qb = qb.Where("category = ?", cat)
+	}
+	if st := strings.TrimSpace(r.URL.Query().Get("status")); st != "" {
+		qb = qb.Where("LOWER(status) = LOWER(?)", st)
+	}
+	if search := strings.TrimSpace(r.URL.Query().Get("q")); search != "" {
+		needle := strings.ToLower(search)
+		like := "%" + search + "%"
+		if s.dbCtx(r).Dialector.Name() == "postgres" {
+			// case-insensitive substring
+			qb = qb.Where(
+				"name ILIKE ? OR COALESCE(description, '') ILIKE ? OR COALESCE(category, '') ILIKE ?",
+				like, like, like,
+			)
+		} else {
+			qb = qb.Where("instr(lower(COALESCE(name, '')), ?) > 0 OR instr(lower(COALESCE(description, '')), ?) > 0 OR instr(lower(COALESCE(category, '')), ?) > 0", needle, needle, needle)
+		}
+	}
 	var rows []db.CapabilityService
-	if err := s.dbCtx(r).Order("name ASC, base_url ASC").Find(&rows).Error; err != nil {
+	if err := qb.Find(&rows).Error; err != nil {
 		writeDetail(w, http.StatusInternalServerError, "Database error")
 		return
 	}
 	out := make([]map[string]any, 0, len(rows))
 	for i := range rows {
-		var openAPI any
-		if strings.TrimSpace(rows[i].OpenapiSpecJSON) != "" {
-			_ = json.Unmarshal([]byte(rows[i].OpenapiSpecJSON), &openAPI)
-		}
-		out = append(out, map[string]any{
-			"id":              rows[i].ID,
-			"name":            rows[i].Name,
-			"version":         rows[i].Version,
-			"base_url":        rows[i].BaseURL,
-			"description":     rows[i].Description,
-			"category":        rows[i].Category,
-			"tags":            rows[i].TagSlice(),
-			"domains":         rows[i].DomainsFromJSON(),
-			"metadata":        rows[i].MetadataMap(),
-			"openapi_url":     rows[i].OpenapiURL,
-			"openapi_spec":    openAPI,
-			"last_seen":       rows[i].LastSeen,
-			"created_at":      rows[i].CreatedAt,
-			"updated_at":      rows[i].UpdatedAt,
-		})
+		out = append(out, capabilityServiceToMap(&rows[i]))
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"count": len(out),
 		"items": out,
 	})
+}
+
+func (s *Server) handleCapabilityServiceGetByID(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeDetail(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+	id := strings.TrimSpace(chi.URLParam(r, "id"))
+	if id == "" {
+		writeDetail(w, http.StatusBadRequest, "id is required")
+		return
+	}
+	var row db.CapabilityService
+	if err := s.dbCtx(r).First(&row, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			writeDetail(w, http.StatusNotFound, "not found")
+			return
+		}
+		writeDetail(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+	writeJSON(w, http.StatusOK, capabilityServiceToMap(&row))
 }
 
 func (s *Server) handleCapabilityServicesRegister(w http.ResponseWriter, r *http.Request) {
@@ -92,8 +147,19 @@ func (s *Server) handleCapabilityServicesRegister(w http.ResponseWriter, r *http
 		writeDetail(w, http.StatusBadRequest, "name, version, and base_url are required")
 		return
 	}
-	if _, err := url.Parse(bu); err != nil {
-		writeDetail(w, http.StatusBadRequest, "base_url is not a valid URL")
+	u, err := url.Parse(bu)
+	if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") {
+		writeDetail(w, http.StatusBadRequest, "base_url must be a valid http or https URL with a host")
+		return
+	}
+	st := strings.TrimSpace(body.Status)
+	if st == "" {
+		st = db.CapabilityServiceStatusActive
+	} else {
+		st = strings.ToLower(st)
+	}
+	if !db.KnownCapabilityServiceStatus(st) {
+		writeDetail(w, http.StatusBadRequest, "status must be active, degraded, or inactive")
 		return
 	}
 	tagsJSON, _ := json.Marshal(body.Tags)
@@ -110,61 +176,67 @@ func (s *Server) handleCapabilityServicesRegister(w http.ResponseWriter, r *http
 	}
 	var specBytes []byte
 	if body.OpenapiSpec != nil {
-		var err error
-		specBytes, err = json.Marshal(body.OpenapiSpec)
-		if err != nil {
+		var err2 error
+		specBytes, err2 = json.Marshal(body.OpenapiSpec)
+		if err2 != nil {
 			writeDetail(w, http.StatusBadRequest, "openapi_spec is not valid JSON")
 			return
 		}
 	}
 	now := time.Now().UTC()
-	var rec db.CapabilityService
-	err := s.dbCtx(r).Where("name = ? AND base_url = ?", n, bu).First(&rec).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		rec = db.CapabilityService{
-			ID:              uuid.NewString(),
-			Name:            n,
-			Version:         ver,
-			BaseURL:         bu,
-			Description:     body.Description,
-			Category:        body.Category,
-			TagsJSON:        string(tagsJSON),
-			DomainsJSON:     string(domJSON),
-			MetadataJSON:    string(mdJSON),
-			OpenapiURL:      strings.TrimSpace(body.OpenapiURL),
-			OpenapiSpecJSON: string(specBytes),
-			LastSeen:        &now,
-			CreatedAt:       now,
-			UpdatedAt:       now,
-		}
-		if err := s.dbCtx(r).Create(&rec).Error; err != nil {
-			writeDetail(w, http.StatusInternalServerError, "Create failed")
-			return
-		}
-	} else if err != nil {
-		writeDetail(w, http.StatusInternalServerError, "Database error")
+	rec := db.CapabilityService{
+		Name:            n,
+		Version:         ver,
+		BaseURL:         bu,
+		Description:     body.Description,
+		Category:        body.Category,
+		TagsJSON:        string(tagsJSON),
+		DomainsJSON:     string(domJSON),
+		MetadataJSON:    string(mdJSON),
+		OpenapiURL:      strings.TrimSpace(body.OpenapiURL),
+		OpenapiSpecJSON: string(specBytes),
+		Status:          st,
+		LastSeen:        &now,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	// id filled in BeforeCreate if still empty; upsert on (name, base_url).
+	if err := s.dbCtx(r).Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "name"},
+			{Name: "base_url"},
+		},
+		DoUpdates: clause.AssignmentColumns(
+			[]string{
+				"version",
+				"description",
+				"category",
+				"tags",
+				"domains",
+				"metadata",
+				"openapi_url",
+				"openapi_spec",
+				"status",
+				"last_seen",
+				"updated_at",
+			},
+		),
+	}).Create(&rec).Error; err != nil {
+		writeDetail(w, http.StatusInternalServerError, "register failed")
 		return
-	} else {
-		rec.Version = ver
-		rec.Description = body.Description
-		rec.Category = body.Category
-		rec.TagsJSON = string(tagsJSON)
-		rec.DomainsJSON = string(domJSON)
-		rec.MetadataJSON = string(mdJSON)
-		rec.OpenapiURL = strings.TrimSpace(body.OpenapiURL)
-		rec.OpenapiSpecJSON = string(specBytes)
-		rec.LastSeen = &now
-		rec.UpdatedAt = now
-		if err := s.dbCtx(r).Save(&rec).Error; err != nil {
-			writeDetail(w, http.StatusInternalServerError, "Update failed")
-			return
-		}
+	}
+	// Re-load to get the stable id (insert path) and full row.
+	if err := s.dbCtx(r).Where("name = ? AND base_url = ?", n, bu).First(&rec).Error; err != nil {
+		writeDetail(w, http.StatusInternalServerError, "load after register failed")
+		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":     true,
-		"id":     rec.ID,
-		"name":   rec.Name,
+		"ok":       true,
+		"id":       rec.ID,
+		"name":     rec.Name,
 		"base_url": rec.BaseURL,
+		"status":   rec.Status,
+		"data":     capabilityServiceToMap(&rec),
 	})
 }
 
@@ -187,11 +259,23 @@ func (s *Server) handleCapabilityServicesHeartbeat(w http.ResponseWriter, r *htt
 		writeDetail(w, http.StatusBadRequest, "name and base_url are required")
 		return
 	}
+	st := strings.TrimSpace(body.Status)
+	if st != "" {
+		st = strings.ToLower(st)
+		if !db.KnownCapabilityServiceStatus(st) {
+			writeDetail(w, http.StatusBadRequest, "status must be active, degraded, or inactive")
+			return
+		}
+	}
 	now := time.Now().UTC()
-	res := s.dbCtx(r).Model(&db.CapabilityService{}).Where("name = ? AND base_url = ?", n, bu).Updates(map[string]any{
+	updates := map[string]any{
 		"last_seen":  &now,
 		"updated_at": now,
-	})
+	}
+	if st != "" {
+		updates["status"] = st
+	}
+	res := s.dbCtx(r).Model(&db.CapabilityService{}).Where("name = ? AND base_url = ?", n, bu).Updates(updates)
 	if res.Error != nil {
 		writeDetail(w, http.StatusInternalServerError, "Database error")
 		return
@@ -200,5 +284,9 @@ func (s *Server) handleCapabilityServicesHeartbeat(w http.ResponseWriter, r *htt
 		writeDetail(w, http.StatusNotFound, "No matching capability service; register first")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "last_seen": now})
+	out := map[string]any{"ok": true, "last_seen": now}
+	if st != "" {
+		out["status"] = st
+	}
+	writeJSON(w, http.StatusOK, out)
 }

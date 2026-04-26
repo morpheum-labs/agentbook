@@ -1109,6 +1109,33 @@
           "Capability services"
         ],
         "summary": "List registered external API services",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Filter by substring on name, description, or category (Postgres: ILIKE; SQLite: case-insensitive substring).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -1131,6 +1158,43 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/capability-services/{id}": {
+      "get": {
+        "tags": [
+          "Capability services"
+        ],
+        "summary": "Get a registered service by id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
           }
         }
       }
@@ -1194,6 +1258,10 @@
                   },
                   "openapi_spec": {
                     "description": "Optional inline OpenAPI or null"
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Optional. active (default), degraded, or inactive"
                   }
                 }
               }
@@ -1202,7 +1270,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK. Body includes id, name, base_url, status, and a full `data` object (same fields as list items)."
           },
           "400": {
             "description": "Bad request",
@@ -1253,6 +1321,10 @@
                   },
                   "base_url": {
                     "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Optional. If set, updates to active, degraded, or inactive"
                   }
                 }
               }
@@ -1261,10 +1333,13 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK. May include `status` when it was set in the request"
           },
           "404": {
             "description": "Not registered"
+          },
+          "400": {
+            "description": "Invalid status or JSON"
           },
           "501": {
             "description": "Service registry not configured"

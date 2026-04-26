@@ -49,6 +49,7 @@ type RegisterRequest struct {
 	Metadata     any      `json:"metadata"`
 	OpenapiURL   string   `json:"openapi_url"`
 	OpenapiSpec  any      `json:"openapi_spec"`
+	Status       string   `json:"status,omitempty"`
 }
 
 // Register calls agentglobe register.
@@ -68,18 +69,22 @@ func (c *Client) Register(ctx context.Context, r RegisterRequest) error {
 	return c.post(ctx, c.BaseURL+"/api/v1/capability-services/register", r)
 }
 
-// Heartbeat updates last_seen.
-func (c *Client) Heartbeat(ctx context.Context, name, publicBase string) error {
+// Heartbeat updates last_seen. Optional status: "active", "degraded", "inactive" (empty omits the field).
+func (c *Client) Heartbeat(ctx context.Context, name, publicBase, status string) error {
 	if !c.Capable() {
 		return nil
 	}
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	return c.post(ctx, c.BaseURL+"/api/v1/capability-services/heartbeat", map[string]string{
+	body := map[string]any{
 		"name":     name,
 		"base_url": publicBase,
-	})
+	}
+	if strings.TrimSpace(status) != "" {
+		body["status"] = strings.ToLower(strings.TrimSpace(status))
+	}
+	return c.post(ctx, c.BaseURL+"/api/v1/capability-services/heartbeat", body)
 }
 
 func (c *Client) post(ctx context.Context, rawURL string, body any) error {

@@ -260,7 +260,7 @@ func RunContext(ctx context.Context, cfg Config, c *worldmon.Client, rcli *regcl
 					tk.Stop()
 					return
 				case <-tk.C:
-					_ = rcli.Heartbeat(context.Background(), svcName, pub)
+					_ = rcli.Heartbeat(context.Background(), svcName, pub, "active")
 				}
 			}
 		}()
