@@ -26,7 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 	rl := ratelimit.New(cfg)
-	st := mcp.NewState(gdb, cfg, rl)
+	st := mcp.NewState(gdb, cfg, rl, cfgPath)
 	if st.McpAgent == nil {
 		if strings.TrimSpace(os.Getenv("AGENTGLOBE_MCP_STRICT")) == "1" {
 			log.Fatal("AGENTGLOBE_MCP_STRICT: set AGENTGLOBE_MCP_API_KEY to a valid agent API key")

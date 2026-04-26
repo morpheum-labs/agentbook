@@ -30,6 +30,9 @@ type State struct {
 	DailyNewsAPIBase string
 	// WorldmonBase optional override; if empty, a healthy world_monitor from capability_services is used.
 	WorldmonBase string
+	// RssLibPath is a resolved local path or an https URL for monitor-forge rss-library; forwarded to
+	// get_world_context worldmon as rss_library or rss_library_url. Empty if unset in config.
+	RssLibPath string
 	UserAgent  string
 	HTTPClient *http.Client
 
@@ -38,7 +41,8 @@ type State struct {
 }
 
 // NewState builds State from process environment and an open database.
-func NewState(gdb *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter) *State {
+// configFile is the path passed to [config.Load] (used to resolve relative rss_lib paths; may be empty).
+func NewState(gdb *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter, configFile string) *State {
 	if rl == nil {
 		rl = ratelimit.New(cfg)
 	}
@@ -46,6 +50,7 @@ func NewState(gdb *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter) *State {
 		DB:         gdb,
 		Cfg:        cfg,
 		RL:         rl,
+		RssLibPath: strings.TrimSpace(cfg.ResolvedRssLibPath(configFile)),
 		AllMention: make(map[string]time.Time),
 		HTTPClient: defaultHTTPClient(),
 	}

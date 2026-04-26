@@ -43,7 +43,8 @@ type GetWorldContextArgs struct {
 	Method  string            `json:"method" jsonschema:"required,description=Final path segment (kebab-case), e.g. list-feed-digest for RSS digest"`
 	// For list-feed-digest: set feeds (comma RSS URLs) and/or forge_categories (comma monitor-forge category keys like politics,tech);
 	// optional library_fresh or forge_fresh (true) to re-fetch the library JSON before resolving categories, optional limit. Other services forward to the worldmon client upstream when configured.
-	Query   map[string]string `json:"query" jsonschema:"description=Query params forwarded to worldmon, e.g. feeds, forge_categories, library_fresh, limit, variant"`
+	// When agentglobe config has rss_lib, the MCP adds rss_library (file path) or rss_library_url (https) unless the tool args override those keys.
+	Query   map[string]string `json:"query" jsonschema:"description=Query params forwarded to worldmon, e.g. feeds, forge_categories, rss_library, rss_library_url, library_fresh, limit, variant"`
 }
 
 // SaveToMemoryArgs upserts a row in mcp_memories.
@@ -240,6 +241,7 @@ func (s *State) getWorldContext(ctx context.Context, args GetWorldContextArgs) (
 		return nil, err
 	}
 	q := u.Query()
+	applyMCPRssLibQuery(q, s.RssLibPath)
 	if args.Query != nil {
 		for k, v := range args.Query {
 			q.Set(k, v)
@@ -268,6 +270,21 @@ func (s *State) getWorldContext(ctx context.Context, args GetWorldContextArgs) (
 		return nil, fmt.Errorf("worldmon http %d: %s", res.StatusCode, strings.TrimSpace(string(b)))
 	}
 	return toolTextJSON(string(b))
+}
+
+// applyMCPRssLibQuery sets worldmon list-feed-digest defaults from config rss_lib. Tool query params are merged
+// after this and can override those keys.
+func applyMCPRssLibQuery(q url.Values, rss string) {
+	rss = strings.TrimSpace(rss)
+	if rss == "" {
+		return
+	}
+	low := strings.ToLower(rss)
+	if strings.HasPrefix(low, "http://") || strings.HasPrefix(low, "https://") {
+		q.Set("rss_library_url", rss)
+		return
+	}
+	q.Set("rss_library", rss)
 }
 
 func (s *State) resolveWorldmonBase() (string, error) {

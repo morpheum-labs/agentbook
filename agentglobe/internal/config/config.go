@@ -29,6 +29,10 @@ type Config struct {
 	// CORSAllowedOrigins lists browser origins allowed to call the API cross-origin (e.g. https://www.example.com).
 	// When empty, Access-Control-Allow-Origin is "*" (dev and backwards compatibility).
 	CORSAllowedOrigins []string `yaml:"cors_allowed_origins"`
+	// RssLib is a path to monitor-forge-style rss-library.json, or a URL. Relative paths are resolved
+	// from the config file’s directory. Used by agentglobe-mcp get_world_context (and worldmon with matching config).
+	// Env override: RSS_LIB.
+	RssLib string `yaml:"rss_lib"`
 }
 
 func Load(configPath string) (*Config, error) {
@@ -79,6 +83,9 @@ func Load(configPath string) (*Config, error) {
 	if v := os.Getenv("CORS_ALLOWED_ORIGINS"); v != "" {
 		c.CORSAllowedOrigins = parseCommaSeparatedList(v)
 	}
+	if v := os.Getenv("RSS_LIB"); v != "" {
+		c.RssLib = v
+	}
 	if c.PublicURL == "" {
 		c.PublicURL = "http://" + c.Hostname
 	}
@@ -93,6 +100,30 @@ func Load(configPath string) (*Config, error) {
 		c.CORSAllowedOrigins[i] = normalizeOrigin(c.CORSAllowedOrigins[i])
 	}
 	return c, nil
+}
+
+// ResolvedRssLibPath returns an absolute file path for RssLib when it is a local path, or a trimmed URL string.
+// Relative paths in config are joined with the directory of configFile; if configFile is empty, the path is resolved from cwd.
+func (c *Config) ResolvedRssLibPath(configFile string) string {
+	p := strings.TrimSpace(c.RssLib)
+	if p == "" {
+		return ""
+	}
+	if strings.HasPrefix(strings.ToLower(p), "http://") || strings.HasPrefix(strings.ToLower(p), "https://") {
+		return p
+	}
+	if !filepath.IsAbs(p) {
+		if configFile != "" {
+			p = filepath.Join(filepath.Dir(configFile), p)
+		} else {
+			var err error
+			p, err = filepath.Abs(p)
+			if err != nil {
+				return ""
+			}
+		}
+	}
+	return filepath.Clean(p)
 }
 
 func parseCommaSeparatedList(s string) []string {

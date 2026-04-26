@@ -158,6 +158,10 @@ func getEnclosure(item *gofeed.Item) string {
 // Optional: `library_fresh`, `forge_fresh`, or `forge_library_fresh` = 1|true|yes|on
 // fetches a fresh [RSSLibraryFile] (no in-process cache) before resolving those categories
 // to feed URLs, so the library matches the latest published monitor-forge data.
+//
+// Optional: `rss_library` — absolute path to a local rss-library.json on the worldmon host;
+// `rss_library_url` — HTTPS/HTTP URL to a library (per-request fetch). If both are set,
+// `rss_library` wins. (agentglobe-mcp can supply them from the rss_lib config field.)
 // Both `feeds` and `forge_categories` may be set; URLs are merged and de-duplicated
 // (first occurrence wins: explicit `feeds` URLs are listed before forge resolution).
 func (n *News) ListFeedDigestLocal(ctx context.Context, q url.Values) (json.RawMessage, error) {
@@ -178,7 +182,7 @@ func (n *News) ListFeedDigestLocal(ctx context.Context, q url.Values) (json.RawM
 		}
 		fresh := queryParamTrue(q, "library_fresh", "forge_fresh", "forge_library_fresh")
 		var err error
-		refs, err = forgeFeedsForCategories(ctx, cats, fresh)
+		refs, err = forgeFeedsForCategories(ctx, cats, fresh, q.Get("rss_library"), q.Get("rss_library_url"))
 		if err != nil {
 			return nil, err
 		}

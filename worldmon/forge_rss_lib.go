@@ -168,13 +168,16 @@ var (
 	libraryTTL      = 1 * time.Hour
 )
 
-// FetchRSSLibrary downloads and parses the current monitor-forge feed library
-// (no in-memory cache). For repeated calls, use [getCachedRSSLibrary].
-func FetchRSSLibrary(ctx context.Context, client *http.Client) (*RSSLibraryFile, error) {
+// fetchRSSLibraryByURL fetches a monitor-forge library from an explicit absolute URL
+// (used by per-request [News.ListFeedDigestLocal] overrides).
+func fetchRSSLibraryByURL(ctx context.Context, client *http.Client, u string) (*RSSLibraryFile, error) {
 	if client == nil {
 		client = http.DefaultClient
 	}
-	u := rssLibraryURL()
+	if strings.TrimSpace(u) == "" {
+		return nil, fmt.Errorf("empty rss library URL")
+	}
+	u = strings.TrimSpace(u)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err
@@ -193,6 +196,15 @@ func FetchRSSLibrary(ctx context.Context, client *http.Client) (*RSSLibraryFile,
 		return nil, fmt.Errorf("rss library HTTP %d from %q", res.StatusCode, u)
 	}
 	return ParseRSSLibraryJSON(b)
+}
+
+// FetchRSSLibrary downloads and parses the current monitor-forge feed library
+// (no in-memory cache). For repeated calls, use [getCachedRSSLibrary].
+func FetchRSSLibrary(ctx context.Context, client *http.Client) (*RSSLibraryFile, error) {
+	if client == nil {
+		client = http.DefaultClient
+	}
+	return fetchRSSLibraryByURL(ctx, client, rssLibraryURL())
 }
 
 // getCachedRSSLibrary fetches the monitor-forge library at most once per
@@ -218,10 +230,11 @@ func getCachedRSSLibrary(ctx context.Context, client *http.Client) (*RSSLibraryF
 
 // forgeFeedsForCategories resolves monitor-forge category keys to
 // [ForgeFeed] rows (by default the in-memory copy from [getCachedRSSLibrary]).
-// If freshLibrary is true, [FetchRSSLibrary] is used so category→URL mappings
-// match the latest published library. wantCat must contain at least one
-// non-empty category.
-func forgeFeedsForCategories(ctx context.Context, wantCat []string, freshLibrary bool) ([]ForgeFeed, error) {
+// If localLibraryPath is non-empty, the library is read from disk (per-request, ignores freshLibrary).
+// If httpLibraryURL is non-empty, that URL is fetched (freshLibrary bypasses the default cache
+// in favor of a live fetch; when false, one fetch per call is used for the custom URL only).
+// When both overrides are empty, the default [DefaultRSSLibraryURL] (or [RSSLibraryEnv]) is used.
+func forgeFeedsForCategories(ctx context.Context, wantCat []string, freshLibrary bool, localLibraryPath, httpLibraryURL string) ([]ForgeFeed, error) {
 	nonEmpty := 0
 	for _, c := range wantCat {
 		if strings.TrimSpace(c) != "" {
@@ -233,10 +246,25 @@ func forgeFeedsForCategories(ctx context.Context, wantCat []string, freshLibrary
 	}
 	var f *RSSLibraryFile
 	var err error
-	if freshLibrary {
-		f, err = FetchRSSLibrary(ctx, nil)
-	} else {
-		f, err = getCachedRSSLibrary(ctx, nil)
+	switch p := strings.TrimSpace(localLibraryPath); {
+	case p != "":
+		f, err = LoadRSSLibraryFile(p)
+		if err != nil {
+			return nil, err
+		}
+	case strings.TrimSpace(httpLibraryURL) != "":
+		u := strings.TrimSpace(httpLibraryURL)
+		// no cross-request cache for a custom library URL: one live fetch per request
+		f, err = fetchRSSLibraryByURL(ctx, nil, u)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		if freshLibrary {
+			f, err = FetchRSSLibrary(ctx, nil)
+		} else {
+			f, err = getCachedRSSLibrary(ctx, nil)
+		}
 	}
 	if err != nil {
 		return nil, err
