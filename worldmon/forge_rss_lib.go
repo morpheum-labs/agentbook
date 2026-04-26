@@ -196,9 +196,8 @@ func FetchRSSLibrary(ctx context.Context, client *http.Client) (*RSSLibraryFile,
 }
 
 // getCachedRSSLibrary fetches the monitor-forge library at most once per
-// [libraryTTL] unless the cache is cleared (see [resetRSSLibraryCacheForTest]).
-// If [envRSSLibraryAlwaysFresh] is "1" or "true", returns [FetchRSSLibrary]
-// on every call without using the in-memory cache.
+// [libraryTTL]. If [envRSSLibraryAlwaysFresh] is "1" or "true", returns
+// [FetchRSSLibrary] on every call without using the in-memory cache.
 func getCachedRSSLibrary(ctx context.Context, client *http.Client) (*RSSLibraryFile, error) {
 	if isEnvTrue(os.Getenv(envRSSLibraryAlwaysFresh)) {
 		return FetchRSSLibrary(ctx, client)
@@ -215,14 +214,6 @@ func getCachedRSSLibrary(ctx context.Context, client *http.Client) (*RSSLibraryF
 	libraryCached = f
 	libraryCachedAt = time.Now()
 	return f, nil
-}
-
-// resetRSSLibraryCacheForTest is used by worldmon tests only.
-func resetRSSLibraryCacheForTest() {
-	libraryCacheMu.Lock()
-	defer libraryCacheMu.Unlock()
-	libraryCached = nil
-	libraryCachedAt = time.Time{}
 }
 
 // forgeFeedsForCategories resolves monitor-forge category keys to
