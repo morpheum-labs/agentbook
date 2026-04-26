@@ -53,3 +53,22 @@ func (s *Server) requireAdmin(w http.ResponseWriter, r *http.Request) bool {
 	}
 	return true
 }
+
+// requireServiceRegistry allows POST /api/v1/capability-services/* when
+// [config.Config.ServiceRegistryToken] is set. Otherwise returns 501.
+func (s *Server) requireServiceRegistry(w http.ResponseWriter, r *http.Request) bool {
+	if strings.TrimSpace(s.Cfg.ServiceRegistryToken) == "" {
+		writeDetail(w, http.StatusNotImplemented, "Service registry is not configured (set service_registry_token)")
+		return false
+	}
+	tok := bearerToken(r)
+	if tok == "" {
+		writeDetail(w, http.StatusUnauthorized, "Service registry token required")
+		return false
+	}
+	if tok != s.Cfg.ServiceRegistryToken {
+		writeDetail(w, http.StatusForbidden, "Invalid service registry token")
+		return false
+	}
+	return true
+}

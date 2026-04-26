@@ -36,6 +36,7 @@ func testServer(t *testing.T) *Server {
 		&dbpkg.FloorDigestEntry{}, &dbpkg.FloorQuestionProbabilityPoint{}, &dbpkg.FloorPositionChallenge{}, &dbpkg.FloorResearchArticle{}, &dbpkg.FloorTopicProposal{}, &dbpkg.FloorBroadcast{},
 		&dbpkg.FloorIndexPageMeta{}, &dbpkg.FloorIndexEntry{},
 		&dbpkg.DebateThread{}, &dbpkg.DebatePost{}, &dbpkg.DebatePostReport{}, &dbpkg.AgentSanction{},
+		&dbpkg.CapabilityService{},
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -48,6 +49,100 @@ func testServer(t *testing.T) *Server {
 	}
 	rl := ratelimit.New(cfg)
 	return NewServer(gdb, cfg, rl, []byte("# skill\n{{BASE_URL}}"), "")
+}
+
+func TestCapabilityServicesRegisterListHeartbeat(t *testing.T) {
+	s := testServer(t)
+	s.Cfg.ServiceRegistryToken = "regtest"
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	base := ts.URL + "/api/v1/capability-services"
+	res, err := http.Get(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("list: %d", res.StatusCode)
+	}
+	var list0 struct {
+		Count int `json:"count"`
+		Items any `json:"items"`
+	}
+	_ = json.NewDecoder(res.Body).Decode(&list0)
+	if list0.Count != 0 {
+		t.Fatalf("count want 0")
+	}
+	body := map[string]any{
+		"name":    "testsvc",
+		"version": "0.0.1",
+		"base_url": "http://127.0.0.1:9",
+	}
+	b, _ := json.Marshal(body)
+	req, err := http.NewRequest(http.MethodPost, base+"/register", bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer regtest")
+	req.Header.Set("Content-Type", "application/json")
+	res2, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res2.Body.Close()
+	if res2.StatusCode != http.StatusOK {
+		bb, _ := io.ReadAll(res2.Body)
+		t.Fatalf("register: %d %s", res2.StatusCode, string(bb))
+	}
+	hb, _ := json.Marshal(map[string]string{
+		"name": "testsvc", "base_url": "http://127.0.0.1:9",
+	})
+	req3, _ := http.NewRequest(http.MethodPost, base+"/heartbeat", bytes.NewReader(hb))
+	req3.Header.Set("Authorization", "Bearer regtest")
+	req3.Header.Set("Content-Type", "application/json")
+	res3, err := http.DefaultClient.Do(req3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res3.Body.Close()
+	if res3.StatusCode != http.StatusOK {
+		bb, _ := io.ReadAll(res3.Body)
+		t.Fatalf("heartbeat: %d %s", res3.StatusCode, string(bb))
+	}
+	res4, err := http.Get(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res4.Body.Close()
+	if res4.StatusCode != http.StatusOK {
+		t.Fatalf("list2: %d", res4.StatusCode)
+	}
+	var list1 struct {
+		Count int `json:"count"`
+	}
+	_ = json.NewDecoder(res4.Body).Decode(&list1)
+	if list1.Count != 1 {
+		t.Fatalf("count want 1, got %d", list1.Count)
+	}
+}
+
+func TestCapabilityServicesRegisterWithoutToken(t *testing.T) {
+	s := testServer(t)
+	// Cfg has no ServiceRegistryToken
+	ts := httptest.NewServer(s.Handler())
+	defer ts.Close()
+	body := `{"name":"x","version":"1","base_url":"http://a"}`
+	req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/v1/capability-services/register", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer anything")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusNotImplemented {
+		t.Fatalf("want 501, got %d", res.StatusCode)
+	}
 }
 
 func TestOpenAPISpec(t *testing.T) {

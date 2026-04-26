@@ -9,7 +9,7 @@ import (
 func clearConfigEnv(t *testing.T) {
 	t.Helper()
 	for _, k := range []string{
-		"DATABASE_URL", "SQLITE_PATH", "ADMIN_TOKEN", "PUBLIC_URL", "HOSTNAME",
+		"DATABASE_URL", "SQLITE_PATH", "ADMIN_TOKEN", "SERVICE_REGISTRY_TOKEN", "PUBLIC_URL", "HOSTNAME",
 		"PORT", "ATTACHMENTS_DIR", "MAX_ATTACHMENT_BYTES", "CORS_ALLOWED_ORIGINS",
 	} {
 		t.Setenv(k, "")
@@ -108,5 +108,17 @@ func TestLoad_sqlitePathWhenNoDatabaseURL(t *testing.T) {
 	}
 	if cfg.Database != "from-env.db" {
 		t.Fatalf("SQLITE_PATH: want from-env.db got %q", cfg.Database)
+	}
+}
+
+func TestLoad_serviceRegistryTokenFromEnv(t *testing.T) {
+	clearConfigEnv(t)
+	t.Setenv("SERVICE_REGISTRY_TOKEN", "reg-from-env")
+	cfg, err := Load("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ServiceRegistryToken != "reg-from-env" {
+		t.Fatalf("got %q", cfg.ServiceRegistryToken)
 	}
 }

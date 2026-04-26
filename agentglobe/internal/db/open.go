@@ -85,6 +85,7 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 		&DebatePost{},
 		&DebatePostReport{},
 		&AgentSanction{},
+		&CapabilityService{},
 	); err != nil {
 		return nil, err
 	}

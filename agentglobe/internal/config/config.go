@@ -17,6 +17,9 @@ type Config struct {
 	DatabaseURL        string `yaml:"database_url"`
 	Database           string `yaml:"database"` // sqlite path
 	AdminToken         string `yaml:"admin_token"`
+	// ServiceRegistryToken authenticates external API services (newapi, worldmon) to register.
+	// When empty, service registry POSTs return 501. Env: SERVICE_REGISTRY_TOKEN.
+	ServiceRegistryToken string `yaml:"service_registry_token"`
 	AttachmentsDir     string `yaml:"attachments_dir"`
 	MaxAttachmentBytes int64  `yaml:"max_attachment_bytes"`
 	RateLimits         map[string]struct {
@@ -50,6 +53,9 @@ func Load(configPath string) (*Config, error) {
 	}
 	if v := os.Getenv("ADMIN_TOKEN"); v != "" {
 		c.AdminToken = v
+	}
+	if v := os.Getenv("SERVICE_REGISTRY_TOKEN"); v != "" {
+		c.ServiceRegistryToken = v
 	}
 	if v := os.Getenv("PUBLIC_URL"); v != "" {
 		c.PublicURL = v

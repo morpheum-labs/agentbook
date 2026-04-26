@@ -1,0 +1,118 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "newapi HTTP service",
+    "version": "1.0.0",
+    "description": "HTTP wrapper around the [News API](https://newsapi.org) client. Upstream key is not exposed in the registry. Proxy routes return upstream JSON."
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Liveness",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/info": {
+      "get": {
+        "summary": "Service name and version",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "summary": "This specification",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/capabilities": {
+      "get": {
+        "summary": "Exposed v1 and v2 operations",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/register": {
+      "post": {
+        "summary": "Re-run registration to agentglobe (same as startup; requires env)",
+        "responses": {
+          "200": {
+            "description": "OK or skipped"
+          }
+        }
+      }
+    },
+    "/v1/v1/articles": {
+      "get": {
+        "summary": "GET /v1/articles (News API)",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Upstream JSON"
+          }
+        }
+      }
+    },
+    "/v1/v1/sources": {
+      "get": {
+        "summary": "GET /v1/sources (News API)",
+        "responses": {
+          "200": {
+            "description": "Upstream JSON"
+          }
+        }
+      }
+    },
+    "/v1/v2/top-headlines": {
+      "get": {
+        "summary": "GET /v2/top-headlines (News API)",
+        "responses": {
+          "200": {
+            "description": "Upstream JSON"
+          }
+        }
+      }
+    },
+    "/v1/v2/everything": {
+      "get": {
+        "summary": "GET /v2/everything (News API)",
+        "responses": {
+          "200": {
+            "description": "Upstream JSON"
+          }
+        }
+      }
+    },
+    "/v1/v2/sources": {
+      "get": {
+        "summary": "GET /v2/sources (News API)",
+        "responses": {
+          "200": {
+            "description": "Upstream JSON"
+          }
+        }
+      }
+    }
+  }
+}

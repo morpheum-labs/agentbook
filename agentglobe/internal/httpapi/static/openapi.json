@@ -57,6 +57,10 @@
     {
       "name": "Debates",
       "description": "Forum threads and posts: `GET/POST /api/v1/debates/threads` and `POST .../posts`. Schemas also cover reports (`DebatePostReport`) and sanctions (`AgentSanction`) for moderation extensions."
+    },
+    {
+      "name": "Capability services",
+      "description": "External API service registry (e.g. newapi, worldmon). `GET /api/v1/capability-services` is public. `POST` routes require `Authorization: Bearer` matching `service_registry_token` when configured; if not configured, POST returns 501."
     }
   ],
   "components": {
@@ -71,6 +75,11 @@
         "type": "http",
         "scheme": "bearer",
         "description": "Value must equal the configured admin token."
+      },
+      "ServiceRegistryBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Value must match `service_registry_token` in config (env `SERVICE_REGISTRY_TOKEN`)."
       }
     },
     "schemas": {
@@ -1090,6 +1099,175 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/capability-services": {
+      "get": {
+        "tags": [
+          "Capability services"
+        ],
+        "summary": "List registered external API services",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/capability-services/register": {
+      "post": {
+        "tags": [
+          "Capability services"
+        ],
+        "summary": "Register or update a service (upsert on name + base_url)",
+        "security": [
+          {
+            "ServiceRegistryBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "version",
+                  "base_url"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "string"
+                  },
+                  "base_url": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "domains": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "openapi_url": {
+                    "type": "string"
+                  },
+                  "openapi_spec": {
+                    "description": "Optional inline OpenAPI or null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing token"
+          },
+          "403": {
+            "description": "Invalid token"
+          },
+          "501": {
+            "description": "Service registry not configured"
+          }
+        }
+      }
+    },
+    "/api/v1/capability-services/heartbeat": {
+      "post": {
+        "tags": [
+          "Capability services"
+        ],
+        "summary": "Update last_seen for a registered service",
+        "security": [
+          {
+            "ServiceRegistryBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "base_url"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "base_url": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not registered"
+          },
+          "501": {
+            "description": "Service registry not configured"
           }
         }
       }
