@@ -375,7 +375,7 @@ func floorTopicRegionalRow(regionCode, regionLabel string, longShare, shortShare
 	}
 }
 
-func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request) map[string]any {
+func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request, db *gorm.DB) map[string]any {
 	id := q.ID
 	title := q.Title
 	gl := q.Probability
@@ -406,7 +406,19 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request) 
 		researchPath = "/research/" + slug
 	}
 
-	rows := []map[string]any{
+	var fromDB bool
+	rows := []map[string]any{}
+	if db != nil {
+		pos, err := floorRegionalLoadPositions(db, id, proofOnly)
+		if err == nil && len(pos) > 0 {
+			rows = floorBuildRegionalRowMaps(q, pos, id)
+			if len(rows) > 0 {
+				fromDB = true
+			}
+		}
+	}
+	if !fromDB {
+		rows = []map[string]any{
 		floorTopicRegionalRow("US", "US", 0.74, 0.26, "+7", 618, "long", "8%", "4%", 41,
 			"Celtics defensive efficiency and playoff ISO volume cited across US macro/sports agents.",
 			"/discover?topic="+id+"&region=US", id, researchPath),
@@ -422,6 +434,7 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request) 
 		floorTopicRegionalRow("SE_ASIA", "SE Asia", 0.52, 0.48, "−15", 76, "neutral", "14%", "9%", 6,
 			"Higher speculative share; signals split on travel-load priors vs US bundle.",
 			"/discover?topic="+id+"&region=SE_ASIA", id, researchPath),
+		}
 	}
 
 	divergence := func(row map[string]any) float64 {
@@ -458,7 +471,7 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request) 
 				continue
 			}
 		}
-		if proofOnly {
+		if proofOnly && !fromDB {
 			pn, _ := row["proof_linked_count"].(int)
 			if pn < 15 {
 				continue
@@ -504,20 +517,7 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request) 
 		}
 	}
 
-	selPreview := map[string]any{
-		"region_code":                  sel["region_code"],
-		"region_label":                 sel["region_label"],
-		"long_share":                   sel["long_share"],
-		"short_share":                  sel["short_share"],
-		"delta_vs_global_label":        sel["delta_vs_global_label"],
-		"agent_count":                  sel["agent_count"],
-		"dominant_cluster":             sel["dominant_cluster"],
-		"proof_linked_count":           sel["proof_linked_count"],
-		"top_signals":                  []any{sel["top_signal_hint"], "Proof-linked cohorts ranked within region"},
-		"open_regional_supporters_url": sel["open_regional_supporters_url"],
-		"open_topic_url":               sel["open_topic_url"],
-		"open_research_url":            sel["open_research_url"],
-	}
+	selPreview := floorBuildSelectedPreview(sel)
 
 	filters := map[string]any{
 		"region":            nil,
@@ -534,6 +534,14 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request) 
 		filters["side"] = sideQ
 	}
 
+	summary := map[string]any{
+		"strongest_long_region":  "US",
+		"strongest_short_region": "CN",
+		"widest_divergence_pair": "US vs CN",
+	}
+	if fromDB {
+		summary = floorSummaryFromRows(filtered)
+	}
 	return map[string]any{
 		"context": map[string]any{
 			"topic_id":           id,
@@ -542,14 +550,10 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request) 
 			"global_short_share": gs,
 			"timeframe":          tf,
 			"consensus_label":    "Consensus",
-			"freshness_label":    "Updated 3m ago",
+			"freshness_label":    floorFreshnessFromQuestion(q),
 			"back_to_topic_url":  "/topic/" + id,
 		},
-		"summary": map[string]any{
-			"strongest_long_region":  "US",
-			"strongest_short_region": "CN",
-			"widest_divergence_pair": "US vs CN",
-		},
+		"summary":         summary,
 		"filters":         filters,
 		"rows":            filtered,
 		"selected_region": selPreview,
@@ -596,7 +600,7 @@ func (s *Server) handleFloorGetTopicRegional(w http.ResponseWriter, r *http.Requ
 		writeDetail(w, http.StatusInternalServerError, "DB error")
 		return
 	}
-	writeJSON(w, http.StatusOK, floorComposedTopicRegionalPayload(&q, r))
+	writeJSON(w, http.StatusOK, floorComposedTopicRegionalPayload(&q, r, s.dbCtx(r)))
 }
 
 // floorComposedTopicsPage is the AgentFloor Topics page payload (structured browse rows + selected-topic panel).
