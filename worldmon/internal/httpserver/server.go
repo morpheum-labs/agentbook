@@ -201,6 +201,21 @@ func handleWMProxy(cl *worldmon.Client) http.HandlerFunc {
 		if q == nil {
 			q = url.Values{}
 		}
+		// list-feed-digest is handled locally in-process (RSS/Atom) so MCP/scheduled
+		// `get_world_context` works without a remote /api base URL.
+		if strings.EqualFold(svc, "news") && ver == "v1" && method == "list-feed-digest" {
+			b, err := cl.News().ListFeedDigest(r.Context(), q)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(map[string]string{"detail": err.Error()})
+				return
+			}
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write(b)
+			return
+		}
+
 		b, err := cl.Service(svc, ver).Fetch(r.Context(), method, q)
 		if err != nil {
 			if cl.APIKey() == "" {
