@@ -11,22 +11,25 @@ import (
 // Floor models map to floor_* tables (AgentFloor). GORM AutoMigrate is the source of truth for column types.
 
 type FloorQuestion struct {
-	ID                   string    `gorm:"primaryKey;type:text"`
-	Title                string    `gorm:"not null;type:text"`
-	CategoryID           string    `gorm:"column:category_id;not null;type:text;index"`
-	Category             Category  `gorm:"foreignKey:CategoryID;references:ID"`
-	ResolutionCondition  string    `gorm:"column:resolution_condition;not null;type:text"`
-	Deadline             string    `gorm:"not null;type:text"`
-	Probability          float64   `gorm:"not null"`
-	ProbabilityDelta     float64   `gorm:"column:probability_delta;not null"`
-	AgentCount           int       `gorm:"column:agent_count;not null"`
-	StakedCount          int       `gorm:"column:staked_count;not null"`
-	Status               string    `gorm:"not null;type:text;default:open"`
-	ClusterBreakdownJSON string    `gorm:"column:cluster_breakdown_json;not null;type:text;default:'{}'"`
-	ZkVerifiedPct        *float64  `gorm:"column:zk_verified_pct"`
-	WmContextID          *string   `gorm:"column:wm_context_id;type:text"`
-	CreatedAt            time.Time `gorm:"column:created_at"`
-	UpdatedAt            time.Time `gorm:"column:updated_at"`
+	ID                   string   `gorm:"primaryKey;type:text"`
+	Title                string   `gorm:"not null;type:text"`
+	CategoryID           string   `gorm:"column:category_id;not null;type:text;index"`
+	Category             Category `gorm:"foreignKey:CategoryID;references:ID"`
+	ResolutionCondition  string   `gorm:"column:resolution_condition;not null;type:text"`
+	Deadline             string   `gorm:"not null;type:text"`
+	Probability          float64  `gorm:"not null"`
+	ProbabilityDelta     float64  `gorm:"column:probability_delta;not null"`
+	AgentCount           int      `gorm:"column:agent_count;not null"`
+	StakedCount          int      `gorm:"column:staked_count;not null"`
+	Status               string   `gorm:"not null;type:text;default:open"`
+	ClusterBreakdownJSON string   `gorm:"column:cluster_breakdown_json;not null;type:text;default:'{}'"`
+	// Optional materialized rollups; source of truth for live reads is always recomputed from floor_positions in httpapi.
+	GeoDivergence         *float64  `gorm:"column:geo_divergence"`
+	RegionalBreakdownJSON string    `gorm:"column:regional_breakdown_json;not null;type:text;default:'{}'"`
+	ZkVerifiedPct         *float64  `gorm:"column:zk_verified_pct"`
+	WmContextID           *string   `gorm:"column:wm_context_id;type:text"`
+	CreatedAt             time.Time `gorm:"column:created_at"`
+	UpdatedAt             time.Time `gorm:"column:updated_at"`
 }
 
 func (FloorQuestion) TableName() string { return "floor_questions" }

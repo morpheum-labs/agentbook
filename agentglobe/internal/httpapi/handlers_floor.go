@@ -355,23 +355,30 @@ func (s *Server) handleFloorGetTopicDetails(w http.ResponseWriter, r *http.Reque
 	s.handleFloorGetQuestion(w, r)
 }
 
-// floorTopicRegionalRow is one region row for Open Regional Detail (composed payload).
-func floorTopicRegionalRow(regionCode, regionLabel string, longShare, shortShare float64, deltaLabel string, agentCount int, dominant, specLabel, unclLabel string, proofN int, topSignal, supportersPath string, topicID, researchPath string) map[string]any {
+// floorTopicRegionalRow is one region row for Open Regional Detail (regional-detail.md §3 camelCase, /floor/… links).
+func floorTopicRegionalRow(
+	regionCode, regionLabel string, longShare, shortShare, neutralShare float64,
+	deltaLabel string, agentCount int, dominant, specLabel, unclLabel string, proofN int, topSignal string, topicID, researchPath string,
+) map[string]any {
+	sup := floorRegionalOpenSupportersURL(topicID, regionCode)
+	ot := floorRegionalOpenTopicURL(topicID)
+	researchUI := floorRegionalOpenResearchURLFromSlug(researchPath)
 	return map[string]any{
-		"region_code":                  regionCode,
-		"region_label":                 regionLabel,
-		"long_share":                   longShare,
-		"short_share":                  shortShare,
-		"delta_vs_global_label":        deltaLabel,
-		"agent_count":                  agentCount,
-		"dominant_cluster":             dominant,
-		"speculative_share_label":      specLabel,
-		"unclustered_share_label":      unclLabel,
-		"proof_linked_count":           proofN,
-		"top_signal_hint":              topSignal,
-		"open_regional_supporters_url": supportersPath,
-		"open_topic_url":               "/topic/" + topicID,
-		"open_research_url":            researchPath,
+		"regionCode":                regionCode,
+		"regionLabel":               regionLabel,
+		"longShare":                 longShare,
+		"shortShare":                shortShare,
+		"neutralShare":              neutralShare,
+		"deltaVsGlobalLabel":        deltaLabel,
+		"agentCount":                agentCount,
+		"dominantCluster":           dominant,
+		"speculativeShareLabel":     specLabel,
+		"unclusteredShareLabel":     unclLabel,
+		"proofLinkedCount":          proofN,
+		"topSignalHint":             topSignal,
+		"openRegionalSupportersUrl": sup,
+		"openTopicUrl":              ot,
+		"openResearchUrl":           researchUI,
 	}
 }
 
@@ -407,10 +414,12 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request, 
 	}
 
 	var fromDB bool
+	var sourcePos []dbpkg.FloorPosition
 	rows := []map[string]any{}
 	if db != nil {
 		pos, err := floorRegionalLoadPositions(db, id, proofOnly)
 		if err == nil && len(pos) > 0 {
+			sourcePos = pos
 			rows = floorBuildRegionalRowMaps(q, pos, id)
 			if len(rows) > 0 {
 				fromDB = true
@@ -419,32 +428,27 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request, 
 	}
 	if !fromDB {
 		rows = []map[string]any{
-		floorTopicRegionalRow("US", "US", 0.74, 0.26, "+7", 618, "long", "8%", "4%", 41,
-			"Celtics defensive efficiency and playoff ISO volume cited across US macro/sports agents.",
-			"/discover?topic="+id+"&region=US", id, researchPath),
-		floorTopicRegionalRow("CN", "CN", 0.39, 0.61, "−28", 244, "short", "11%", "6%", 12,
-			"Road SRS and upset-rate priors dominate; valuation-style short framing.",
-			"/discover?topic="+id+"&region=CN", id, researchPath),
-		floorTopicRegionalRow("EU", "EU", 0.58, 0.42, "−9", 172, "neutral", "7%", "8%", 19,
-			"Moderate long with lower conviction vs US; digest citations mixed.",
-			"/discover?topic="+id+"&region=EU", id, researchPath),
-		floorTopicRegionalRow("JP_KR", "JP/KR", 0.69, 0.31, "+2", 98, "long", "6%", "5%", 14,
-			"Efficiency metrics align with US long cluster; lower agent depth.",
-			"/discover?topic="+id+"&region=JP_KR", id, researchPath),
-		floorTopicRegionalRow("SE_ASIA", "SE Asia", 0.52, 0.48, "−15", 76, "neutral", "14%", "9%", 6,
-			"Higher speculative share; signals split on travel-load priors vs US bundle.",
-			"/discover?topic="+id+"&region=SE_ASIA", id, researchPath),
+			floorTopicRegionalRow("US", "US", 0.74, 0.26, 0, "+7", 618, "long", "8%", "4%", 41,
+				"Celtics defensive efficiency and playoff ISO volume cited across US macro/sports agents.", id, researchPath),
+			floorTopicRegionalRow("CN", "CN", 0.39, 0.61, 0, "−28", 244, "short", "11%", "6%", 12,
+				"Road SRS and upset-rate priors dominate; valuation-style short framing.", id, researchPath),
+			floorTopicRegionalRow("EU", "EU", 0.58, 0.42, 0, "−9", 172, "neutral", "7%", "8%", 19,
+				"Moderate long with lower conviction vs US; digest citations mixed.", id, researchPath),
+			floorTopicRegionalRow("JP_KR", "JP/KR", 0.69, 0.31, 0, "+2", 98, "long", "6%", "5%", 14,
+				"Efficiency metrics align with US long cluster; lower agent depth.", id, researchPath),
+			floorTopicRegionalRow("SE_ASIA", "SE Asia", 0.52, 0.48, 0, "−15", 76, "neutral", "14%", "9%", 6,
+				"Higher speculative share; signals split on travel-load priors vs US bundle.", id, researchPath),
 		}
 	}
 
 	divergence := func(row map[string]any) float64 {
-		lo, _ := row["long_share"].(float64)
+		lo, _ := row["longShare"].(float64)
 		return math.Abs(lo - gl)
 	}
 
 	filtered := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
-		code, _ := row["region_code"].(string)
+		code, _ := row["regionCode"].(string)
 		if regionQ != "" && !strings.EqualFold(regionQ, "all") {
 			want := strings.ReplaceAll(strings.ToUpper(regionQ), "/", "_")
 			if want == "JP" || want == "KR" {
@@ -458,27 +462,27 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request, 
 			}
 		}
 		if sideQ == "long" {
-			lo, _ := row["long_share"].(float64)
-			sh, _ := row["short_share"].(float64)
+			lo, _ := row["longShare"].(float64)
+			sh, _ := row["shortShare"].(float64)
 			if lo < sh {
 				continue
 			}
 		}
 		if sideQ == "short" {
-			lo, _ := row["long_share"].(float64)
-			sh, _ := row["short_share"].(float64)
+			lo, _ := row["longShare"].(float64)
+			sh, _ := row["shortShare"].(float64)
 			if sh <= lo {
 				continue
 			}
 		}
 		if proofOnly && !fromDB {
-			pn, _ := row["proof_linked_count"].(int)
+			pn, _ := row["proofLinkedCount"].(int)
 			if pn < 15 {
 				continue
 			}
 		}
 		if rankedOnly {
-			ac, _ := row["agent_count"].(int)
+			ac, _ := row["agentCount"].(int)
 			if ac < 150 {
 				continue
 			}
@@ -492,16 +496,16 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request, 
 	sort.Slice(filtered, func(i, j int) bool {
 		switch sortQ {
 		case "long_share":
-			li, _ := filtered[i]["long_share"].(float64)
-			lj, _ := filtered[j]["long_share"].(float64)
+			li, _ := filtered[i]["longShare"].(float64)
+			lj, _ := filtered[j]["longShare"].(float64)
 			return li > lj
 		case "short_share":
-			si, _ := filtered[i]["short_share"].(float64)
-			sj, _ := filtered[j]["short_share"].(float64)
+			si, _ := filtered[i]["shortShare"].(float64)
+			sj, _ := filtered[j]["shortShare"].(float64)
 			return si > sj
 		case "agent_count":
-			ai, _ := filtered[i]["agent_count"].(int)
-			aj, _ := filtered[j]["agent_count"].(int)
+			ai, _ := filtered[i]["agentCount"].(int)
+			aj, _ := filtered[j]["agentCount"].(int)
 			return ai > aj
 		default:
 			return divergence(filtered[i]) > divergence(filtered[j])
@@ -510,7 +514,7 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request, 
 
 	sel := filtered[0]
 	for _, row := range filtered {
-		code, _ := row["region_code"].(string)
+		code, _ := row["regionCode"].(string)
 		if regionQ != "" && strings.EqualFold(code, strings.ReplaceAll(strings.ToUpper(regionQ), "/", "_")) {
 			sel = row
 			break
@@ -520,12 +524,12 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request, 
 	selPreview := floorBuildSelectedPreview(sel)
 
 	filters := map[string]any{
-		"region":            nil,
-		"side":              "all",
-		"proof_linked_only": proofOnly,
-		"ranked_only":       rankedOnly,
-		"sort":              sortQ,
-		"timeframe":         tf,
+		"region":          nil,
+		"side":            "all",
+		"proofLinkedOnly": proofOnly,
+		"rankedOnly":      rankedOnly,
+		"sort":            sortQ,
+		"timeframe":       tf,
 	}
 	if regionQ != "" && !strings.EqualFold(regionQ, "all") {
 		filters["region"] = regionQ
@@ -535,28 +539,30 @@ func floorComposedTopicRegionalPayload(q *dbpkg.FloorQuestion, r *http.Request, 
 	}
 
 	summary := map[string]any{
-		"strongest_long_region":  "US",
-		"strongest_short_region": "CN",
-		"widest_divergence_pair": "US vs CN",
+		"strongestLongRegion":  "US",
+		"strongestShortRegion": "CN",
+		"widestDivergencePair": "US vs CN",
 	}
 	if fromDB {
 		summary = floorSummaryFromRows(filtered)
 	}
+	metrics := floorRegionalBuildMetrics(db, q, sourcePos, filtered)
 	return map[string]any{
 		"context": map[string]any{
-			"topic_id":           id,
-			"topic_title":        title,
-			"global_long_share":  gl,
-			"global_short_share": gs,
-			"timeframe":          tf,
-			"consensus_label":    "Consensus",
-			"freshness_label":    floorFreshnessFromQuestion(q),
-			"back_to_topic_url":  "/topic/" + id,
+			"topicId":          id,
+			"topicTitle":       title,
+			"globalLongShare":  gl,
+			"globalShortShare": gs,
+			"timeframe":        tf,
+			"consensusLabel":   "Consensus",
+			"freshnessLabel":   floorFreshnessFromQuestion(q),
+			"backToTopicUrl":   floorRegionalBackToTopicURL(id),
 		},
-		"summary":         summary,
-		"filters":         filters,
-		"rows":            filtered,
-		"selected_region": selPreview,
+		"summary":        summary,
+		"filters":        filters,
+		"rows":           filtered,
+		"selectedRegion": selPreview,
+		"metrics":        metrics,
 	}
 }
 
@@ -1321,6 +1327,10 @@ func (s *Server) handleFloorGetQuestion(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		writeDetail(w, http.StatusInternalServerError, "DB error")
+		return
+	}
+	if strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("view")), "regional") {
+		writeJSON(w, http.StatusOK, floorComposedTopicRegionalPayload(&q, r, db))
 		return
 	}
 	m := floorQuestionMap(&q)

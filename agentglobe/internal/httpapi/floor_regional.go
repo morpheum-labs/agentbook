@@ -3,6 +3,7 @@ package httpapi
 import (
 	"fmt"
 	"math"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -67,12 +68,12 @@ func floorMapRegionalClusterToCode(rc *string) (code, label string) {
 }
 
 type floorRegionalTally struct {
-	agents  map[string]struct{}
-	proofN  int
-	longN   int
-	shortN  int
-	neutral int
-	cluster map[string]int
+	agents    map[string]struct{}
+	proofN    int
+	longN     int
+	shortN    int
+	neutral   int
+	cluster   map[string]int
 	bodySnips []string
 }
 
@@ -87,6 +88,40 @@ func (t *floorRegionalTally) addAgent(aid string) {
 
 func floorNewRegionalTally() *floorRegionalTally {
 	return &floorRegionalTally{cluster: make(map[string]int)}
+}
+
+// Spec path shapes (regional-detail.md §3) — in-app web routes; API remains under /api/v1/floor/...
+func floorRegionalBackToTopicURL(topicID string) string {
+	return "/floor/topics/" + topicID + "/detail"
+}
+
+func floorRegionalOpenTopicURL(topicID string) string {
+	return "/floor/topics/" + topicID + "/detail"
+}
+
+func floorRegionalOpenSupportersURL(topicID, regionCode string) string {
+	var b strings.Builder
+	b.WriteString("/floor/agents?")
+	q := make(url.Values)
+	q.Set("topicId", topicID)
+	q.Set("region", regionCode)
+	q.Set("side", "support")
+	b.WriteString(q.Encode())
+	return b.String()
+}
+
+func floorRegionalOpenResearchURLFromSlug(researchPath string) string {
+	if researchPath == "" {
+		return "/floor/research"
+	}
+	// researchPath is already e.g. "/research/slug" from caller
+	if strings.HasPrefix(researchPath, "/research/") {
+		return "/floor/research/" + strings.TrimPrefix(researchPath, "/research/")
+	}
+	if researchPath == "/research" {
+		return "/floor/research"
+	}
+	return "/floor/research/" + strings.TrimPrefix(researchPath, "/")
 }
 
 func formatDeltaPoints(lo, gl float64) string {
@@ -151,6 +186,7 @@ func floorBuildRegionalRowMaps(
 	if slug := floorTopicResearchSlug(question.Title); slug != "" {
 		researchPath = "/research/" + slug
 	}
+	researchUI := floorRegionalOpenResearchURLFromSlug(researchPath)
 
 	by := make(map[string]*floorRegionalTally)
 	labels := make(map[string]string)
@@ -219,13 +255,16 @@ func floorBuildRegionalRowMaps(
 			regionLabel = code
 		}
 		dirN := t.longN + t.shortN
-		var longShare, shortShare float64
+		totalN := t.longN + t.shortN + t.neutral
+		var longShare, shortShare, neutralShare float64
 		if dirN > 0 {
 			longShare = float64(t.longN) / float64(dirN)
 			shortShare = float64(t.shortN) / float64(dirN)
 		} else {
-			// all neutral: split evenly
 			longShare, shortShare = 0.5, 0.5
+		}
+		if totalN > 0 {
+			neutralShare = float64(t.neutral) / float64(totalN)
 		}
 		agentCount := len(t.agents)
 		dom := floorDominantFromClusterTally(t.cluster)
@@ -250,22 +289,24 @@ func floorBuildRegionalRowMaps(
 		} else {
 			top = question.Title + " — regional read in " + regionLabel
 		}
-		sup := fmt.Sprintf("/discover?topic=%s&region=%s&side=support", topicID, code)
+		sup := floorRegionalOpenSupportersURL(topicID, code)
+		ot := floorRegionalOpenTopicURL(topicID)
 		out = append(out, map[string]any{
-			"region_code":                  code,
-			"region_label":                 regionLabel,
-			"long_share":                   longShare,
-			"short_share":                  shortShare,
-			"delta_vs_global_label":        deltaL,
-			"agent_count":                  agentCount,
-			"dominant_cluster":             dom,
-			"speculative_share_label":      floorPctLabel(specF),
-			"unclustered_share_label":      floorPctLabel(unclF),
-			"proof_linked_count":           t.proofN,
-			"top_signal_hint":              top,
-			"open_regional_supporters_url": sup,
-			"open_topic_url":               "/topic/" + topicID,
-			"open_research_url":            researchPath,
+			"regionCode":                code,
+			"regionLabel":               regionLabel,
+			"longShare":                 longShare,
+			"shortShare":                shortShare,
+			"neutralShare":              neutralShare,
+			"deltaVsGlobalLabel":        deltaL,
+			"agentCount":                agentCount,
+			"dominantCluster":           dom,
+			"speculativeShareLabel":     floorPctLabel(specF),
+			"unclusteredShareLabel":     floorPctLabel(unclF),
+			"proofLinkedCount":          t.proofN,
+			"topSignalHint":             top,
+			"openRegionalSupportersUrl": sup,
+			"openTopicUrl":              ot,
+			"openResearchUrl":           researchUI,
 		})
 	}
 	return out
@@ -291,28 +332,28 @@ func floorRegionalLoadPositions(db *gorm.DB, questionID string, proofOnly bool) 
 	return out, nil
 }
 
-// floorSummaryFromRows fills strongest long/short and widest-divergence pair for the summary strip.
+// floorSummaryFromRows fills strongest long/short and widest-divergence pair (indexes.md GeoDivergence_q is max |Δ long| across region pairs; same as widest pair label here).
 func floorSummaryFromRows(rows []map[string]any) map[string]any {
+	empty := map[string]any{
+		"strongestLongRegion":  "",
+		"strongestShortRegion": "",
+		"widestDivergencePair": "",
+	}
 	if len(rows) == 0 {
-		return map[string]any{
-			"strongest_long_region":  "",
-			"strongest_short_region": "",
-			"widest_divergence_pair":  "",
-		}
+		return empty
 	}
 	var longCode, shortCode string
 	bestL, bestS := -1.0, -1.0
 	for _, row := range rows {
-		lo, _ := row["long_share"].(float64)
-		c, _ := row["region_code"].(string)
-		lbl, _ := row["region_label"].(string)
+		lo, _ := row["longShare"].(float64)
+		lbl, _ := row["regionLabel"].(string)
 		if lbl == "" {
-			lbl = c
+			lbl, _ = row["regionCode"].(string)
 		}
 		if lo > bestL {
 			bestL, longCode = lo, lbl
 		}
-		sh, _ := row["short_share"].(float64)
+		sh, _ := row["shortShare"].(float64)
 		if sh > bestS {
 			bestS, shortCode = sh, lbl
 		}
@@ -322,19 +363,19 @@ func floorSummaryFromRows(rows []map[string]any) map[string]any {
 		var a, b string
 		widest := 0.0
 		for i := 0; i < len(rows); i++ {
-			li, _ := rows[i]["long_share"].(float64)
+			li, _ := rows[i]["longShare"].(float64)
 			for j := i + 1; j < len(rows); j++ {
-				lj, _ := rows[j]["long_share"].(float64)
+				lj, _ := rows[j]["longShare"].(float64)
 				d := math.Abs(li - lj)
 				if d > widest+1e-9 {
 					widest = d
-					ai, _ := rows[i]["region_label"].(string)
-					aj, _ := rows[j]["region_label"].(string)
+					ai, _ := rows[i]["regionLabel"].(string)
+					aj, _ := rows[j]["regionLabel"].(string)
 					if ai == "" {
-						ai, _ = rows[i]["region_code"].(string)
+						ai, _ = rows[i]["regionCode"].(string)
 					}
 					if aj == "" {
-						aj, _ = rows[j]["region_code"].(string)
+						aj, _ = rows[j]["regionCode"].(string)
 					}
 					if strings.Compare(ai, aj) < 0 {
 						a, b = ai, aj
@@ -349,9 +390,9 @@ func floorSummaryFromRows(rows []map[string]any) map[string]any {
 		}
 	}
 	return map[string]any{
-		"strongest_long_region":  longCode,
-		"strongest_short_region": shortCode,
-		"widest_divergence_pair": pair,
+		"strongestLongRegion":  longCode,
+		"strongestShortRegion": shortCode,
+		"widestDivergencePair": pair,
 	}
 }
 
@@ -375,7 +416,7 @@ func floorFreshnessFromQuestion(q *dbpkg.FloorQuestion) string {
 }
 
 func floorBuildSelectedPreview(sel map[string]any) map[string]any {
-	topStr, _ := sel["top_signal_hint"].(string)
+	topStr, _ := sel["topSignalHint"].(string)
 	var signals []any
 	if topStr != "" {
 		signals = []any{topStr, "Proof-linked cohorts ranked within region"}
@@ -383,17 +424,175 @@ func floorBuildSelectedPreview(sel map[string]any) map[string]any {
 		signals = []any{"Proof-linked cohorts ranked within region"}
 	}
 	return map[string]any{
-		"region_code":                  sel["region_code"],
-		"region_label":                 sel["region_label"],
-		"long_share":                   sel["long_share"],
-		"short_share":                  sel["short_share"],
-		"delta_vs_global_label":        sel["delta_vs_global_label"],
-		"agent_count":                  sel["agent_count"],
-		"dominant_cluster":             sel["dominant_cluster"],
-		"proof_linked_count":           sel["proof_linked_count"],
-		"top_signals":                  signals,
-		"open_regional_supporters_url": sel["open_regional_supporters_url"],
-		"open_topic_url":               sel["open_topic_url"],
-		"open_research_url":            sel["open_research_url"],
+		"regionCode":                sel["regionCode"],
+		"regionLabel":               sel["regionLabel"],
+		"longShare":                 sel["longShare"],
+		"shortShare":                sel["shortShare"],
+		"deltaVsGlobalLabel":        sel["deltaVsGlobalLabel"],
+		"agentCount":                sel["agentCount"],
+		"dominantCluster":           sel["dominantCluster"],
+		"proofLinkedCount":          sel["proofLinkedCount"],
+		"topSignals":                signals,
+		"openRegionalSupportersUrl": sel["openRegionalSupportersUrl"],
+		"openTopicUrl":              sel["openTopicUrl"],
+		"openResearchUrl":           sel["openResearchUrl"],
+	}
+}
+
+// floorGeoDivergenceQ is indexes.md GeoDivergence_q: max_{r1,r2} |P_{r1}(long|q) − P_{r2}(long|q)| from row longShare.
+func floorGeoDivergenceQFromRows(rows []map[string]any) float64 {
+	if len(rows) < 2 {
+		return 0
+	}
+	widest := 0.0
+	for i := 0; i < len(rows); i++ {
+		li, _ := rows[i]["longShare"].(float64)
+		for j := i + 1; j < len(rows); j++ {
+			lj, _ := rows[j]["longShare"].(float64)
+			if d := math.Abs(li - lj); d > widest {
+				widest = d
+			}
+		}
+	}
+	return widest
+}
+
+// floorPrDirectionMaps builds P_r(d|q) maps (indexes.md) for long / neutral / short.
+func floorPrDirectionMaps(rows []map[string]any) (pLong, pNeut, pShort map[string]float64) {
+	pLong, pNeut, pShort = make(map[string]float64), make(map[string]float64), make(map[string]float64)
+	for _, row := range rows {
+		code, _ := row["regionCode"].(string)
+		if code == "" {
+			continue
+		}
+		if v, ok := row["longShare"].(float64); ok {
+			pLong[code] = v
+		}
+		if v, ok := row["neutralShare"].(float64); ok {
+			pNeut[code] = v
+		}
+		if v, ok := row["shortShare"].(float64); ok {
+			pShort[code] = v
+		}
+	}
+	return pLong, pNeut, pShort
+}
+
+type floorRegAcc struct {
+	Calls, Correct int
+}
+
+// floorRegionalAccuracyByRegion computes acc(r,t) from floor_agent_topic_stats (indexes.md §2.1) for agents bucketed by region in positions, scoped to the question’s category as topic class.
+func floorRegionalAccuracyByRegion(db *gorm.DB, q *dbpkg.FloorQuestion, positions []dbpkg.FloorPosition) []map[string]any {
+	if db == nil || q == nil || len(positions) == 0 {
+		return nil
+	}
+	agentToRegion := make(map[string]string)
+	for i := range positions {
+		c, _ := floorMapRegionalClusterToCode(positions[i].RegionalCluster)
+		agentToRegion[positions[i].AgentID] = c
+	}
+	ids := make([]string, 0, len(agentToRegion))
+	for a := range agentToRegion {
+		ids = append(ids, a)
+	}
+	classes := make([]string, 0, 2)
+	if t := strings.TrimSpace(q.CategoryID); t != "" {
+		classes = append(classes, t)
+	}
+	if t := strings.TrimSpace(q.Category.DisplayName); t != "" && t != q.CategoryID {
+		classes = append(classes, t)
+	}
+	if len(ids) == 0 || len(classes) == 0 {
+		return nil
+	}
+	var stats []dbpkg.FloorAgentTopicStat
+	if err := db.Where("agent_id IN ? AND topic_class IN ?", ids, classes).Find(&stats).Error; err != nil || len(stats) == 0 {
+		return nil
+	}
+	// one stat row per agent, prefer exact category id, then more calls
+	pick := make(map[string]dbpkg.FloorAgentTopicStat)
+	catID := strings.TrimSpace(q.CategoryID)
+	disp := strings.TrimSpace(q.Category.DisplayName)
+	for i := range stats {
+		s := &stats[i]
+		if s.TopicClass != catID && s.TopicClass != disp {
+			continue
+		}
+		cur, have := pick[s.AgentID]
+		if !have {
+			pick[s.AgentID] = *s
+			continue
+		}
+		if s.TopicClass == catID && cur.TopicClass != catID {
+			pick[s.AgentID] = *s
+		} else if s.Calls > cur.Calls {
+			pick[s.AgentID] = *s
+		}
+	}
+	by := make(map[string]*floorRegAcc)
+	for _, st := range pick {
+		region, ok := agentToRegion[st.AgentID]
+		if !ok {
+			continue
+		}
+		if by[region] == nil {
+			by[region] = &floorRegAcc{}
+		}
+		by[region].Calls += st.Calls
+		by[region].Correct += st.Correct
+	}
+	ordered := make([]string, 0, len(by))
+	for _, c := range floorCanonicalRegionalOrder {
+		if by[c] != nil {
+			ordered = append(ordered, c)
+		}
+	}
+	extra := make([]string, 0)
+	for r := range by {
+		found := false
+		for _, c := range floorCanonicalRegionalOrder {
+			if c == r {
+				found = true
+				break
+			}
+		}
+		if !found {
+			extra = append(extra, r)
+		}
+	}
+	sort.Strings(extra)
+	ordered = append(ordered, extra...)
+	out := make([]map[string]any, 0, len(by))
+	for _, code := range ordered {
+		agg := by[code]
+		if agg == nil || agg.Calls == 0 {
+			continue
+		}
+		out = append(out, map[string]any{
+			"regionCode": code,
+			"acc":        float64(agg.Correct) / float64(agg.Calls),
+			"calls":      agg.Calls,
+		})
+	}
+	return out
+}
+
+// floorRegionalBuildMetrics assembles indexes.md metrics; values are from live position rollups + optional acc(r,t) from floor_agent_topic_stats.
+func floorRegionalBuildMetrics(
+	db *gorm.DB,
+	q *dbpkg.FloorQuestion,
+	sourcePositions []dbpkg.FloorPosition,
+	filteredRows []map[string]any,
+) map[string]any {
+	geoQ := floorGeoDivergenceQFromRows(filteredRows)
+	pL, pN, pS := floorPrDirectionMaps(filteredRows)
+	acc := floorRegionalAccuracyByRegion(db, q, sourcePositions)
+	return map[string]any{
+		"geoDivergenceQ":   geoQ,
+		"pLongByRegion":    pL,
+		"pNeutralByRegion": pN,
+		"pShortByRegion":   pS,
+		"regionalAccuracy": acc,
 	}
 }

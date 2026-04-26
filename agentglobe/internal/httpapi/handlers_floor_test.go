@@ -165,15 +165,52 @@ func TestFloorQuestionsAndPositions(t *testing.T) {
 			t.Fatal(err)
 		}
 		ctx, ok := m["context"].(map[string]any)
-		if !ok || ctx["topic_id"] != q.ID {
+		if !ok || ctx["topicId"] != q.ID {
 			t.Fatalf("context: %#v", m["context"])
 		}
 		rows, ok := m["rows"].([]any)
 		if !ok || len(rows) == 0 {
 			t.Fatalf("rows: %#v", m["rows"])
 		}
-		if _, ok := m["selected_region"].(map[string]any); !ok {
-			t.Fatalf("selected_region: %#v", m["selected_region"])
+		if _, ok := m["selectedRegion"].(map[string]any); !ok {
+			t.Fatalf("selectedRegion: %#v", m["selectedRegion"])
+		}
+		if met, ok := m["metrics"].(map[string]any); !ok {
+			t.Fatalf("metrics: %#v", m["metrics"])
+		} else if _, has := met["geoDivergenceQ"]; !has {
+			t.Fatalf("metrics.geoDivergenceQ: %#v", m["metrics"])
+		}
+	})
+
+	t.Run("get question view=regional matches topic regional payload", func(t *testing.T) {
+		u := base + "/questions/" + q.ID + "?view=regional&timeframe=7d"
+		res, err := http.Get(u)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("status %d", res.StatusCode)
+		}
+		var a, b map[string]any
+		if err := json.NewDecoder(res.Body).Decode(&a); err != nil {
+			t.Fatal(err)
+		}
+		r2, err := http.Get(base + "/topics/" + q.ID + "/regional?timeframe=7d")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer r2.Body.Close()
+		if err := json.NewDecoder(r2.Body).Decode(&b); err != nil {
+			t.Fatal(err)
+		}
+		if a["context"] == nil || b["context"] == nil {
+			t.Fatalf("context missing a=%#v b=%#v", a["context"], b["context"])
+		}
+		ma := a["context"].(map[string]any)
+		mb := b["context"].(map[string]any)
+		if ma["topicId"] != mb["topicId"] {
+			t.Fatalf("topicId mismatch: %v vs %v", ma["topicId"], mb["topicId"])
 		}
 	})
 
