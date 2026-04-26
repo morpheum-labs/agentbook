@@ -1,14 +1,8 @@
-// Package worldmon is a Go client for the World Monitor HTTP APIs. Method paths
-// follow the public server under server/worldmonitor on
-// [World Monitor on GitHub] (e.g. GET /api/intelligence/v1/get-risk-scores).
-// RPC cache tiers and gateway error JSON shapes are mirrored from
-// [server/gateway] and [server/error-mapper]; see [CacheTierForPath] and [ParseErrorBody].
-// See [worldmonitor.app] for auth and product documentation.
-//
-// [World Monitor on GitHub]: https://github.com/koala73/worldmonitor/tree/main/server/worldmonitor
-// [server/gateway]: https://github.com/koala73/worldmonitor/blob/main/server/gateway.ts
-// [server/error-mapper]: https://github.com/koala73/worldmonitor/blob/main/server/error-mapper.ts
-// [worldmonitor.app]: https://worldmonitor.app
+// Package worldmon is a Go HTTP client for versioned JSON APIs of the form
+// GET /api/{service}/{version}/{method} with query parameters, optional
+// [HeaderAPIKey] and [StringFromEnv] configuration.
+// Error bodies are parsed with [ParseErrorBody]; [CacheTierForPath] and related
+// helpers follow common “gateway cache tier” conventions.
 package worldmon
 
 import (
@@ -24,24 +18,37 @@ import (
 	"time"
 )
 
-const defaultBaseURL = "https://worldmonitor.app"
+const defaultBaseURL = ""
 
-// Header for upstream authentication (set when you have a World Monitor key). The
-// public edge gateway also accepts [HeaderAPIKeyAlt].
-const HeaderAPIKey = "X-WorldMonitor-Key"
+// Header for upstream API authentication when the key is set (X-API-Key style; some
+// gateways also accept [HeaderAPIKeyAlt] or other product-specific key headers).
+const HeaderAPIKey = "X-API-Key"
 
-// HeaderAPIKeyAlt is the legacy/alternate name for the key header; see server/gateway.ts
-// (validateApiKey) which checks both.
+// HeaderAPIKeyAlt is a common alternate header name.
 const HeaderAPIKeyAlt = "X-Api-Key"
 
-// DefaultWorldMonitorKeyEnv is the environment variable the upstream team documents for API keys.
-const DefaultWorldMonitorKeyEnv = "WORLDMONITOR_API_KEY"
+// Environment variable names.
+const (
+	EnvAPIKey  = "WORLDMON_API_KEY"
+	EnvBaseURL = "WORLDMON_API_BASE"
+	// EnvAPIKeyLegacy and EnvBaseURLLegacy are deprecated but still read by [StringFromEnv] and [NewFromEnv] when
+	// the preferred [EnvAPIKey] / [EnvBaseURL] are empty.
+	EnvAPIKeyLegacy  = "WORLDMONITOR_API_KEY"
+	EnvBaseURLLegacy = "WORLDMONITOR_API_BASE"
+)
 
-// DefaultWorldMonitorBaseEnv overrides the API base URL when set (e.g. WORLDMONITOR_API_BASE).
-const DefaultWorldMonitorBaseEnv = "WORLDMONITOR_API_BASE"
+// StringFromEnv returns the first non-empty trimmed value of os.Getenv among keys.
+func StringFromEnv(keys ...string) string {
+	for _, k := range keys {
+		if s := strings.TrimSpace(os.Getenv(k)); s != "" {
+			return s
+		}
+	}
+	return ""
+}
 
-// Client calls World Monitor JSON endpoints. It is safe for concurrent use
-// (each request uses a snapshot of the configured HTTP client and base URL).
+// Client is an HTTP client for a configured API origin. It is safe for concurrent
+// use (each request uses a snapshot of the configured [http.Client] and base URL).
 type Client struct {
 	baseURL   string
 	apiKey    string
@@ -49,9 +56,10 @@ type Client struct {
 	http      *http.Client
 }
 
-// New builds a [Client] with the given API key (may be empty if a route does not
-// require a key, though most production API paths expect one). Use [WithBaseURL] for
-// staging, and [WithHTTPClient] to tune timeouts and tracing.
+// New builds a [Client] with the given API key (optional). Use [WithBaseURL] to
+// set the request origin. When the base is empty, remote [Service] calls need
+// [WithBaseURL] or [StringFromEnv]([EnvBaseURL], [EnvBaseURLLegacy]). Use [WithHTTPClient] to
+// tune timeouts and tracing.
 func New(apiKey string, opts ...Option) *Client {
 	c := &Client{
 		baseURL:   defaultBaseURL,
@@ -64,21 +72,19 @@ func New(apiKey string, opts ...Option) *Client {
 			o(c)
 		}
 	}
-	if c.baseURL == "" {
-		c.baseURL = defaultBaseURL
-	}
+	// do not backfill a hard-coded host; the caller or [WithBaseURL] / env must set it
 	if c.http == nil {
 		c.http = &http.Client{Timeout: 30 * time.Second}
 	}
 	return c
 }
 
-// NewFromEnv is like [New] but takes the key from [DefaultWorldMonitorKeyEnv]
-// and, when set, the base from [DefaultWorldMonitorBaseEnv].
+// NewFromEnv is like [New] with the key and base from [StringFromEnv]([EnvAPIKey], [EnvAPIKeyLegacy]) and
+// [StringFromEnv]([EnvBaseURL], [EnvBaseURLLegacy]).
 func NewFromEnv(opts ...Option) *Client {
-	key := strings.TrimSpace(os.Getenv(DefaultWorldMonitorKeyEnv))
+	key := StringFromEnv(EnvAPIKey, EnvAPIKeyLegacy)
 	c := New(key, opts...)
-	if b := strings.TrimSpace(os.Getenv(DefaultWorldMonitorBaseEnv)); b != "" {
+	if b := StringFromEnv(EnvBaseURL, EnvBaseURLLegacy); b != "" {
 		WithBaseURL(b)(c)
 	}
 	return c
@@ -87,7 +93,7 @@ func NewFromEnv(opts ...Option) *Client {
 // Option customizes [New].
 type Option func(*Client)
 
-// WithBaseURL sets the origin (e.g. https://worldmonitor.app) without a trailing path.
+// WithBaseURL sets the origin (scheme+host) without a trailing path.
 func WithBaseURL(u string) Option {
 	return func(c *Client) {
 		if s := strings.TrimSpace(u); s != "" {

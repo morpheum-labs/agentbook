@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// Trade is the worldmonitor/trade/v1 API.
+// Trade is GET /api/trade/v1/…
 type Trade struct{ *Service }
 
 // Trade returns the trade v1 service.

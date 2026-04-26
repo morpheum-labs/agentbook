@@ -1,7 +1,7 @@
 package httpserver
 
-// ServiceNames lists World Monitor /api/{service}/... first path segment names (kebab-case),
-// for GET /capabilities and service registry metadata.
+// ServiceNames lists /api/{service}/... first path segment names (kebab-case) for
+// GET /capabilities and service registry metadata.
 var ServiceNames = []string{
 	"aviation",
 	"climate",

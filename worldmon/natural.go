@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// Natural is the worldmonitor/natural/v1 API.
+// Natural is GET /api/natural/v1/…
 type Natural struct{ *Service }
 
 // Natural returns the natural v1 service.

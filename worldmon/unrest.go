@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// Unrest is the worldmonitor/unrest/v1 API.
+// Unrest is GET /api/unrest/v1/…
 type Unrest struct{ *Service }
 
 // Unrest returns the unrest v1 service.

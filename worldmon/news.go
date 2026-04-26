@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// News is the worldmonitor/news/v1 API.
+// News is the local feed digest and optional upstream news helpers for /api/news/v1/…
 type News struct{ *Service }
 
 // News returns the news v1 service.
@@ -22,7 +22,8 @@ func (n *News) GetSummarizeArticleCache(ctx context.Context, q url.Values) (json
 	return n.Fetch(ctx, "get-summarize-article-cache", q)
 }
 
-// ListFeedDigest is GET /api/news/v1/list-feed-digest
+// ListFeedDigest is local parallel RSS/Atom aggregation (see [ListFeedDigestLocal] and
+// [AggregateFeeds]). The query must include `feeds` (comma-separated feed URLs).
 func (n *News) ListFeedDigest(ctx context.Context, q url.Values) (json.RawMessage, error) {
-	return n.Fetch(ctx, "list-feed-digest", q)
+	return n.ListFeedDigestLocal(ctx, q)
 }

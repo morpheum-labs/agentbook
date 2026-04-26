@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// Seismology is the worldmonitor/seismology/v1 API.
+// Seismology is GET /api/seismology/v1/…
 type Seismology struct{ *Service }
 
 // Seismology returns the seismology v1 service.

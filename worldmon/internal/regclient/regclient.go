@@ -61,7 +61,7 @@ func (c *Client) Register(ctx context.Context, r RegisterRequest) error {
 		ctx = context.Background()
 	}
 	if r.Tags == nil {
-		r.Tags = []string{"worldmonitor", "geopolitics"}
+		r.Tags = []string{"worldmon", "geopolitics"}
 	}
 	if r.Metadata == nil {
 		r.Metadata = map[string]any{"kind": "worldmon_server"}

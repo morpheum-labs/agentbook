@@ -6,11 +6,7 @@ import (
 	"net/url"
 )
 
-// Intelligence is the worldmonitor/intelligence/v1 API (see
-// [server/worldmonitor/intelligence/v1] on GitHub). Query parameters follow the
-// generated request types for each RPC.
-//
-// [server/worldmonitor/intelligence/v1]: https://github.com/koala73/worldmonitor/tree/main/server/worldmonitor/intelligence/v1
+// Intelligence is GET /api/intelligence/v1/…
 type Intelligence struct{ *Service }
 
 // Intelligence returns the intelligence v1 service.

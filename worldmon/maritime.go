@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// Maritime is the worldmonitor/maritime/v1 API.
+// Maritime is GET /api/maritime/v1/…
 type Maritime struct{ *Service }
 
 // Maritime returns the maritime v1 service.

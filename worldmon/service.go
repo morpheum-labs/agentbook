@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// Service is a versioned World Monitor service (maps to /api/{name}/{version}/…).
+// Service is a versioned /api/{name}/{version}/… service.
 // Obtain one with [Client.Service] or the helpers on [Client] (e.g. [Client.Intelligence]).
 type Service struct {
 	client  *Client
@@ -18,8 +18,7 @@ type Service struct {
 }
 
 // Fetch issues GET /api/{service}/{version}/{method} with optional query.
-// The method string is the final path segment, usually kebab-case and matching the
-// handler file name in server/worldmonitor/... (without .ts).
+// The method string is the final path segment (kebab-case).
 func (s *Service) Fetch(ctx context.Context, method string, q url.Values) (json.RawMessage, error) {
 	if s == nil || s.client == nil {
 		return nil, errors.New("worldmon: nil Service or Client")

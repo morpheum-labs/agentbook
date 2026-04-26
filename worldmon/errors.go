@@ -5,11 +5,8 @@ import (
 	"strings"
 )
 
-// ErrorBody is the common JSON shape for 4xx/5xx responses from the edge gateway
-// ([server/gateway.ts] and [server/error-mapper.ts]).
-//
-// [server/gateway.ts]: https://github.com/koala73/worldmonitor/blob/main/server/gateway.ts
-// [server/error-mapper.ts]: https://github.com/koala73/worldmonitor/blob/main/server/error-mapper.ts
+// ErrorBody is a common JSON shape for 4xx/5xx responses: optional "error", "message",
+// "_debug", and "retryAfter" fields.
 type ErrorBody struct {
 	Error   string `json:"error"`
 	Message string `json:"message"`

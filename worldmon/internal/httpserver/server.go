@@ -21,14 +21,14 @@ import (
 
 const (
 	svcName        = "worldmon"
-	svcDescription = "HTTP proxy for World Monitor (worldmonitor.app) service APIs; generic GET by service/version/method."
+	svcDescription = "HTTP proxy for a configured /api/… JSON service; generic GET by service, version, and method."
 )
 
 // Config holds environment-driven server settings.
 type Config struct {
 	Port              int
-	WorldMonitorKey   string
-	WorldMonitorBase  string
+	APIKey            string
+	BaseURL           string
 	PublicBaseURL     string
 	RegistryBaseURL   string
 	RegistryToken     string
@@ -36,7 +36,9 @@ type Config struct {
 	Version           string
 }
 
-// LoadConfig reads env: PORT, WORLDMONITOR_API_KEY, WORLDMONITOR_API_BASE, PUBLIC_BASE_URL, AGENTGLOBE_BASE_URL, SERVICE_REGISTRY_TOKEN, HEARTBEAT_INTERVAL, WORLDSERVER_VERSION.
+// LoadConfig reads environment: PORT, WORLDMON_API_KEY (or legacy WORLDMONITOR_API_KEY),
+// WORLDMON_API_BASE (or legacy WORLDMONITOR_API_BASE), PUBLIC_BASE_URL, AGENTGLOBE_BASE_URL,
+// SERVICE_REGISTRY_TOKEN, HEARTBEAT_INTERVAL, WORLDSERVER_VERSION.
 func LoadConfig() Config {
 	p := 8080
 	if s := os.Getenv("PORT"); s != "" {
@@ -56,8 +58,8 @@ func LoadConfig() Config {
 	}
 	return Config{
 		Port:              p,
-		WorldMonitorKey:   strings.TrimSpace(os.Getenv(worldmon.DefaultWorldMonitorKeyEnv)),
-		WorldMonitorBase:  strings.TrimSpace(os.Getenv(worldmon.DefaultWorldMonitorBaseEnv)),
+		APIKey:            worldmon.StringFromEnv(worldmon.EnvAPIKey, worldmon.EnvAPIKeyLegacy),
+		BaseURL:           worldmon.StringFromEnv(worldmon.EnvBaseURL, worldmon.EnvBaseURLLegacy),
 		PublicBaseURL:     strings.TrimRight(strings.TrimSpace(os.Getenv("PUBLIC_BASE_URL")), "/"),
 		RegistryBaseURL:   strings.TrimRight(strings.TrimSpace(os.Getenv("AGENTGLOBE_BASE_URL")), "/"),
 		RegistryToken:     os.Getenv("SERVICE_REGISTRY_TOKEN"),
@@ -66,7 +68,7 @@ func LoadConfig() Config {
 	}
 }
 
-// NewRouter wires routes. c is the World Monitor client (non-nil; build in RunContext).
+// NewRouter wires routes. c is the [worldmon.Client] (non-nil; build in RunContext).
 func NewRouter(c *worldmon.Client, publicBase, ver string, rcli *regclient.Client) *chi.Mux {
 	if ver == "" {
 		ver = "0.0.0-dev"
@@ -167,12 +169,12 @@ func handleRegister(cl *worldmon.Client, rcli *regclient.Client, publicBase, ver
 			Version:     version,
 			BaseURL:     publicBase,
 			Description: svcDescription,
-			Category:    "world_monitor",
-			Tags:        []string{"worldmonitor", "geopolitics", "news", "conflict", "intelligence"},
+			Category:    "osint",
+			Tags:        []string{"worldmon", "geopolitics", "news", "conflict", "intelligence"},
 			Domains:     ServiceNames,
 			OpenapiURL:  publicBase + "/openapi.json",
 			Metadata: map[string]any{
-				"kind": "worldmon_server", "upstream": "https://worldmonitor.app", "key_configured": keyed,
+				"kind": "worldmon_server", "upstream": cl.BaseURL(), "key_configured": keyed,
 			},
 		}
 		if err := rcli.Register(r.Context(), req); err != nil {
@@ -219,7 +221,7 @@ func handleWMProxy(cl *worldmon.Client) http.HandlerFunc {
 // Caller must provide a [worldmon.Client] (e.g. from [worldmon.New] and optional [worldmon.WithBaseURL]).
 func RunContext(ctx context.Context, cfg Config, c *worldmon.Client, rcli *regclient.Client, out io.Writer) error {
 	if c == nil {
-		return errors.New("httpserver: nil World Monitor client")
+		return errors.New("httpserver: nil worldmon client")
 	}
 	if out == nil {
 		out = os.Stderr
@@ -238,8 +240,8 @@ func RunContext(ctx context.Context, cfg Config, c *worldmon.Client, rcli *regcl
 				Version:     cfg.Version,
 				BaseURL:     pub,
 				Description: svcDescription,
-				Category:    "world_monitor",
-				Tags:        []string{"worldmonitor", "geopolitics"},
+				Category:    "osint",
+				Tags:        []string{"worldmon", "geopolitics"},
 				Domains:     ServiceNames,
 				OpenapiURL:  pub + "/openapi.json",
 				Metadata: map[string]any{
@@ -271,7 +273,7 @@ func RunContext(ctx context.Context, cfg Config, c *worldmon.Client, rcli *regcl
 		_, _ = io.WriteString(out, "httpserver: registry token or base empty; skipping registry\n")
 	}
 	if c != nil && c.APIKey() == "" {
-		_, _ = io.WriteString(out, "httpserver: "+worldmon.DefaultWorldMonitorKeyEnv+" is empty: upstream may return 401\n")
+		_, _ = io.WriteString(out, "httpserver: set "+worldmon.EnvAPIKey+" (or "+worldmon.EnvAPIKeyLegacy+") if upstream requires auth; otherwise expect 401\n")
 	}
 	srv := &http.Server{Addr: fmt.Sprintf("0.0.0.0:%d", cfg.Port), Handler: h}
 	go func() {

@@ -1,9 +1,7 @@
 package worldmon
 
-// rpcCacheTier copies server/gateway.ts RPC_CACHE_TIER, plus
-// /api/shipping/v2/… client-path aliases for the two /api/v2/shipping/…
-// entries. When updating, align with:
-// https://github.com/koala73/worldmonitor/blob/main/server/gateway.ts
+// rpcCacheTier is the path → tier map for [MethodCacheTier], including
+// /api/shipping/v2/… client-path aliases for the two /api/v2/shipping/… entries.
 var rpcCacheTier = map[string]CacheTier{
 	"/api/aviation/v1/get-airport-ops-summary":                 CacheTierStatic,
 	"/api/aviation/v1/get-carrier-ops":                         CacheTierSlow,

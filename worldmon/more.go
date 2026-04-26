@@ -1,11 +1,8 @@
 package worldmon
 
-// The following methods return a generic [Service] for the matching directory under
-// [server/worldmonitor] on GitHub. Call [Service.Fetch] with the handler file stem as
-// the method (kebab-case, same as the .ts name without the extension) when a typed
-// wrapper is not yet in this module.
-//
-// [server/worldmonitor]: https://github.com/koala73/worldmonitor/tree/main/server/worldmonitor
+// The following methods return a generic [Service] for a domain you can call
+// with [Service.Fetch] (method = final path segment, kebab-case) if there is
+// no typed wrapper yet in this module.
 
 // Aviation is GET /api/aviation/v1/…
 func (c *Client) Aviation() *Service { return c.Service("aviation", "v1") }

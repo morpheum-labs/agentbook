@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// Market is the worldmonitor/market/v1 API.
+// Market is GET /api/market/v1/…
 type Market struct{ *Service }
 
 // Market returns the market v1 service.

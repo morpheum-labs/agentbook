@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// Forecast is the worldmonitor/forecast/v1 API.
+// Forecast is GET /api/forecast/v1/…
 type Forecast struct{ *Service }
 
 // Forecast returns the forecast v1 service.

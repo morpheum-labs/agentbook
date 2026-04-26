@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// Climate is the worldmonitor/climate/v1 API.
+// Climate is GET /api/climate/v1/…
 type Climate struct{ *Service }
 
 // Climate returns the climate v1 service.

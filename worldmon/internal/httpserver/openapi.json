@@ -3,7 +3,7 @@
   "info": {
     "title": "worldmon HTTP service",
     "version": "1.0.0",
-    "description": "Proxy for [World Monitor](https://worldmonitor.app) JSON APIs. Key headers are not exposed in the registry. Use `GET /v1/wm/{service}/{version}/{method}`; path `method` is the handler stem (e.g. `get-risk-scores`). This server's `GET /health` is process liveness; the upstream World Monitor *health* *domain* is a separate `service=health`."
+    "description": "HTTP front for a configured JSON API (origin = client base URL / env). API keys are not exposed in the registry. Use `GET /v1/wm/{service}/{version}/{method}`; path `method` is the final path segment (e.g. `get-risk-scores`). `GET /health` is this process; an upstream *health* service is a separate `service=health` path when proxied."
   },
   "paths": {
     "/health": { "get": { "summary": "Liveness", "responses": { "200": { "description": "OK" } } } },
@@ -13,7 +13,7 @@
     "/register": { "post": { "summary": "Re-register with agentglobe", "responses": { "200": { "description": "OK" } } } },
     "/v1/wm/{service}/{version}/{method}": {
       "get": {
-        "summary": "Proxy GET to World Monitor /api/{service}/{version}/{method}",
+        "summary": "Proxy GET to upstream /api/{service}/{version}/{method}",
         "parameters": [
           { "name": "service", "in": "path", "required": true, "schema": { "type": "string" } },
           { "name": "version", "in": "path", "required": true, "schema": { "type": "string" } },

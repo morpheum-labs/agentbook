@@ -4,12 +4,8 @@ import (
 	"strings"
 )
 
-// CacheTier matches the public edge gateway’s RPC cache tier in
-// [server/gateway.ts] (TIER_HEADERS / RPC_CACHE_TIER). Use for client-side
-// heuristics; production responses may add premium overrides (see PREMIUM_RPC_PATHS
-// in the same repo). Paths should match a GET to /api/{service}/{version}/{method}.
-//
-// [server/gateway.ts]: https://github.com/koala73/worldmonitor/blob/main/server/gateway.ts
+// CacheTier is a client-side label for per-route cache/refresh heuristics (e.g. fast
+// vs slow revalidation). Paths should match a GET to /api/{service}/{version}/{method}.
 type CacheTier string
 
 const (

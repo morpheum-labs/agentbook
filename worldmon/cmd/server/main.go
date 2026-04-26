@@ -1,4 +1,4 @@
-// Command server runs the worldmon HTTP service (World Monitor API proxy, optional agentglobe registration).
+// Command server runs the worldmon HTTP service (API proxy, optional agentglobe registration).
 package main
 
 import (
@@ -18,15 +18,15 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	cfg := httpserver.LoadConfig()
-	key := cfg.WorldMonitorKey
+	key := cfg.APIKey
 	if key == "" {
-		key = strings.TrimSpace(os.Getenv(worldmon.DefaultWorldMonitorKeyEnv))
+		key = worldmon.StringFromEnv(worldmon.EnvAPIKey, worldmon.EnvAPIKeyLegacy)
 	}
 	var opts []worldmon.Option
-	if b := strings.TrimSpace(cfg.WorldMonitorBase); b != "" {
+	if b := strings.TrimSpace(cfg.BaseURL); b != "" {
 		opts = append(opts, worldmon.WithBaseURL(b))
 	} else {
-		eb := os.Getenv(worldmon.DefaultWorldMonitorBaseEnv)
+		eb := worldmon.StringFromEnv(worldmon.EnvBaseURL, worldmon.EnvBaseURLLegacy)
 		if strings.TrimSpace(eb) != "" {
 			opts = append(opts, worldmon.WithBaseURL(eb))
 		}

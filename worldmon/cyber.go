@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// Cyber is the worldmonitor/cyber/v1 API.
+// Cyber is GET /api/cyber/v1/…
 type Cyber struct{ *Service }
 
 // Cyber returns the cyber v1 service.

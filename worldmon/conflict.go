@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// Conflict is the worldmonitor/conflict/v1 API.
+// Conflict is GET /api/conflict/v1/…
 type Conflict struct{ *Service }
 
 // Conflict returns the conflict v1 service.

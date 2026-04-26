@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// Military is the worldmonitor/military/v1 API.
+// Military is GET /api/military/v1/…
 type Military struct{ *Service }
 
 // Military returns the military v1 service.

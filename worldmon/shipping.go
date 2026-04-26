@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-// ShippingV2 is the worldmonitor/shipping/v2 API (this tree only has v2 today on GitHub).
+// ShippingV2 is /api/shipping/v2/…
 type ShippingV2 struct{ *Service }
 
 // ShippingV2 returns the shipping v2 service.
