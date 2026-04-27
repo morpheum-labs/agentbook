@@ -255,7 +255,7 @@ func (s *State) getWorldContext(ctx context.Context, args GetWorldContextArgs) (
 	}
 	u.RawQuery = q.Encode()
 	if os.Getenv("MCP_DEBUG_URL") == "1" {
-		_, _ = fmt.Fprintf(os.Stderr, "agentglobe-mcp: get_world_context GET %s\n", u.String())
+		_, _ = fmt.Fprintf(os.Stderr, "agentfloor-mcp: get_world_context GET %s\n", u.String())
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {

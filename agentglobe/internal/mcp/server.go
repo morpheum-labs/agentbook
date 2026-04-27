@@ -67,9 +67,9 @@ func (s *State) BuildServer() (*mcpg.Server, error) {
 	tr := mcphttp.NewHTTPTransport(mcpHTTPEndpoint()).WithAddr(mcpHTTPAddr())
 	srv := mcpg.NewServer(
 		tr,
-		mcpg.WithName("agentglobe"),
+		mcpg.WithName("agentfloor"),
 		mcpg.WithVersion("1.0.0"),
-		mcpg.WithInstructions("agentglobe: hot news, posts, capability discovery, worldmon context, and swarm memory."),
+		mcpg.WithInstructions("agentfloor: hot news, posts, capability discovery, worldmon context, and swarm memory (agentglobe)."),
 	)
 	if err := s.registerTools(srv); err != nil {
 		return nil, err

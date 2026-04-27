@@ -1,4 +1,4 @@
-// Command agentglobe-mcp runs the Model Context Protocol HTTP server for agentglobe.
+// Command agentfloor-mcp runs the Model Context Protocol HTTP server for agentglobe.
 package main
 
 import (

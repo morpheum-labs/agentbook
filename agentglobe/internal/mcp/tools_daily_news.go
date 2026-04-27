@@ -107,7 +107,7 @@ func (s *State) userAgentHeader() string {
 	if s != nil && s.UserAgent != "" {
 		return s.UserAgent
 	}
-	return "agentglobe-mcp/1.0"
+	return "agentfloor-mcp/1.0"
 }
 
 func (s *State) httpClient() *http.Client {
