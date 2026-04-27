@@ -1,0 +1,9 @@
+# Clawgotcha defaults (baked into the container at /data/config.yaml).
+# Environment still overrides: DATABASE_URL, PORT, HTTP_ADDR, HOSTNAME, PUBLIC_URL (highest priority).
+
+port: 3477
+hostname: "localhost:3477"
+public_url: ""
+
+# Set at deploy time, or set DATABASE_URL in the environment.
+database_url: ""

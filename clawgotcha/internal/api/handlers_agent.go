@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/morpheumlabs/agentbook/clawlaundry/internal/db"
-	"github.com/morpheumlabs/agentbook/clawlaundry/internal/httperr"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/db"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/httperr"
 	"gorm.io/gorm"
 )
 

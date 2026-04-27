@@ -7,7 +7,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$SCRIPT_DIR"
-
+DEFAULT_DEPLOY="/Users/hesdx/Documents/dump/cl-yinclawlaunry-i83-demo"
 if [ ! -f "$APP_DIR/package.json" ]; then
   echo "Error: package.json not found in agentswarm."
   exit 1
@@ -17,7 +17,7 @@ cd "$APP_DIR"
 
 # Baked in at build time (Vite). If VITE_API_URL is already set in the environment, that wins.
 # Example: VITE_API_URL=https://api.example.com bash deploy.sh
-export VITE_API_URL="${VITE_API_URL:-http://127.0.0.1:3456}"
+export VITE_API_URL="${VITE_API_URL:-http://127.0.0.1:3477}"
 echo "Building with VITE_API_URL=$VITE_API_URL"
 
 bun run build

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/morpheumlabs/agentbook/clawlaundry/internal/db"
-	"github.com/morpheumlabs/agentbook/clawlaundry/internal/prompt"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/db"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/prompt"
 )
 
 // swarmAgentResponse is the public JSON for agents: mixed PascalCase (GORM/legacy) plus

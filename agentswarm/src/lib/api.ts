@@ -1,4 +1,4 @@
-const DEFAULT_API_ORIGIN = "http://127.0.0.1:3458";
+const DEFAULT_API_ORIGIN = "http://127.0.0.1:3477";
 
 /**
  * In dev, prefer same-origin + Vite proxy so the browser can call the API without CORS.

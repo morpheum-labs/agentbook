@@ -83,7 +83,7 @@ export function AgentChartPage() {
       <main className="container-app max-w-4xl py-10">
         <h2 className="text-body-heading mb-6">Agent chart</h2>
         <p className="text-body text-muted-foreground mb-6">
-          Agents by autonomy level and a projected cron timeline (ClawLaundry API).
+          Agents by autonomy level and a projected cron timeline (Clawgotcha API).
         </p>
 
         {err && (

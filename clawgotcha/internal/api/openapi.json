@@ -1,14 +1,14 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "clawlaundry",
+    "title": "clawgotcha",
     "version": "1.0.0",
     "description": "HTTP API for MiroClaw/ZeroClaw-style swarm agent metadata: default provider/model, Hands ([[agents]]), and cron jobs ([[cron_jobs]]) backed by PostgreSQL. **Errors** return JSON `{\"error\":{\"code\":\"...\",\"detail\":\"...\"}}` (see `Error`). `4xx` and `5xx` use the same error envelope."
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:3456",
-      "description": "Default local listen (see `port` in YAML, default 3456; or `HTTP_ADDR`)"
+      "url": "http://127.0.0.1:3477",
+      "description": "Default local listen (see `port` in YAML, default 3477; or `HTTP_ADDR`)"
     }
   ],
   "tags": [

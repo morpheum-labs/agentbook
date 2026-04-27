@@ -50,7 +50,7 @@ export function AppHeader({ maxWidthClassName = "max-w-4xl" }: AppHeaderProps) {
                 "dark:text-[color:var(--dark-text-primary)]"
               )}
             >
-              ClawLaundry
+              Clawgotcha
             </h1>
             <p
               className={cn(

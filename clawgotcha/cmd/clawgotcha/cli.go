@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/morpheumlabs/agentbook/clawlaundry/internal/api"
-	"github.com/morpheumlabs/agentbook/clawlaundry/internal/config"
-	"github.com/morpheumlabs/agentbook/clawlaundry/internal/db"
-	"github.com/morpheumlabs/agentbook/clawlaundry/internal/prompt"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/api"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/config"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/db"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/prompt"
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
 )
@@ -22,7 +22,7 @@ var (
 
 func newRoot() *cobra.Command {
 	root := &cobra.Command{
-		Use:   "clawlaundry",
+		Use:   "clawgotcha",
 		Short: "HTTP API for MiroClaw/ZeroClaw-style swarm agent metadata, plus prompt workspace helpers",
 		Long:  "PostgreSQL + GORM backend. With no subcommand, starts the HTTP server (config via -c/--config or CONFIG_PATH).",
 		RunE:  runServer,
@@ -93,7 +93,7 @@ func runServer(_ *cobra.Command, _ []string) error {
 		return err
 	}
 	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: api.NewRouter(g)}
-	slog.Info("clawlaundry listening", "addr", cfg.HTTPAddr)
+	slog.Info("clawgotcha listening", "addr", cfg.HTTPAddr)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err

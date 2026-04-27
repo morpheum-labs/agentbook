@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/morpheumlabs/agentbook/clawlaundry/internal/db"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/db"
 	"gorm.io/gorm"
 )
 

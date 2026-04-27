@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/morpheumlabs/agentbook/clawlaundry/internal/db"
-	"github.com/morpheumlabs/agentbook/clawlaundry/internal/httperr"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/db"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/httperr"
 	"github.com/robfig/cron/v3"
 )
 

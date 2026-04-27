@@ -1,4 +1,4 @@
-// Command clawlaundry is the HTTP API for MiroClaw/ZeroClaw-style swarm agent metadata
+// Command clawgotcha is the HTTP API for MiroClaw/ZeroClaw-style swarm agent metadata
 // (Hands + cron jobs + defaults) backed by PostgreSQL and GORM, plus a prompt workspace CLI.
 package main
 
@@ -10,7 +10,7 @@ import (
 
 func main() {
 	if err := newRoot().Execute(); err != nil {
-		slog.Error("clawlaundry", "err", err)
+		slog.Error("clawgotcha", "err", err)
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

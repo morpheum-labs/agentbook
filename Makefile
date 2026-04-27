@@ -2,8 +2,8 @@
 # Override local config: make run-local-build LOCAL_CONFIG=../dep/other.yaml
 LOCAL_CONFIG ?= ../dep/cf.yaml
 
-# Clawlaundry (agent metadata HTTP API). Config YAML: database_url, port, etc.
-# Override: make run-clawlaundry CL_LOCAL_CONFIG=../dep/other.yaml
+# Clawgotcha (agent metadata HTTP API). Config YAML: database_url, port, etc.
+# Override: make run-clawgotcha CL_LOCAL_CONFIG=../dep/other.yaml
 CL_LOCAL_CONFIG ?= ../dep/cl.yaml
 
 # Database DDL (Postgres: pg_dump, fallback docker; SQLite: sqlite_master). Uses LOCAL_CONFIG.
@@ -12,7 +12,7 @@ SCHEMA_OUT ?= spec/agentglobe_schema.sql
 .DEFAULT_GOAL := help
 
 .PHONY: help build build-all run run-local-build \
-	build-clawlaundry run-clawlaundry build-newapi build-worldmon build-feed-digest build-agentfloor-mcp \
+	build-clawgotcha run-clawgotcha build-newapi build-worldmon build-feed-digest build-agentfloor-mcp \
 	schema-export migrate test tidy vet lint
 
 help:
@@ -21,12 +21,12 @@ help:
 	@echo "  make build              Build agentglobe → bin/agentglobe"
 	@echo "  make build-all          Build every app in bin/ (see targets below)"
 	@echo "  make run                Build and run agentglobe (CONFIG via LOCAL_CONFIG, def. ../dep/cf.yaml)"
-	@echo "  make build-clawlaundry  clawlaundry → bin/clawlaundry"
+	@echo "  make build-clawgotcha  clawgotcha → bin/clawgotcha"
 	@echo "  make build-newapi       newapi      → bin/newapi"
 	@echo "  make build-worldmon     worldmon    → bin/worldmon"
 	@echo "  make build-feed-digest  worldmon    → bin/feed-digest"
 	@echo "  make build-agentfloor-mcp  agentglobe → bin/agentfloor-mcp"
-	@echo "  make run-clawlaundry    Build and run clawlaundry (CONFIG via CL_LOCAL_CONFIG, def. ../dep/cl.yaml)"
+	@echo "  make run-clawgotcha    Build and run clawgotcha (CONFIG via CL_LOCAL_CONFIG, def. ../dep/cl.yaml)"
 	@echo "  make schema-export      Write DB schema to SCHEMA_OUT (def. spec/agentglobe_schema.sql)"
 	@echo "  make migrate            Apply spec/migrations (Postgres) via agentglobe migrate"
 	@echo "  make test|tidy|vet|lint  Go test / mod tidy / vet / golangci-lint in agentglobe"
@@ -36,14 +36,14 @@ build:
 	mkdir -p bin
 	cd agentglobe && GOWORK=off go build -o ../bin/agentglobe ./cmd/agentglobe
 
-build-all: build build-clawlaundry build-newapi build-worldmon build-feed-digest build-agentfloor-mcp
+build-all: build build-clawgotcha build-newapi build-worldmon build-feed-digest build-agentfloor-mcp
 
 run: build
 	cd agentglobe && CONFIG_PATH=$(LOCAL_CONFIG) ../bin/agentglobe
 
-build-clawlaundry:
+build-clawgotcha:
 	mkdir -p bin
-	cd clawlaundry && GOWORK=off go build -o ../bin/clawlaundry ./cmd/clawlaundry
+	cd clawgotcha && GOWORK=off go build -o ../bin/clawgotcha ./cmd/clawgotcha
 
 build-newapi:
 	mkdir -p bin
@@ -61,8 +61,8 @@ build-agentfloor-mcp:
 	mkdir -p bin
 	cd agentglobe && GOWORK=off go build -o ../bin/agentfloor-mcp ./cmd/agentfloor-mcp
 
-run-clawlaundry: build-clawlaundry
-	cd clawlaundry && CONFIG_PATH=$(CL_LOCAL_CONFIG) ../bin/clawlaundry
+run-clawgotcha: build-clawgotcha
+	cd clawgotcha && CONFIG_PATH=$(CL_LOCAL_CONFIG) ../bin/clawgotcha
 
 schema-export:
 	cd agentglobe && GOWORK=off CONFIG_PATH=$(LOCAL_CONFIG) go run ./cmd/schemaexport -out ../$(SCHEMA_OUT)

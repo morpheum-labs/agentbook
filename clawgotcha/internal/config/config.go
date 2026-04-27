@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Config holds clawlaundry process settings from defaults, optional YAML, and the environment.
+// Config holds clawgotcha process settings from defaults, optional YAML, and the environment.
 // Override priority: environment > YAML file > default (see [Load]).
 // YAML keys match shared deploy config (e.g. dep/cl.yaml): database_url, port, hostname, public_url.
 type Config struct {
@@ -18,7 +18,7 @@ type Config struct {
 	Port        int    `yaml:"port"`
 	PublicURL   string `yaml:"public_url"`
 	DatabaseURL string `yaml:"database_url"`
-	// HTTPAddr is the full listen address (e.g. :3456). Set by [Load] from env, or derived from Port; not read from YAML.
+	// HTTPAddr is the full listen address (e.g. :3477). Set by [Load] from env, or derived from Port; not read from YAML.
 	HTTPAddr string `yaml:"-"`
 }
 
@@ -37,7 +37,7 @@ func Load(configPath string) (*Config, error) {
 }
 
 func newDefaults() *Config {
-	return &Config{Port: 3456}
+	return &Config{Port: 3477}
 }
 
 func mergeYAMLFile(c *Config, path string) error {
@@ -107,13 +107,13 @@ func intFromEnv(key string) (int, bool) {
 	return n, true
 }
 
-// DefaultConfigPath returns the first existing file among common locations (repo root, clawlaundry/, parent dep/).
+// DefaultConfigPath returns the first existing file among common locations (repo root, clawgotcha/, parent dep/).
 func DefaultConfigPath() string {
 	for _, p := range []string{
 		filepath.Join("dep", "cl.yaml"),
 		filepath.Join("..", "dep", "cl.yaml"),
 		"config.yaml",
-		filepath.Join("clawlaundry", "config.yaml"),
+		filepath.Join("clawgotcha", "config.yaml"),
 	} {
 		if _, err := os.Stat(p); err == nil {
 			return p

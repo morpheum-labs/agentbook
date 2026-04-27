@@ -164,7 +164,7 @@ export function CronJobEditPage() {
       {form && !loading && (
         <CronJobFormLayout
           title="Edit cron job"
-          description="Tweak the schedule, timeout, and prompt. Changes are persisted to the ClawLaundry API."
+          description="Tweak the schedule, timeout, and prompt. Changes are persisted to the Clawgotcha API."
           headerExtra={
             <>
               <p className="text-caption text-muted-foreground font-mono pt-0.5 break-all">{originalId}</p>
