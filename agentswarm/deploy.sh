@@ -15,9 +15,9 @@ fi
 
 cd "$APP_DIR"
 
-# Baked in at build time (Vite). If VITE_API_URL is already set in the environment, that wins.
-# Example: VITE_API_URL=https://api.example.com bash deploy.sh
-export VITE_API_URL="${VITE_API_URL:-http://127.0.0.1:3477}"
+# Baked in at build time (Vite). If unset, matches .env.production (or override explicitly).
+# Example: VITE_API_URL=https://staging.example.com bash deploy.sh
+export VITE_API_URL="https://gochaapi.clawlaundry.com"
 echo "Building with VITE_API_URL=$VITE_API_URL"
 
 bun run build

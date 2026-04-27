@@ -26,7 +26,7 @@ PostgreSQL via GORM. [Open](../../clawgotcha/internal/db/open.go) runs **AutoMig
 | --- | --- | --- |
 | `SwarmConfig` | `swarm_config` | Single row (`id=1`): `default_provider`, `default_model` (mirrors agentic_swarm top-level defaults). |
 | `SwarmAgent` | `swarm_agents` | One row per **Hand** / `[[agents]]` block: `name` (unique), `system_prompt`, `tools` (JSON), `provider`, `model`, `timeout_seconds`, `autonomy_level`. |
-| `SwarmCronJob` | `swarm_cron_jobs` | One row per **cron** / `[[cron_jobs]]` block: `name` (unique), `agent_name`, `schedule`, `timeout_seconds`, `prompt`. |
+| `SwarmCronJob` | `swarm_cron_jobs` | One row per **cron** / `[[cron_jobs]]` block: `name` (unique), `agent_name`, `schedule`, `timeout_seconds`, `prompt`, `active`. |
 
 Autonomy levels in code: `ReadOnly`, `Supervised`, `Full` (see [models.go](../../clawgotcha/internal/db/models.go)).
 
@@ -36,13 +36,16 @@ Small helper for **JSON error responses**: `PublicError` with `code` and `detail
 
 ## `internal/api`
 
-REST API on [chi](https://github.com/go-chi/chi), exposed by [NewRouter](../../clawgotcha/internal/api/server.go).
+REST API on [chi](https://github.com/go-chi/chi), exposed by [NewRouter](../../clawgotcha/internal/api/server.go). **CORS** is applied globally (including `OPTIONS` preflight) so a static SPA on another origin can call the JSON API; see [server.go](../../clawgotcha/internal/api/server.go).
+
+Authoritative request/response shapes, status codes, and query parameters live in the embedded [OpenAPI](../../clawgotcha/internal/api/openapi.json) (also at `GET /openapi.json`). Notable JSON conventions: many entity responses use **PascalCase** (Go `json` defaults); create/update bodies for agents and cron often use **snake_case** keys; errors return an `error` object with `code` and optional `detail` (see `ErrorResponse` in the spec).
 
 - **`GET /healthz`** — liveness JSON (`status`, `ts`).
 - **`GET /openapi.json`** — embedded OpenAPI spec (see `openapi.json` + `openapi_embed.go`).
 - **`/api/v1/config`** — `GET` / `PUT` for `SwarmConfig` (id 1).
-- **`/api/v1/agents`** — CRUD for `SwarmAgent` (`GET/POST` list and create, `GET/PUT/PATCH/DELETE` by UUID, `GET /agents/by-name/{name}`).
-- **`/api/v1/cron-jobs`** — CRUD for `SwarmCronJob`; create/put require a matching agent **name** (`agentExists` in [validate.go](../../clawgotcha/internal/api/validate.go)).
+- **`/api/v1/agents`** — `GET` list, `POST` create; `GET/PUT/PATCH/DELETE` by path UUID; **`GET /api/v1/agents/by-name/{name}`** to resolve by unique hand name. Create/put can supply modular parts (`identity`, `soul`, `user_context`) that are assembled into `system_prompt` in the store, or a flat `system_prompt`; see the `SwarmAgent` and request schemas in OpenAPI.
+- **`/api/v1/cron-jobs`** — `GET` list, `POST` create; `GET/PUT/PATCH/DELETE` by path UUID. Create, replace, and patch (when `agent_name` changes) require an existing agent name (`agentExists` in [validate.go](../../clawgotcha/internal/api/validate.go)).
+- **`GET /api/v1/cron-jobs/schedule-timeline`** — projected next run instants for each **active** job (standard five-field cron), with query params `horizon_hours` (default 168, max 8760) and `max_runs` (default 64, max 200). Response includes `as_of`, `horizon_ends`, and per-job `ProjectedRuns`; tick alignment uses each row’s `anchor_at` (`UpdatedAt`, or `CreatedAt` if `UpdatedAt` is zero). Inactive or unparsable schedules yield empty `ProjectedRuns` (see OpenAPI for `CronScheduleTimelineRow`).
 
 Support code:
 
