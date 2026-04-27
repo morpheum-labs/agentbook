@@ -419,3 +419,14 @@ body {
 @utility border-surface-hero {
   border-color: var(--surface-hero-border);
 }
+
+/* SVAR Gantt — time-scale (x-axis) header: extra space between tick labels (cron schedule) */
+.cron-gantt-timeline .wx-scale .wx-row .wx-cell {
+  box-sizing: border-box;
+  padding-inline: 0.5rem;
+}
+@media (min-width: 640px) {
+  .cron-gantt-timeline .wx-scale .wx-row .wx-cell {
+    padding-inline: 0.75rem;
+  }
+}

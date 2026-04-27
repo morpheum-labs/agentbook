@@ -120,8 +120,9 @@ export function AgentChartPage() {
                     >
                       <div
                         className={cn(
-                          "h-full rounded-sm bg-primary/80 transition-[width] duration-300",
-                          "min-w-1"
+                          "h-full min-w-1 rounded-sm transition-[width] duration-300",
+                          "bg-[color-mix(in_srgb,var(--amethyst-link)_88%,var(--pure-white))]",
+                          "dark:bg-[color-mix(in_srgb,var(--amethyst-link)_45%,var(--dark-surface))]"
                         )}
                         style={{ width: `${(n / max) * 100}%` }}
                       />

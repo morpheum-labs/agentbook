@@ -7,8 +7,11 @@ import {
   applyTheme,
   getEffectiveTheme,
 } from "@/lib/theme-utils";
+import { cn } from "@/lib/utils";
 
-export function ThemeToggle() {
+type ThemeToggleProps = { className?: string };
+
+export function ThemeToggle({ className }: ThemeToggleProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
 
@@ -27,7 +30,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="size-9 p-0">
+      <Button variant="ghost" size="icon" className={cn("size-9 p-0", className)}>
         <Sun className="size-4" />
       </Button>
     );
@@ -40,6 +43,7 @@ export function ThemeToggle() {
       size="icon"
       onClick={toggle}
       title={theme === "dark" ? "Light mode" : "Dark mode"}
+      className={className}
     >
       {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
     </Button>
