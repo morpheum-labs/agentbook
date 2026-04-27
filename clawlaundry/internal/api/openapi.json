@@ -238,6 +238,37 @@
         }
       }
     },
+    "/api/v1/cron-jobs/schedule-timeline": {
+      "get": {
+        "tags": ["Cron jobs"],
+        "summary": "List cron jobs with projected run times (standard 5-field cron) anchored on `UpdatedAt` and filtered by `Active` & horizon",
+        "parameters": [
+          {
+            "name": "horizon_hours",
+            "in": "query",
+            "description": "Window length from server `as_of` (default 168, max 8760)",
+            "schema": { "type": "integer", "default": 168, "minimum": 1, "maximum": 8760 }
+          },
+          {
+            "name": "max_runs",
+            "in": "query",
+            "description": "Cap of projected instants per job (default 64, max 200)",
+            "schema": { "type": "integer", "default": 64, "minimum": 1, "maximum": 200 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CronScheduleTimelineResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
     "/api/v1/cron-jobs": {
       "get": {
         "tags": ["Cron jobs"],
@@ -507,6 +538,7 @@
           "Schedule": { "type": "string" },
           "TimeoutSeconds": { "type": "integer" },
           "Prompt": { "type": "string" },
+          "Active": { "type": "boolean" },
           "CreatedAt": { "type": "string", "format": "date-time" },
           "UpdatedAt": { "type": "string", "format": "date-time" }
         }
@@ -520,7 +552,8 @@
           "agent_name": { "type": "string" },
           "schedule": { "type": "string" },
           "timeout_seconds": { "type": "integer" },
-          "prompt": { "type": "string" }
+          "prompt": { "type": "string" },
+          "active": { "type": "boolean" }
         }
       },
       "PatchCronJobRequest": {
@@ -530,7 +563,8 @@
           "agent_name": { "type": "string" },
           "schedule": { "type": "string" },
           "timeout_seconds": { "type": "integer" },
-          "prompt": { "type": "string" }
+          "prompt": { "type": "string" },
+          "active": { "type": "boolean" }
         }
       },
       "CronJobListResponse": {
@@ -541,6 +575,35 @@
             "type": "array",
             "items": { "$ref": "#/components/schemas/SwarmCronJob" }
           }
+        }
+      },
+      "CronScheduleTimelineResponse": {
+        "type": "object",
+        "required": ["as_of", "horizon_ends", "anchored_by", "horizon_hours", "max_runs", "rows"],
+        "properties": {
+          "as_of": { "type": "string", "format": "date-time", "description": "Server time when the window starts" },
+          "horizon_ends": { "type": "string", "format": "date-time", "description": "End of the projection window" },
+          "anchored_by": { "type": "string", "example": "UpdatedAt" },
+          "horizon_hours": { "type": "integer" },
+          "max_runs": { "type": "integer" },
+          "rows": { "type": "array", "items": { "$ref": "#/components/schemas/CronScheduleTimelineRow" } }
+        }
+      },
+      "CronScheduleTimelineRow": {
+        "type": "object",
+        "description": "Mirrors a cron job; `ProjectedRuns` is empty if inactive, schedule is not standard cron, or no match in the window",
+        "properties": {
+          "ID": { "type": "string", "format": "uuid" },
+          "Name": { "type": "string" },
+          "AgentName": { "type": "string" },
+          "Schedule": { "type": "string" },
+          "Active": { "type": "boolean" },
+          "UpdatedAt": { "type": "string", "format": "date-time" },
+          "CreatedAt": { "type": "string", "format": "date-time" },
+          "anchor_at": { "type": "string", "format": "date-time", "description": "Time used to anchor the first ticks (from `UpdatedAt` when set, else `CreatedAt`)" },
+          "ScheduleParsed": { "type": "boolean" },
+          "ParseError": { "type": "string" },
+          "ProjectedRuns": { "type": "array", "items": { "type": "string", "format": "date-time" } }
         }
       }
     }

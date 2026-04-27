@@ -148,6 +148,7 @@ export type SwarmCronJob = {
   Schedule: string;
   TimeoutSeconds: number;
   Prompt: string;
+  Active: boolean;
   CreatedAt: string;
   UpdatedAt: string;
 };
@@ -160,6 +161,7 @@ export type CreateOrReplaceCronJobRequest = {
   schedule?: string;
   timeout_seconds?: number;
   prompt?: string;
+  active?: boolean;
 };
 
 export type PatchCronJobRequest = {
@@ -168,7 +170,53 @@ export type PatchCronJobRequest = {
   schedule?: string;
   timeout_seconds?: number;
   prompt?: string;
+  active?: boolean;
 };
+
+export type CronScheduleTimelineRow = {
+  ID: string;
+  Name: string;
+  AgentName: string;
+  Schedule: string;
+  Active: boolean;
+  UpdatedAt: string;
+  CreatedAt: string;
+  anchor_at: string;
+  ScheduleParsed: boolean;
+  ParseError?: string;
+  ProjectedRuns: string[];
+};
+
+export type CronScheduleTimelineResponse = {
+  as_of: string;
+  horizon_ends: string;
+  anchored_by: string;
+  horizon_hours: number;
+  max_runs: number;
+  rows: CronScheduleTimelineRow[];
+};
+
+export async function fetchCronScheduleTimeline(
+  options?: { horizonHours?: number; maxRuns?: number }
+): Promise<CronScheduleTimelineResponse> {
+  const p = new URLSearchParams();
+  if (options?.horizonHours != null) {
+    p.set("horizon_hours", String(options.horizonHours));
+  }
+  if (options?.maxRuns != null) {
+    p.set("max_runs", String(options.maxRuns));
+  }
+  const q = p.toString();
+  const r = await fetch(
+    apiUrl(`/api/v1/cron-jobs/schedule-timeline${q ? `?${q}` : ""}`),
+    { headers: { Accept: "application/json" } }
+  );
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
+  return (await r.json()) as CronScheduleTimelineResponse;
+}
 
 export async function fetchCronJobs(): Promise<SwarmCronJob[]> {
   const r = await fetch(apiUrl("/api/v1/cron-jobs"), {

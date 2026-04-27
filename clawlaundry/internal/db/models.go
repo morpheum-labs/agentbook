@@ -49,6 +49,7 @@ type SwarmCronJob struct {
 	Schedule       string    `gorm:"not null;type:text"`
 	TimeoutSeconds int       `gorm:"not null;column:timeout_seconds"`
 	Prompt         string    `gorm:"not null;type:text"`
+	Active         bool      `gorm:"not null;default:true;column:active"`
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }

@@ -12,6 +12,7 @@ import { AgentHandToolsInspector } from "@/components/cron-job/agent-hand-tools-
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { CronScheduleField } from "@/components/cron-job/cron-schedule-field";
 import { CronJobPromptRichtext } from "@/components/cron-job/cron-prompt-richtext";
 import { CronJobFormLayout } from "@/components/cron-job/cron-job-form-layout";
@@ -24,6 +25,7 @@ function cronToForm(j: {
   Schedule: string;
   TimeoutSeconds: number;
   Prompt: string;
+  Active?: boolean;
 }): CreateOrReplaceCronJobRequest {
   return {
     name: j.Name,
@@ -31,6 +33,7 @@ function cronToForm(j: {
     schedule: j.Schedule,
     timeout_seconds: j.TimeoutSeconds,
     prompt: j.Prompt,
+    active: j.Active !== false,
   };
 }
 
@@ -109,6 +112,7 @@ export function CronJobEditPage() {
         schedule: form.schedule?.trim() || undefined,
         timeout_seconds: form.timeout_seconds,
         prompt: form.prompt,
+        active: form.active !== false,
       });
     } catch (caught: unknown) {
       setErr(caught instanceof Error ? caught.message : "Save failed");
@@ -173,6 +177,29 @@ export function CronJobEditPage() {
           }
         >
           <form onSubmit={onSave} className="flex flex-col gap-6">
+            <CronJobFieldGroup
+              label="Status"
+              description="When off, the job is paused—your runner should skip it until you turn it back on. The API only stores this flag."
+            >
+              <div className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/50 px-4 py-3.5 sm:px-5">
+                <div className="min-w-0 pr-2">
+                  <label htmlFor="cje_active" className="text-body text-foreground font-medium">
+                    Active
+                  </label>
+                  <p className="text-caption text-muted-foreground mt-1 text-pretty leading-snug" id="cje_active_desc">
+                    Paused jobs stay in the list but should not be executed on schedule.
+                  </p>
+                </div>
+                <Switch
+                  id="cje_active"
+                  checked={form.active !== false}
+                  onCheckedChange={(v) => update("active", v)}
+                  disabled={saving}
+                  aria-describedby="cje_active_desc"
+                />
+              </div>
+            </CronJobFieldGroup>
+
             <CronJobFieldGroup label="What & who" description="Job label and the Hand that executes it.">
               <div>
                 <label className="text-caption text-muted-foreground block mb-1.5" htmlFor="cje_name">

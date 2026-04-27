@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -19,6 +20,7 @@ type createCronBody struct {
 	Schedule       string `json:"schedule"`
 	TimeoutSeconds int    `json:"timeout_seconds"`
 	Prompt         string `json:"prompt"`
+	Active         *bool  `json:"active"`
 }
 
 type patchCronBody struct {
@@ -27,6 +29,7 @@ type patchCronBody struct {
 	Schedule       *string `json:"schedule"`
 	TimeoutSeconds *int    `json:"timeout_seconds"`
 	Prompt         *string `json:"prompt"`
+	Active         *bool   `json:"active"`
 }
 
 func (s *Server) listCronJobs(w http.ResponseWriter, r *http.Request) {
@@ -64,12 +67,17 @@ func (s *Server) createCronJob(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
+	active := true
+	if b.Active != nil {
+		active = *b.Active
+	}
 	cj := db.SwarmCronJob{
 		Name:           strings.TrimSpace(b.Name),
 		AgentName:      agentName,
 		Schedule:       strings.TrimSpace(b.Schedule),
 		TimeoutSeconds: b.TimeoutSeconds,
 		Prompt:         b.Prompt,
+		Active:         active,
 	}
 	if err := s.db.Create(&cj).Error; err != nil {
 		if isUniqueViolation(err) {
@@ -129,6 +137,10 @@ func (s *Server) putCronJob(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
+	active := existing.Active
+	if b.Active != nil {
+		active = *b.Active
+	}
 	cj := db.SwarmCronJob{
 		ID:             id,
 		CreatedAt:     existing.CreatedAt,
@@ -137,6 +149,7 @@ func (s *Server) putCronJob(w http.ResponseWriter, r *http.Request) {
 		Schedule:       strings.TrimSpace(b.Schedule),
 		TimeoutSeconds: b.TimeoutSeconds,
 		Prompt:         b.Prompt,
+		Active:         active,
 	}
 	if err := s.db.Save(&cj).Error; err != nil {
 		if isUniqueViolation(err) {
@@ -178,6 +191,9 @@ func (s *Server) patchCronJob(w http.ResponseWriter, r *http.Request) {
 	if b.Prompt != nil {
 		updates["prompt"] = *b.Prompt
 	}
+	if b.Active != nil {
+		updates["active"] = *b.Active
+	}
 	if b.AgentName != nil {
 		an := strings.TrimSpace(*b.AgentName)
 		if an == "" {
@@ -198,6 +214,9 @@ func (s *Server) patchCronJob(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, cj)
 		return
 	}
+	// Map Updates do not run GORM's autoUpdateTime; bump so toggling `active` (or any
+	// field) refreshes the anchor for schedule execution logic that keys off updated_at.
+	updates["updated_at"] = time.Now()
 	if err := s.db.Model(&cj).Updates(updates).Error; err != nil {
 		if isUniqueViolation(err) {
 			httperr.Write(w, r, httperr.BadRequest("duplicate name", err))

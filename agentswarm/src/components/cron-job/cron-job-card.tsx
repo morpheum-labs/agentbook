@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Bot, Clock, Timer } from "lucide-react";
+import { ArrowUpRight, Bot, CirclePause, CirclePlay, Clock, Timer } from "lucide-react";
 import type { SwarmCronJob } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -14,17 +14,22 @@ type CronJobCardProps = {
  */
 export function CronJobCard({ job, className }: CronJobCardProps) {
   const hasSchedule = Boolean(job.Schedule?.trim());
+  const isActive = job.Active !== false;
   return (
     <article
+      aria-label={`Cron job: ${job.Name}, ${isActive ? "active" : "paused"}`}
       className={cn(
         "group relative overflow-hidden rounded-2xl border border-border/80 bg-card shadow-elevation-2",
         "transition-shadow duration-300 hover:shadow-elevation-3",
         "dark:border-white/[0.08] dark:shadow-[0_8px_32px_rgba(0,0,0,0.35)]",
-        className
+        !isActive && "opacity-95"
       )}
     >
         <div
-          className="h-1.5 w-full bg-gradient-to-r from-[var(--mysteria-purple)] via-[var(--amethyst-link)] to-[var(--lavender-glow)]"
+          className={cn(
+            "h-1.5 w-full bg-gradient-to-r from-[var(--mysteria-purple)] via-[var(--amethyst-link)] to-[var(--lavender-glow)]",
+            !isActive && "from-muted-foreground/40 via-muted-foreground/25 to-muted-foreground/10"
+          )}
           aria-hidden
         />
         <div className="relative p-5 sm:p-6">
@@ -50,9 +55,40 @@ export function CronJobCard({ job, className }: CronJobCardProps) {
               </div>
               <div className="min-w-0 space-y-3">
                 <div>
-                  <h3 className="text-card-title text-foreground font-medium tracking-tight">
-                    {job.Name}
-                  </h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-card-title text-foreground font-medium tracking-tight">
+                      {job.Name}
+                    </h3>
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5",
+                        "text-[0.6875rem] font-medium leading-tight",
+                        isActive
+                          ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                          : "border-border/80 bg-muted/60 text-muted-foreground"
+                      )}
+                    >
+                      {isActive ? (
+                        <>
+                          <CirclePlay
+                            className="size-3.5 text-emerald-600 dark:text-emerald-400/90"
+                            strokeWidth={2}
+                            aria-hidden
+                          />
+                          Active
+                        </>
+                      ) : (
+                        <>
+                          <CirclePause
+                            className="size-3.5 opacity-80"
+                            strokeWidth={2}
+                            aria-hidden
+                          />
+                          Paused
+                        </>
+                      )}
+                    </span>
+                  </div>
                   <p
                     className="text-caption font-mono text-muted-foreground mt-1.5 break-all"
                     title={job.ID}

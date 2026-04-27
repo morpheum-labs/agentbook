@@ -46,6 +46,7 @@ func NewRouter(gdb *gorm.DB) http.Handler {
 		// Optional convenience: resolve by hand name
 		r.Get("/agents/by-name/{name}", s.getAgentByName)
 
+		r.Get("/cron-jobs/schedule-timeline", s.listCronScheduleTimeline)
 		r.Get("/cron-jobs", s.listCronJobs)
 		r.Post("/cron-jobs", s.createCronJob)
 		r.Get("/cron-jobs/{id}", s.getCronJob)

@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchAgents, type SwarmAgent } from "@/lib/api";
+import {
+  fetchAgents,
+  fetchCronScheduleTimeline,
+  type CronScheduleTimelineResponse,
+  type SwarmAgent,
+} from "@/lib/api";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CronScheduleGantt } from "@/components/cron-job/cron-schedule-gantt";
 import { cn } from "@/lib/utils";
 
 const LEVEL_ORDER = ["ReadOnly", "Supervised", "Full"] as const;
@@ -19,6 +25,9 @@ function countByAutonomy(agents: SwarmAgent[]) {
 export function AgentChartPage() {
   const [agents, setAgents] = useState<SwarmAgent[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [timeline, setTimeline] = useState<CronScheduleTimelineResponse | null>(null);
+  const [timelineErr, setTimelineErr] = useState<string | null>(null);
+  const [timelineLoading, setTimelineLoading] = useState(true);
 
   useEffect(() => {
     setErr(null);
@@ -27,6 +36,24 @@ export function AgentChartPage() {
       .then(setAgents)
       .catch((e: unknown) => {
         setErr(e instanceof Error ? e.message : "Failed to load");
+      });
+  }, []);
+
+  useEffect(() => {
+    setTimelineErr(null);
+    setTimeline(null);
+    setTimelineLoading(true);
+    fetchCronScheduleTimeline()
+      .then((t) => {
+        setTimeline(t);
+        setTimelineErr(null);
+      })
+      .catch((e: unknown) => {
+        setTimelineErr(e instanceof Error ? e.message : "Failed to load cron timeline");
+        setTimeline(null);
+      })
+      .finally(() => {
+        setTimelineLoading(false);
       });
   }, []);
 
@@ -56,7 +83,7 @@ export function AgentChartPage() {
       <main className="container-app max-w-4xl py-10">
         <h2 className="text-body-heading mb-6">Agent chart</h2>
         <p className="text-body text-muted-foreground mb-6">
-          Agents by autonomy level (from the ClawLaundry API).
+          Agents by autonomy level and a projected cron timeline (ClawLaundry API).
         </p>
 
         {err && (
@@ -126,6 +153,15 @@ export function AgentChartPage() {
             </Card>
           </div>
         )}
+
+        <div className="mt-10">
+          <CronScheduleGantt
+            data={timeline}
+            loading={timelineLoading}
+            error={timelineErr}
+            className="w-full"
+          />
+        </div>
       </main>
     </div>
   );
