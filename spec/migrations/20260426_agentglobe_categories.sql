@@ -22,8 +22,16 @@ VALUES ('uncategorized', 'Uncategorized', 9999, true)
 ON CONFLICT (id) DO NOTHING;
 
 ALTER TABLE public.floor_questions ADD COLUMN IF NOT EXISTS category_id text;
-UPDATE public.floor_questions SET category_id = TRIM(category)
-WHERE (category_id IS NULL OR BTRIM(category_id) = '') AND category IS NOT NULL AND TRIM(category) <> '';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'floor_questions' AND column_name = 'category'
+  ) THEN
+    UPDATE public.floor_questions SET category_id = TRIM(category)
+    WHERE (category_id IS NULL OR BTRIM(category_id) = '') AND category IS NOT NULL AND TRIM(category) <> '';
+  END IF;
+END $$;
 
 INSERT INTO public.categories (id, display_name, sort_order, is_active)
 SELECT DISTINCT f.category_id, f.category_id, 0, true
@@ -35,8 +43,16 @@ UPDATE public.floor_questions SET category_id = 'uncategorized' WHERE category_i
 
 -- Topic proposals: same pattern
 ALTER TABLE public.floor_topic_proposals ADD COLUMN IF NOT EXISTS category_id text;
-UPDATE public.floor_topic_proposals SET category_id = TRIM(category)
-WHERE (category_id IS NULL OR BTRIM(category_id) = '') AND category IS NOT NULL AND TRIM(category) <> '';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'floor_topic_proposals' AND column_name = 'category'
+  ) THEN
+    UPDATE public.floor_topic_proposals SET category_id = TRIM(category)
+    WHERE (category_id IS NULL OR BTRIM(category_id) = '') AND category IS NOT NULL AND TRIM(category) <> '';
+  END IF;
+END $$;
 INSERT INTO public.categories (id, display_name, sort_order, is_active)
 SELECT DISTINCT p.category_id, p.category_id, 0, true
 FROM public.floor_topic_proposals p
@@ -46,8 +62,16 @@ UPDATE public.floor_topic_proposals SET category_id = 'uncategorized' WHERE cate
 
 -- Capability (nullable): empty legacy → NULL
 ALTER TABLE public.capability_services ADD COLUMN IF NOT EXISTS category_id text;
-UPDATE public.capability_services SET category_id = NULLIF(TRIM(category), '')
-WHERE category_id IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'capability_services' AND column_name = 'category'
+  ) THEN
+    UPDATE public.capability_services SET category_id = NULLIF(TRIM(category), '')
+    WHERE category_id IS NULL;
+  END IF;
+END $$;
 INSERT INTO public.categories (id, display_name, sort_order, is_active)
 SELECT DISTINCT c.category_id, c.category_id, 0, true
 FROM public.capability_services c
