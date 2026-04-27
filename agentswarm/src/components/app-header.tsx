@@ -30,7 +30,7 @@ export function AppHeader({ maxWidthClassName = "max-w-4xl" }: AppHeaderProps) {
     <header
       className={cn(
         "border-b backdrop-blur-md",
-        "sticky top-0 z-sticky",
+        "sticky top-0 z-[var(--z-app-header)]",
         "border-[rgba(255,255,255,0.1)] bg-[rgba(27,25,56,0.95)]",
         "dark:border-border dark:bg-[rgba(18,17,17,0.92)]"
       )}

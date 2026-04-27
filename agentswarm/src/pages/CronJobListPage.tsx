@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { fetchAgents, fetchCronJobs, type SwarmCronJob } from "@/lib/api";
-import { AppHeader } from "@/components/app-header";
 import { CronJobCard } from "@/components/cron-job/cron-job-card";
 import { CronJobEmptyState } from "@/components/cron-job/cron-job-empty-state";
 import { CronJobListSkeleton } from "@/components/cron-job/cron-job-list-skeleton";
@@ -30,10 +29,7 @@ export function CronJobListPage() {
   }, []);
 
   return (
-    <div className="min-h-screen">
-      <AppHeader />
-
-      <main className="container-app max-w-4xl space-y-8 py-8 sm:py-10">
+    <div className="container-app max-w-4xl space-y-8 py-8 sm:py-10">
         <CronJobsHero
           onRefresh={() => void load()}
           refreshDisabled={jobs === null && !err}
@@ -63,7 +59,6 @@ export function CronJobListPage() {
             ))}
           </ul>
         )}
-      </main>
     </div>
   );
 }

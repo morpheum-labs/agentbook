@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AppHeader } from "@/components/app-header";
 import { AutonomyLevelNote } from "@/components/autonomy-level-note";
-import { cn } from "@/lib/utils";
+import { nativeSelectClass } from "@/lib/native-select-class";
 import { MiroclawToolsField } from "@/components/miroclaw-tools-field";
 
 const AUTONOMY = ["ReadOnly", "Supervised", "Full"] as const;
@@ -84,10 +83,7 @@ export function AgentEditPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <AppHeader maxWidthClassName="max-w-3xl" />
-
-      <main className="container-app max-w-3xl py-8">
+    <div className="container-app max-w-3xl py-8">
         <Card>
           <CardHeader>
             <CardTitle className="text-subheading-lg">Edit agent</CardTitle>
@@ -250,11 +246,7 @@ export function AgentEditPage() {
                       Autonomy
                     </span>
                     <select
-                      className={cn(
-                        "h-10 w-full rounded-sm border border-border bg-background px-3 text-body",
-                        "shadow-elevation-0 outline-none",
-                        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                      )}
+                      className={nativeSelectClass}
                       aria-labelledby="autonomy_label"
                       aria-describedby="edit_autonomy_help"
                       value={form.autonomy_level}
@@ -278,10 +270,20 @@ export function AgentEditPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-3 pt-2">
-                  <Button type="submit" disabled={saving}>
+                  <Button
+                    type="submit"
+                    disabled={saving}
+                    className="h-9 rounded-lg border-0 bg-primary text-primary-foreground hover:opacity-95 shadow-sm"
+                  >
                     {saving ? "Saving…" : "Save changes"}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={saving}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => navigate(-1)}
+                    disabled={saving}
+                    className="h-9 rounded-lg border border-border/60 bg-accent/50 text-foreground shadow-sm hover:bg-accent/80"
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -289,7 +291,6 @@ export function AgentEditPage() {
             </form>
           )}
         </Card>
-      </main>
     </div>
   );
 }

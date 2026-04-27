@@ -6,7 +6,6 @@ import {
   type CronScheduleTimelineResponse,
   type SwarmAgent,
 } from "@/lib/api";
-import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CronScheduleGantt } from "@/components/cron-job/cron-schedule-gantt";
 import { cn } from "@/lib/utils";
@@ -77,10 +76,7 @@ export function AgentChartPage() {
   }, [agents]);
 
   return (
-    <div className="min-h-screen">
-      <AppHeader />
-
-      <main className="container-app max-w-4xl py-10">
+    <div className="container-app max-w-4xl py-10">
         <h2 className="text-body-heading mb-6">Agent chart</h2>
         <p className="text-body text-muted-foreground mb-6">
           Agents by autonomy level and a projected cron timeline (Clawgotcha API).
@@ -163,7 +159,6 @@ export function AgentChartPage() {
             className="w-full"
           />
         </div>
-      </main>
     </div>
   );
 }

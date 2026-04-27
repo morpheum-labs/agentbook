@@ -120,6 +120,16 @@
   --elevation-shadow-1: 0 1px 2px color-mix(in srgb, var(--color-foreground) 5%, transparent);
   --elevation-shadow-2: 0 4px 16px color-mix(in srgb, var(--color-foreground) 6%, transparent);
   --elevation-shadow-3: 0 4px 24px color-mix(in srgb, var(--color-foreground) 7%, transparent);
+
+  /*
+   * Z-index stack — use with utilities: z-[var(--z-app-header)] etc.
+   * (Tailwind v4 does not create named z-* classes from @theme; numeric z-100 works, or var() as here.)
+   */
+  --z-page-raised: 20;
+  --z-sticky: 30;
+  --z-overlay: 40;
+  --z-app-header: 100;
+  --z-modal: 200;
 }
 
 @media (max-width: 767px) {
@@ -167,10 +177,6 @@
   --spacing-11: 2.75rem;
   --spacing-12: 3rem;
   --spacing-14: 3.5rem;
-
-  --z-sticky: 30;
-  --z-overlay: 40;
-  --z-modal: 50;
 
   --shadow-elevation-0: var(--elevation-shadow-0);
   --shadow-elevation-1: var(--elevation-shadow-1);
@@ -393,6 +399,10 @@ body {
   color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100dvh;
 }
 
 @utility container-app {

@@ -4,7 +4,6 @@ import { Pencil, PlusCircle, RefreshCw } from "lucide-react";
 import { fetchAgents, type SwarmAgent } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AppHeader } from "@/components/app-header";
 import { cn } from "@/lib/utils";
 
 export function AgentListPage() {
@@ -26,22 +25,33 @@ export function AgentListPage() {
   }, []);
 
   return (
-    <div className="min-h-screen">
-      <AppHeader />
-
-      <main className="container-app max-w-4xl py-10">
+    <div className="container-app max-w-4xl py-10">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-body-heading">Agents</h2>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/agents/new">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={load}
+              disabled={agents === null && !err}
+              className={cn(
+                "h-9 rounded-lg border border-border/60 bg-accent/50 shadow-sm",
+                "text-foreground hover:bg-accent/80"
+              )}
+            >
+              <RefreshCw className="size-4" />
+              Refresh
+            </Button>
+            <Button
+              size="sm"
+              asChild
+              className="h-9 rounded-lg border-0 bg-primary text-primary-foreground hover:opacity-95 shadow-sm"
+            >
+              <Link to="/agents/new" className="inline-flex items-center gap-1.5">
                 <PlusCircle className="size-4" />
                 New agent
               </Link>
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={load} disabled={agents === null && !err}>
-              <RefreshCw className="size-4" />
-              Refresh
             </Button>
           </div>
         </div>
@@ -73,8 +83,16 @@ export function AgentListPage() {
                           {a.ID}
                         </p>
                       </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/agents/${a.ID}`}>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-9 rounded-xl border border-border/60 bg-accent/50 shadow-sm hover:bg-accent/80"
+                        asChild
+                      >
+                        <Link
+                          to={`/agents/${a.ID}`}
+                          className="inline-flex items-center gap-1.5"
+                        >
                           <Pencil className="size-4" />
                           Edit
                         </Link>
@@ -100,7 +118,6 @@ export function AgentListPage() {
             ))}
           </ul>
         )}
-      </main>
     </div>
   );
 }

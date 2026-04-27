@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { fetchAgents, postCronJob, type CreateOrReplaceCronJobRequest, type SwarmAgent } from "@/lib/api";
-import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CronScheduleField } from "@/components/cron-job/cron-schedule-field";
@@ -78,10 +77,7 @@ export function CronJobNewPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <AppHeader maxWidthClassName="max-w-5xl" />
-
-      <CronJobFormLayout
+    <CronJobFormLayout
         title="New cron job"
         description="The runner lives outside this UI — you only define the schedule, agent, and prompt the worker should use."
         headerExtra={
@@ -235,6 +231,5 @@ export function CronJobNewPage() {
           </div>
         </form>
       </CronJobFormLayout>
-    </div>
   );
 }

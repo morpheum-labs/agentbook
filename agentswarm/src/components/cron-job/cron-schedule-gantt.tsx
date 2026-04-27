@@ -273,7 +273,7 @@ function GanttCurrentTimeLine({
 
   return (
     <div
-      className="pointer-events-none absolute z-20 max-md:hidden"
+      className="pointer-events-none absolute z-[var(--z-page-raised)] max-md:hidden"
       style={{
         left: leftOffsetPx,
         right: 0,
@@ -485,8 +485,12 @@ export function CronScheduleGantt({ data, loading, error, className }: CronSched
                   key={id}
                   type="button"
                   size="xs"
-                  variant={timeScale === id ? "default" : "outline"}
-                  className="font-medium"
+                  variant={timeScale === id ? "default" : "secondary"}
+                  className={cn(
+                    "font-medium",
+                    timeScale !== id &&
+                      "border border-border/60 bg-accent/50 text-foreground shadow-sm hover:bg-accent/80"
+                  )}
                   onClick={() => setTimeScale(id)}
                 >
                   {label}

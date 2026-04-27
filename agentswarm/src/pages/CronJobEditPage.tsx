@@ -9,7 +9,6 @@ import {
   type SwarmAgent,
 } from "@/lib/api";
 import { AgentHandToolsInspector } from "@/components/cron-job/agent-hand-tools-inspector";
-import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -137,26 +136,21 @@ export function CronJobEditPage() {
 
   if (err && !form && !loading) {
     return (
-      <div className="min-h-screen">
-        <AppHeader maxWidthClassName="max-w-5xl" />
-        <div className="container-app max-w-5xl py-12">
-          <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-elevation-2">
-            <p className="text-destructive text-body" role="alert">
-              {err}
-            </p>
-            <Button className="mt-6 rounded-xl" variant="outline" asChild>
-              <Link to="/cron-jobs">Back to cron jobs</Link>
-            </Button>
-          </div>
+      <div className="container-app max-w-5xl py-12">
+        <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-elevation-2">
+          <p className="text-destructive text-body" role="alert">
+            {err}
+          </p>
+          <Button className="mt-6 rounded-xl" variant="outline" asChild>
+            <Link to="/cron-jobs">Back to cron jobs</Link>
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <AppHeader maxWidthClassName="max-w-5xl" />
-
+    <>
       {loading && (
         <div className="container-app max-w-5xl py-16 text-muted-foreground text-body">Loading…</div>
       )}
@@ -356,6 +350,6 @@ export function CronJobEditPage() {
           </div>
         </CronJobFormLayout>
       )}
-    </div>
+    </>
   );
 }
