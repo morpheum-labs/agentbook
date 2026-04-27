@@ -11,11 +11,27 @@ import (
 	"gorm.io/gorm"
 )
 
+// corsMiddleware allows browser UIs (e.g. a static SPA on another origin) to call the JSON API.
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // NewRouter mounts REST handlers on r (caller may wrap with middleware).
 func NewRouter(gdb *gorm.DB) http.Handler {
 	s := &Server{db: gdb}
 	r := chi.NewRouter()
+	r.Use(corsMiddleware)
 	r.Get("/healthz", s.healthz)
+	r.Get("/openapi.json", handleOpenapi())
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/config", s.getConfig)

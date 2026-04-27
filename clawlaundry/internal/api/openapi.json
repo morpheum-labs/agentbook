@@ -1,0 +1,538 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "clawlaundry",
+    "version": "1.0.0",
+    "description": "HTTP API for MiroClaw/ZeroClaw-style swarm agent metadata: default provider/model, Hands ([[agents]]), and cron jobs ([[cron_jobs]]) backed by PostgreSQL. **Errors** return JSON `{\"error\":{\"code\":\"...\",\"detail\":\"...\"}}` (see `Error`). `4xx` and `5xx` use the same error envelope."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:3456",
+      "description": "Default local listen (see `port` in YAML, default 3456; or `HTTP_ADDR`)"
+    }
+  ],
+  "tags": [
+    { "name": "Health" },
+    { "name": "Meta" },
+    { "name": "Config" },
+    { "name": "Agents" },
+    { "name": "Cron jobs" }
+  ],
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Liveness",
+        "responses": {
+          "200": {
+            "description": "Service is up",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Healthz" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "tags": ["Meta"],
+        "summary": "This OpenAPI document",
+        "responses": {
+          "200": {
+            "description": "OpenAPI 3 JSON"
+          }
+        }
+      }
+    },
+    "/api/v1/config": {
+      "get": {
+        "tags": ["Config"],
+        "summary": "Get swarm defaults (single row, id=1)",
+        "responses": {
+          "200": {
+            "description": "Default provider and model",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwarmConfig" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "put": {
+        "tags": ["Config"],
+        "summary": "Replace swarm defaults",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PutConfigRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated config",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwarmConfig" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/agents": {
+      "get": {
+        "tags": ["Agents"],
+        "summary": "List agents (Hands), ordered by name",
+        "responses": {
+          "200": {
+            "description": "List wrapper",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AgentListResponse" }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "post": {
+        "tags": ["Agents"],
+        "summary": "Create an agent (Hand)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateOrReplaceAgentRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created agent",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwarmAgent" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/agents/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "get": {
+        "tags": ["Agents"],
+        "summary": "Get agent by id",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwarmAgent" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "put": {
+        "tags": ["Agents"],
+        "summary": "Replace agent by id (full body; same fields as create)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateOrReplaceAgentRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwarmAgent" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "patch": {
+        "tags": ["Agents"],
+        "summary": "Partially update an agent. If `clear_tools` is true, `tools` is set to []. Omitted fields are unchanged; empty `updates` returns current row.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PatchAgentRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwarmAgent" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "delete": {
+        "tags": ["Agents"],
+        "summary": "Delete agent by id",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/agents/by-name/{name}": {
+      "get": {
+        "tags": ["Agents"],
+        "summary": "Get agent by unique name",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwarmAgent" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/cron-jobs": {
+      "get": {
+        "tags": ["Cron jobs"],
+        "summary": "List cron jobs, ordered by name",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CronJobListResponse" }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "post": {
+        "tags": ["Cron jobs"],
+        "summary": "Create a cron job. `agent_name` must match an existing agent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateOrReplaceCronJobRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwarmCronJob" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/cron-jobs/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "get": {
+        "tags": ["Cron jobs"],
+        "summary": "Get cron job by id",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwarmCronJob" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "put": {
+        "tags": ["Cron jobs"],
+        "summary": "Replace cron job by id",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateOrReplaceCronJobRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwarmCronJob" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "patch": {
+        "tags": ["Cron jobs"],
+        "summary": "Partially update a cron job. When changing `agent_name`, the target must exist. Empty `updates` returns the current row.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PatchCronJobRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwarmCronJob" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "delete": {
+        "tags": ["Cron jobs"],
+        "summary": "Delete cron job by id",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid id, body, or validation (e.g. `autonomy_level` not ReadOnly, Supervised, or Full; duplicate `name` where applicable; missing `agent` for `agent_name` on cron).",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Not found (including GORM record not found)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Server error; detail is a generic message",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": { "$ref": "#/components/schemas/PublicError" }
+        }
+      },
+      "PublicError": {
+        "type": "object",
+        "required": ["code"],
+        "properties": {
+          "code": { "type": "string", "description": "Machine-friendly code (e.g. `not_found`, `invalid id`, `internal_error`)" },
+          "detail": { "type": "string", "description": "Optional human-readable detail" }
+        }
+      },
+      "Healthz": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "ok" },
+          "ts": { "type": "string", "format": "date-time", "description": "Server timestamp (RFC 3339 nanoseconds)" }
+        }
+      },
+      "SwarmConfig": {
+        "type": "object",
+        "description": "Response fields use the Go struct default (PascalCase) — no `json` tags on the model",
+        "properties": {
+          "ID": { "type": "integer" },
+          "DefaultProvider": { "type": "string" },
+          "DefaultModel": { "type": "string" },
+          "CreatedAt": { "type": "string", "format": "date-time" },
+          "UpdatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PutConfigRequest": {
+        "type": "object",
+        "properties": {
+          "default_provider": { "type": "string" },
+          "default_model": { "type": "string" }
+        }
+      },
+      "AutonomyLevel": {
+        "type": "string",
+        "description": "Required for create/put when supplied in handler validation",
+        "enum": ["ReadOnly", "Supervised", "Full"]
+      },
+      "SwarmAgent": {
+        "type": "object",
+        "description": "List/get responses encode the GORM model with default JSON key names (PascalCase, `SystemPrompt` not `system_prompt`)",
+        "properties": {
+          "ID": { "type": "string", "format": "uuid" },
+          "Name": { "type": "string" },
+          "SystemPrompt": { "type": "string" },
+          "Tools": { "type": "array", "items": { "type": "string" } },
+          "Provider": { "type": "string" },
+          "Model": { "type": "string" },
+          "TimeoutSeconds": { "type": "integer" },
+          "AutonomyLevel": { "$ref": "#/components/schemas/AutonomyLevel" },
+          "CreatedAt": { "type": "string", "format": "date-time" },
+          "UpdatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateOrReplaceAgentRequest": {
+        "type": "object",
+        "description": "JSON field names are snake_case (Go struct tags). `name` is required. `autonomy_level` is validated (ReadOnly, Supervised, Full). Omitted or null `tools` is stored as [].",
+        "required": ["name", "autonomy_level"],
+        "properties": {
+          "name": { "type": "string" },
+          "system_prompt": { "type": "string" },
+          "tools": { "type": "array", "items": { "type": "string" } },
+          "provider": { "type": "string" },
+          "model": { "type": "string" },
+          "timeout_seconds": { "type": "integer" },
+          "autonomy_level": { "$ref": "#/components/schemas/AutonomyLevel" }
+        }
+      },
+      "PatchAgentRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "system_prompt": { "type": "string" },
+          "tools": { "type": "array", "items": { "type": "string" } },
+          "clear_tools": { "type": "boolean", "description": "If true, forces `tools` to []." },
+          "provider": { "type": "string" },
+          "model": { "type": "string" },
+          "timeout_seconds": { "type": "integer" },
+          "autonomy_level": { "type": "string" }
+        }
+      },
+      "AgentListResponse": {
+        "type": "object",
+        "required": ["agents"],
+        "properties": {
+          "agents": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SwarmAgent" }
+          }
+        }
+      },
+      "SwarmCronJob": {
+        "type": "object",
+        "description": "Response body uses Go default JSON (PascalCase) — `AgentName` not `agent_name`",
+        "properties": {
+          "ID": { "type": "string", "format": "uuid" },
+          "Name": { "type": "string" },
+          "AgentName": { "type": "string" },
+          "Schedule": { "type": "string" },
+          "TimeoutSeconds": { "type": "integer" },
+          "Prompt": { "type": "string" },
+          "CreatedAt": { "type": "string", "format": "date-time" },
+          "UpdatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateOrReplaceCronJobRequest": {
+        "type": "object",
+        "description": "Request body uses `json` struct tags: snake_case keys (`agent_name`, `timeout_seconds`, …). Responses use PascalCase (see `SwarmCronJob`).",
+        "required": ["name", "agent_name"],
+        "properties": {
+          "name": { "type": "string" },
+          "agent_name": { "type": "string" },
+          "schedule": { "type": "string" },
+          "timeout_seconds": { "type": "integer" },
+          "prompt": { "type": "string" }
+        }
+      },
+      "PatchCronJobRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "agent_name": { "type": "string" },
+          "schedule": { "type": "string" },
+          "timeout_seconds": { "type": "integer" },
+          "prompt": { "type": "string" }
+        }
+      },
+      "CronJobListResponse": {
+        "type": "object",
+        "required": ["cron_jobs"],
+        "properties": {
+          "cron_jobs": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SwarmCronJob" }
+          }
+        }
+      }
+    }
+  }
+}
