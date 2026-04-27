@@ -220,7 +220,7 @@ export function CronJobEditPage() {
 
             <CronJobFieldGroup
               label="Prompt"
-              description="Instruction the worker sends when the job runs. The hand’s tool list is below. Backtick text like `tool_name` is highlighted in green in the editor."
+              description="The hand’s tool list is below. A backtick-wrapped tool name in the prompt is green when that tool is on the hand’s allowlist, and red if it is not. If the hand can’t be resolved, backtick text is not validated (all shown in the neutral green ref style)."
             >
               {form.agent_name ? (
                 <div>
@@ -249,6 +249,7 @@ export function CronJobEditPage() {
                   value={form.prompt ?? ""}
                   onChange={(e) => update("prompt", e.target.value)}
                   disabled={saving}
+                  allowedToolNames={selectedHand != null ? selectedHand.Tools : undefined}
                 />
               </div>
             </CronJobFieldGroup>

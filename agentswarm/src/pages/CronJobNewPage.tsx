@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { fetchAgents, postCronJob, type CreateOrReplaceCronJobRequest } from "@/lib/api";
+import { fetchAgents, postCronJob, type CreateOrReplaceCronJobRequest, type SwarmAgent } from "@/lib/api";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,13 +24,25 @@ export function CronJobNewPage() {
   const [err, setErr] = useState<string | null>(null);
   const [form, setForm] = useState<CreateOrReplaceCronJobRequest>(initial);
   const [agentNames, setAgentNames] = useState<string[]>([]);
+  const [agents, setAgents] = useState<SwarmAgent[]>([]);
   const [loadingAgents, setLoadingAgents] = useState(true);
+
+  const selectedHand = useMemo(
+    () => (form.agent_name ? agents.find((x) => x.Name === form.agent_name) : undefined),
+    [form.agent_name, agents]
+  );
 
   useEffect(() => {
     setLoadingAgents(true);
     fetchAgents()
-      .then((a) => setAgentNames(a.map((x) => x.Name).sort((x, y) => x.localeCompare(y))))
-      .catch(() => setAgentNames([]))
+      .then((a) => {
+        setAgents(a);
+        setAgentNames(a.map((x) => x.Name).sort((x, y) => x.localeCompare(y)));
+      })
+      .catch(() => {
+        setAgentNames([]);
+        setAgents([]);
+      })
       .finally(() => setLoadingAgents(false));
   }, []);
 
@@ -142,7 +154,7 @@ export function CronJobNewPage() {
 
               <CronJobFieldGroup
                 label="Prompt"
-                description="The instruction payload when the schedule fires. Keep it scoped to one goal. Backtick text like `tool_name` is highlighted in green in the editor."
+                description="Keep the payload scoped. Backtick-wrapped tool names are green when on the selected hand’s allowlist, red if not. Pick a hand first; until then, backtick text is not validated to the list."
               >
                 <div>
                   <label
@@ -158,6 +170,7 @@ export function CronJobNewPage() {
                     onChange={(e) => update("prompt", e.target.value)}
                     disabled={saving}
                     placeholder="You are the nightly triage hand. Use `file_read` and …"
+                    allowedToolNames={selectedHand != null ? selectedHand.Tools : undefined}
                   />
                 </div>
               </CronJobFieldGroup>
