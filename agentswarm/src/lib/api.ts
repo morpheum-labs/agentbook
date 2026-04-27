@@ -1,4 +1,4 @@
-const DEFAULT_API_ORIGIN = "http://127.0.0.1:3456";
+const DEFAULT_API_ORIGIN = "http://127.0.0.1:3458";
 
 /**
  * In dev, prefer same-origin + Vite proxy so the browser can call the API without CORS.
@@ -25,6 +25,11 @@ export type SwarmAgent = {
   ID: string;
   Name: string;
   SystemPrompt: string;
+  /** MiroClaw IDENTITY / SOUL / USER (also combined with markers in `SystemPrompt` in the DB). */
+  identity?: string;
+  soul?: string;
+  user_context?: string;
+  modular_prompt?: boolean;
   Tools: string[];
   Provider: string;
   Model: string;
@@ -38,11 +43,28 @@ export type AgentListResponse = { agents: SwarmAgent[] };
 
 export type PutAgentRequest = {
   name: string;
-  system_prompt: string;
+  identity: string;
+  soul: string;
+  user_context: string;
   tools: string[];
   provider: string;
   model: string;
   timeout_seconds: number;
+  autonomy_level: string;
+};
+
+/** Body for `POST /api/v1/agents` (CreateOrReplaceAgentRequest). */
+export type CreateAgentRequest = {
+  name: string;
+  /** If any of `identity` / `soul` / `user_context` is present, the server assembles `system_prompt`. */
+  identity?: string;
+  soul?: string;
+  user_context?: string;
+  system_prompt?: string;
+  tools?: string[];
+  provider?: string;
+  model?: string;
+  timeout_seconds?: number;
   autonomy_level: string;
 };
 
@@ -73,6 +95,22 @@ export async function fetchAgents(): Promise<SwarmAgent[]> {
   return data.agents ?? [];
 }
 
+export async function postAgent(body: CreateAgentRequest): Promise<SwarmAgent> {
+  const r = await fetch(apiUrl("/api/v1/agents"), {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
+  return (await r.json()) as SwarmAgent;
+}
+
 export async function fetchAgent(id: string): Promise<SwarmAgent> {
   const r = await fetch(apiUrl(`/api/v1/agents/${encodeURIComponent(id)}`), {
     headers: { Accept: "application/json" },
@@ -101,4 +139,123 @@ export async function putAgent(
     throw new Error(parseErrorBody(t));
   }
   return (await r.json()) as SwarmAgent;
+}
+
+export type SwarmCronJob = {
+  ID: string;
+  Name: string;
+  AgentName: string;
+  Schedule: string;
+  TimeoutSeconds: number;
+  Prompt: string;
+  CreatedAt: string;
+  UpdatedAt: string;
+};
+
+export type CronJobListResponse = { cron_jobs: SwarmCronJob[] };
+
+export type CreateOrReplaceCronJobRequest = {
+  name: string;
+  agent_name: string;
+  schedule?: string;
+  timeout_seconds?: number;
+  prompt?: string;
+};
+
+export type PatchCronJobRequest = {
+  name?: string;
+  agent_name?: string;
+  schedule?: string;
+  timeout_seconds?: number;
+  prompt?: string;
+};
+
+export async function fetchCronJobs(): Promise<SwarmCronJob[]> {
+  const r = await fetch(apiUrl("/api/v1/cron-jobs"), {
+    headers: { Accept: "application/json" },
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
+  const data = (await r.json()) as CronJobListResponse;
+  return data.cron_jobs ?? [];
+}
+
+export async function postCronJob(
+  body: CreateOrReplaceCronJobRequest
+): Promise<SwarmCronJob> {
+  const r = await fetch(apiUrl("/api/v1/cron-jobs"), {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
+  return (await r.json()) as SwarmCronJob;
+}
+
+export async function fetchCronJob(id: string): Promise<SwarmCronJob> {
+  const r = await fetch(apiUrl(`/api/v1/cron-jobs/${encodeURIComponent(id)}`), {
+    headers: { Accept: "application/json" },
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
+  return (await r.json()) as SwarmCronJob;
+}
+
+export async function putCronJob(
+  id: string,
+  body: CreateOrReplaceCronJobRequest
+): Promise<SwarmCronJob> {
+  const r = await fetch(apiUrl(`/api/v1/cron-jobs/${encodeURIComponent(id)}`), {
+    method: "PUT",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
+  return (await r.json()) as SwarmCronJob;
+}
+
+export async function patchCronJob(
+  id: string,
+  body: PatchCronJobRequest
+): Promise<SwarmCronJob> {
+  const r = await fetch(apiUrl(`/api/v1/cron-jobs/${encodeURIComponent(id)}`), {
+    method: "PATCH",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
+  return (await r.json()) as SwarmCronJob;
+}
+
+export async function deleteCronJob(id: string): Promise<void> {
+  const r = await fetch(apiUrl(`/api/v1/cron-jobs/${encodeURIComponent(id)}`), {
+    method: "DELETE",
+    headers: { Accept: "application/json" },
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
 }

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Pencil, RefreshCw } from "lucide-react";
+import { Pencil, PlusCircle, RefreshCw } from "lucide-react";
 import { fetchAgents, type SwarmAgent } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { AppHeader } from "@/components/app-header";
 import { cn } from "@/lib/utils";
 
 export function AgentListPage() {
@@ -27,27 +27,23 @@ export function AgentListPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-border bg-surface-elevated/30">
-        <div className="container-app section-y flex max-w-4xl flex-col gap-4 py-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-section-heading text-foreground">ClawLaundry</h1>
-              <p className="text-caption-body mt-1 text-muted-foreground">
-                Swarm Hands — list and edit agent metadata
-              </p>
-            </div>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="container-app max-w-4xl py-10">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-body-heading">Agents</h2>
-          <Button type="button" variant="outline" size="sm" onClick={load} disabled={agents === null && !err}>
-            <RefreshCw className="size-4" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/agents/new">
+                <PlusCircle className="size-4" />
+                New agent
+              </Link>
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={load} disabled={agents === null && !err}>
+              <RefreshCw className="size-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {err && (

@@ -1,0 +1,386 @@
+{
+  "source": "MiroClaw — tools reference",
+  "sourcePath": "miroclaw/docs/tools.md",
+  "tools": [
+    {
+      "name": "content_search",
+      "description": "Search file contents by regex pattern within the workspace. Supports ripgrep (rg) with grep fallback. Output modes: 'content' (matching lines with context), 'files_with_matches' (file paths only), 'count' (match counts per file). Example: pattern='fn main', include='*.rs', output_mode='content'.",
+      "category": "A. Workspace, shell, Git & files"
+    },
+    {
+      "name": "file_edit",
+      "description": "Edit a file by replacing an exact string match with new content",
+      "category": "A. Workspace, shell, Git & files"
+    },
+    {
+      "name": "file_read",
+      "description": "Read file contents with line numbers. Supports partial reading via offset and limit. Extracts text from PDF; other binary files are read with lossy UTF-8 conversion.",
+      "category": "A. Workspace, shell, Git & files"
+    },
+    {
+      "name": "file_write",
+      "description": "Write contents to a file in the workspace",
+      "category": "A. Workspace, shell, Git & files"
+    },
+    {
+      "name": "git_operations",
+      "description": "Perform structured Git operations (status, diff, log, branch, commit, add, checkout, stash). Provides parsed JSON output and integrates with security policy for autonomy controls.",
+      "category": "A. Workspace, shell, Git & files"
+    },
+    {
+      "name": "glob_search",
+      "description": "Search for files matching a glob pattern within the workspace. Returns a sorted list of matching file paths relative to the workspace root. Examples: '**/*.rs' (all Rust files), 'src/**/mod.rs' (all mod.rs in src).",
+      "category": "A. Workspace, shell, Git & files"
+    },
+    {
+      "name": "pdf_read",
+      "description": "Extract plain text from a PDF file in the workspace. Returns all readable text. Image-only or encrypted PDFs return an empty result. Requires the 'rag-pdf' build feature.",
+      "category": "A. Workspace, shell, Git & files"
+    },
+    {
+      "name": "shell",
+      "description": "Execute a shell command in the workspace directory",
+      "category": "A. Workspace, shell, Git & files"
+    },
+    {
+      "name": "backup",
+      "description": "Create, list, verify, and restore workspace backups",
+      "category": "B. Backups, retention & multi-workspace"
+    },
+    {
+      "name": "data_management",
+      "description": "Workspace data retention, purge, and storage statistics",
+      "category": "B. Backups, retention & multi-workspace"
+    },
+    {
+      "name": "workspace",
+      "description": "Manage multi-client workspaces. Subcommands: list, switch, create, info, export. Each workspace provides isolated memory, audit, secrets, and tool restrictions.",
+      "category": "B. Backups, retention & multi-workspace"
+    },
+    {
+      "name": "discord_search",
+      "description": "Search Discord message history. Returns messages matching a keyword query, optionally filtered by channel_id, author_id, or time range.",
+      "category": "C. Long-term memory & knowledge"
+    },
+    {
+      "name": "knowledge",
+      "description": "Manage a knowledge graph of architecture decisions, solution patterns, lessons learned, and experts. Actions: capture, search, relate, suggest, expert_find, lessons_extract, graph_stats.",
+      "category": "C. Long-term memory & knowledge"
+    },
+    {
+      "name": "memory_forget",
+      "description": "Remove a memory by key. Use to delete outdated facts or sensitive data. Returns whether the memory was found and removed.",
+      "category": "C. Long-term memory & knowledge"
+    },
+    {
+      "name": "memory_purge",
+      "description": "Remove all memories in a namespace (category) or session. Use to bulk-delete conversation context or category-scoped data. Returns the number of deleted entries. WARNING: This operation cannot be undone.",
+      "category": "C. Long-term memory & knowledge"
+    },
+    {
+      "name": "memory_recall",
+      "description": "Search long-term memory for relevant facts, preferences, or context. Returns scored results ranked by relevance. Supports keyword search, time-only query (since/until), or both.",
+      "category": "C. Long-term memory & knowledge"
+    },
+    {
+      "name": "memory_store",
+      "description": "Store a fact, preference, or note in long-term memory. Use category 'core' for permanent facts, 'daily' for session notes, 'conversation' for chat context, or a custom category name.",
+      "category": "C. Long-term memory & knowledge"
+    },
+    {
+      "name": "read_skill",
+      "description": "Read the full source file for an available skill by name. Use this in compact skills mode when you need the complete skill instructions without remembering file paths.",
+      "category": "D. Skills"
+    },
+    {
+      "name": "llm_task",
+      "description": "Run a prompt through an LLM with no tool access and return the response. Optionally validates the output against a JSON Schema. Ideal for structured data extraction, classification, summarization, and transformation tasks.",
+      "category": "E. Model routing, LLM & HTTP stack"
+    },
+    {
+      "name": "model_routing_config",
+      "description": "Manage default model settings, scenario-based provider/model routes, classification rules, and delegate sub-agent profiles",
+      "category": "E. Model routing, LLM & HTTP stack"
+    },
+    {
+      "name": "model_switch",
+      "description": "Switch the AI model at runtime. Use 'get' to see current model, 'list_providers' to see available providers, 'list_models' to see models for a provider, or 'set' to switch to a different model. The switch takes effect immediately for the current conversation.",
+      "category": "E. Model routing, LLM & HTTP stack"
+    },
+    {
+      "name": "proxy_config",
+      "description": "Manage Miroclaw proxy settings (scope: environment | miroclaw | services), including runtime and process env application",
+      "category": "E. Model routing, LLM & HTTP stack"
+    },
+    {
+      "name": "vi_verify",
+      "description": "Verify a Verifiable Intent credential chain. Supports two operations: 'verify_binding' checks sd_hash binding between credential layers; 'evaluate_constraints' validates constraints against fulfillment data.",
+      "category": "E. Model routing, LLM & HTTP stack"
+    },
+    {
+      "name": "cron_add",
+      "description": "Create a scheduled cron job (shell or agent) with cron/at/every schedules. Use job_type='agent' with a prompt to run the AI agent on schedule. To deliver output to a channel (Discord, Telegram, Slack, Mattermost, Matrix, QQ), set delivery={ \"mode \": \"announce \", \"channel \": \"discord \", \"to \": \"<channel_id_or_chat_id> \"}. This is the preferred tool for sending scheduled/delayed messages to users via channels.",
+      "category": "F. Scheduling & cron"
+    },
+    {
+      "name": "cron_list",
+      "description": "List all scheduled cron jobs",
+      "category": "F. Scheduling & cron"
+    },
+    {
+      "name": "cron_remove",
+      "description": "Remove a cron job by id",
+      "category": "F. Scheduling & cron"
+    },
+    {
+      "name": "cron_run",
+      "description": "Force-run a cron job immediately and record run history",
+      "category": "F. Scheduling & cron"
+    },
+    {
+      "name": "cron_runs",
+      "description": "List recent run history for a cron job",
+      "category": "F. Scheduling & cron"
+    },
+    {
+      "name": "cron_update",
+      "description": "Patch an existing cron job (schedule, command, prompt, enabled, delivery, model, etc.)",
+      "category": "F. Scheduling & cron"
+    },
+    {
+      "name": "schedule",
+      "description": "Manage scheduled shell-only tasks. Actions: create/add/once/list/get/cancel/remove/pause/resume. WARNING: This tool creates shell jobs whose output is only logged, NOT delivered to any channel. To send a scheduled message to Discord/Telegram/Slack/Matrix, use the cron_add tool with job_type='agent' and a delivery config like { \"mode \": \"announce \", \"channel \": \"discord \", \"to \": \"<channel_id> \"}.",
+      "category": "F. Scheduling & cron"
+    },
+    {
+      "name": "browser",
+      "description": "Web/browser automation with pluggable backends (agent-browser, rust-native, computer_use).  Supports DOM actions plus optional OS-level actions (mouse_move, mouse_click, mouse_drag,  key_type, key_press, screen_capture) through a computer-use sidecar. Use 'snapshot' to map  interactive elements to refs (@e1, @e2). Enforces browser.allowed_domains for open actions.",
+      "category": "G. Web, HTTP, search & browsers"
+    },
+    {
+      "name": "browser_delegate",
+      "description": "Delegate browser-based tasks to a browser-capable CLI for interacting with web applications like Teams, Outlook, Jira, Confluence",
+      "category": "G. Web, HTTP, search & browsers"
+    },
+    {
+      "name": "browser_open",
+      "description": "Open an approved HTTPS URL in the system browser. Security constraints: allowlist-only domains, no local/private hosts, no scraping.",
+      "category": "G. Web, HTTP, search & browsers"
+    },
+    {
+      "name": "http_request",
+      "description": "Make HTTP requests to external APIs. Supports GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS methods. Security constraints: allowlist-only domains, no local/private hosts, configurable timeout and response size limits.",
+      "category": "G. Web, HTTP, search & browsers"
+    },
+    {
+      "name": "text_browser",
+      "description": "Render a web page as plain text using a text-based browser (lynx, links, or w3m). Ideal for headless/SSH environments without a graphical browser. Auto-detects available browser or uses a configured preference.",
+      "category": "G. Web, HTTP, search & browsers"
+    },
+    {
+      "name": "web_fetch",
+      "description": "Fetch a web page and return its content as clean plain text. HTML pages are automatically converted to readable text. JSON and plain text responses are returned as-is. Only GET requests; follows redirects. Falls back to Firecrawl for JS-heavy/bot-blocked sites (if enabled). Security: allowlist-only domains, no local/private hosts.",
+      "category": "G. Web, HTTP, search & browsers"
+    },
+    {
+      "name": "web_search_tool",
+      "description": "Search the web for information. Returns relevant search results with titles, URLs, and descriptions. Use this to find current information, news, or research topics.",
+      "category": "G. Web, HTTP, search & browsers"
+    },
+    {
+      "name": "canvas",
+      "description": "Push rendered content (HTML, SVG, Markdown) to a live web canvas that users can see in real-time. Actions: render (push content), snapshot (get current content), clear (reset canvas), eval (evaluate JS expression in canvas context). Each canvas is identified by a canvas_id string.",
+      "category": "H. Media, vision & live canvas"
+    },
+    {
+      "name": "image_gen",
+      "description": "Generate an image from a text prompt using fal.ai (Flux models). Saves the result to the workspace images directory and returns the file path.",
+      "category": "H. Media, vision & live canvas"
+    },
+    {
+      "name": "image_info",
+      "description": "Read image file metadata (format, dimensions, size) and optionally return base64-encoded data.",
+      "category": "H. Media, vision & live canvas"
+    },
+    {
+      "name": "screenshot",
+      "description": "Capture a screenshot of the current screen. Returns the file path and base64-encoded PNG data.",
+      "category": "H. Media, vision & live canvas"
+    },
+    {
+      "name": "ask_user",
+      "description": "Ask the user a question and wait for their response. Sends the question to a messaging channel and blocks until the user replies or the timeout expires. Optionally provide choices for structured responses.",
+      "category": "I. Channel UX & sessions"
+    },
+    {
+      "name": "poll",
+      "description": "Create a poll in a messaging channel. For Telegram/Discord uses native polls; for other channels formats as a numbered text message with emoji reactions for voting.",
+      "category": "I. Channel UX & sessions"
+    },
+    {
+      "name": "pushover",
+      "description": "Send a Pushover notification to your device. Requires PUSHOVER_TOKEN and PUSHOVER_USER_KEY in .env file.",
+      "category": "I. Channel UX & sessions"
+    },
+    {
+      "name": "reaction",
+      "description": "Add or remove an emoji reaction on a message in any active channel. Provide the channel name (e.g. 'discord', 'slack'), the platform channel ID, the platform message ID, and the emoji (Unicode character or platform shortcode).",
+      "category": "I. Channel UX & sessions"
+    },
+    {
+      "name": "sessions_history",
+      "description": "Read the message history of a specific session by its session ID. Returns the last N messages.",
+      "category": "I. Channel UX & sessions"
+    },
+    {
+      "name": "sessions_list",
+      "description": "List all active conversation sessions with their channel, last activity time, and message count.",
+      "category": "I. Channel UX & sessions"
+    },
+    {
+      "name": "sessions_send",
+      "description": "Send a message to a specific session by its session ID. The message is appended to the session's conversation history as a 'user' message, enabling inter-agent communication.",
+      "category": "I. Channel UX & sessions"
+    },
+    {
+      "name": "composio",
+      "description": "Execute actions on 1000+ apps via Composio (Gmail, Notion, GitHub, Slack, etc.). Use action='list' to see available actions (includes parameter names). action='execute' with action_name/tool_slug and params to run an action. If you are unsure of the exact params, pass 'text' instead with a natural-language description of what you want (Composio will resolve the correct parameters via NLP). action='list_accounts' or action='connected_accounts' to list OAuth-connected accounts. action='connect' with app/auth_config_id to get OAuth URL. connected_account_id is auto-resolved when omitted.",
+      "category": "J. SaaS & work apps"
+    },
+    {
+      "name": "google_workspace",
+      "description": "Interact with Google Workspace services (Drive, Gmail, Calendar, Sheets, Docs, etc.) via the gws CLI. Requires gws to be installed and authenticated.",
+      "category": "J. SaaS & work apps"
+    },
+    {
+      "name": "jira",
+      "description": "Interact with Jira: get tickets with configurable detail level, search issues with JQL, add comments with mention and formatting support.",
+      "category": "J. SaaS & work apps"
+    },
+    {
+      "name": "linkedin",
+      "description": "Manage LinkedIn: create posts, list your posts, comment, react, delete posts, view engagement, get profile info, and read the configured content strategy. Requires LINKEDIN_* credentials in .env file.",
+      "category": "J. SaaS & work apps"
+    },
+    {
+      "name": "microsoft365",
+      "description": "Microsoft 365 integration: manage Outlook mail, Teams messages, Calendar events, OneDrive files, and SharePoint search via Microsoft Graph API",
+      "category": "J. SaaS & work apps"
+    },
+    {
+      "name": "notion",
+      "description": "Interact with Notion: query databases, read/create/update pages, and search the workspace.",
+      "category": "J. SaaS & work apps"
+    },
+    {
+      "name": "cloud_ops",
+      "description": "Cloud transformation advisory tool. Analyzes IaC plans, assesses migration paths, reviews costs, and checks architecture against Well-Architected Framework pillars. Read-only: does not create or modify cloud resources.",
+      "category": "K. Project, cloud & security advisory"
+    },
+    {
+      "name": "cloud_patterns",
+      "description": "Cloud pattern library. Given a workload description, suggests applicable cloud-native architectural patterns (containerization, serverless, database modernization, etc.).",
+      "category": "K. Project, cloud & security advisory"
+    },
+    {
+      "name": "project_intel",
+      "description": "Project delivery intelligence: generate status reports, detect risks, draft client updates, summarize sprints, and estimate effort. Read-only analysis tool.",
+      "category": "K. Project, cloud & security advisory"
+    },
+    {
+      "name": "security_ops",
+      "description": "Security operations tool for managed cybersecurity services. Actions: triage_alert (classify/prioritize alerts), run_playbook (execute incident response steps), parse_vulnerability (parse scan results), generate_report (create security posture reports), list_playbooks (list available playbooks), alert_stats (summarize alert metrics).",
+      "category": "K. Project, cloud & security advisory"
+    },
+    {
+      "name": "sop_advance",
+      "description": "Report the result of the current SOP step and advance to the next step. Provide the run_id, whether the step succeeded or failed, and a brief output summary.",
+      "category": "K. Project, cloud & security advisory"
+    },
+    {
+      "name": "sop_approve",
+      "description": "Approve a pending SOP step that is waiting for operator approval. Returns the step instruction to execute. Use sop_status to see which runs are waiting.",
+      "category": "K. Project, cloud & security advisory"
+    },
+    {
+      "name": "sop_execute",
+      "description": "Manually trigger a Standard Operating Procedure (SOP) by name. Returns the run ID and first step instruction. Use sop_list to see available SOPs.",
+      "category": "K. Project, cloud & security advisory"
+    },
+    {
+      "name": "sop_list",
+      "description": "List all loaded Standard Operating Procedures (SOPs) with their triggers, priority, step count, and active run count. Optionally filter by name or priority.",
+      "category": "K. Project, cloud & security advisory"
+    },
+    {
+      "name": "sop_status",
+      "description": "Query SOP execution status. Provide run_id for a specific run, or sop_name to list runs for that SOP. With no arguments, shows all active runs.",
+      "category": "K. Project, cloud & security advisory"
+    },
+    {
+      "name": "claude_code",
+      "description": "Delegate a coding task to Claude Code (claude -p). Supports file editing, bash execution, structured output, and multi-turn sessions. Use for complex coding work that benefits from Claude Code's full agent loop.",
+      "category": "L. Orchestration & external CLIs"
+    },
+    {
+      "name": "claude_code_runner",
+      "description": "Spawn a Claude Code task in a tmux session with live Slack progress updates and SSH handoff. Returns immediately with session ID and attach command.",
+      "category": "L. Orchestration & external CLIs"
+    },
+    {
+      "name": "codex_cli",
+      "description": "Delegate a coding task to Codex CLI (codex -q). Supports file editing and bash execution. Use for complex coding work that benefits from Codex's full agent loop.",
+      "category": "L. Orchestration & external CLIs"
+    },
+    {
+      "name": "delegate",
+      "description": "Delegate a subtask to a specialized agent. Use when: a task benefits from a different model (e.g. fast summarization, deep reasoning, code generation). The sub-agent runs a single prompt by default; with agentic=true it can iterate with a filtered tool-call loop. Supports background execution (returns a task_id immediately) and parallel execution (runs multiple agents concurrently). Use action='check_result' with a task_id to retrieve background results.",
+      "category": "L. Orchestration & external CLIs"
+    },
+    {
+      "name": "gemini_cli",
+      "description": "Delegate a coding task to Gemini CLI (gemini -p). Supports file editing and shell execution. Use for complex coding work that benefits from Gemini CLI's full agent loop.",
+      "category": "L. Orchestration & external CLIs"
+    },
+    {
+      "name": "opencode_cli",
+      "description": "Delegate a coding task to OpenCode CLI (opencode run). Supports file editing and bash execution. Use for complex coding work that benefits from OpenCode's full agent loop.",
+      "category": "L. Orchestration & external CLIs"
+    },
+    {
+      "name": "swarm",
+      "description": "Orchestrate a swarm of agents to collaboratively handle a task. Supports sequential (pipeline), parallel (fan-out/fan-in), and router (LLM-selected) strategies.",
+      "category": "L. Orchestration & external CLIs"
+    },
+    {
+      "name": "calculator",
+      "description": "Perform arithmetic and statistical calculations. Supports 25 functions: add, subtract, divide, multiply, pow, sqrt, abs, modulo, round, log, ln, exp, factorial, sum, average, median, mode, min, max, range, variance, stdev, percentile, count, percentage_change, clamp. Use this tool whenever you need to compute a numeric result instead of guessing.",
+      "category": "M. Productivity & misc"
+    },
+    {
+      "name": "weather",
+      "description": "Get current weather conditions and up to 3-day forecast for any location worldwide. Supports city names (in any language or script), airport IATA codes (e.g. 'LAX'), GPS coordinates (e.g. '51.5,-0.1'), postal/zip codes, and domain-based geolocation. No API key required. Units default to metric (°C, km/h, mm) but can be switched to imperial (°F, mph, inches) per request.",
+      "category": "M. Productivity & misc"
+    },
+    {
+      "name": "tool_search",
+      "description": "Fetch full schema definitions for deferred MCP tools so they can be called. Use \"select:name1,name2 \" for exact match or keywords to search.",
+      "category": "N. MCP, search bridge & other runtime tools"
+    },
+    {
+      "name": "hardware_board_info",
+      "description": "Return full board info (chip, architecture, memory map) for connected hardware. Use when: user asks for 'board info', 'what board do I have', 'connected hardware', 'chip info', 'what hardware', or 'memory map'.",
+      "category": "O. Hardware & device helpers"
+    },
+    {
+      "name": "hardware_memory_map",
+      "description": "Return the memory map (flash and RAM address ranges) for connected hardware. Use when: user asks for 'upper and lower memory addresses', 'memory map', 'address space', or 'readable addresses'. Returns flash/RAM ranges from datasheets.",
+      "category": "O. Hardware & device helpers"
+    },
+    {
+      "name": "hardware_memory_read",
+      "description": "Read actual memory/register values from Nucleo via USB. Use when: user asks to 'read register values', 'read memory at address', 'dump memory', 'lower memory 0-126', or 'give address and value'. Returns hex dump. Requires Nucleo connected via USB and probe feature. Params: address (hex, e.g. 0x20000000 for RAM start), length (bytes, default 128).",
+      "category": "O. Hardware & device helpers"
+    }
+  ]
+}

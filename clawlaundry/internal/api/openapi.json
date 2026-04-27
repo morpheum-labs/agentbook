@@ -436,11 +436,15 @@
       },
       "SwarmAgent": {
         "type": "object",
-        "description": "List/get responses encode the GORM model with default JSON key names (PascalCase, `SystemPrompt` not `system_prompt`)",
+        "description": "PascalCase fields for most keys; `identity`, `soul`, `user_context` are the MiroClaw modular parts (also stored together in `SystemPrompt` with === markers). `modular_prompt` is true when `SystemPrompt` uses that format; when false, `user_context` mirrors the full legacy text for UIs that edit three parts.",
         "properties": {
           "ID": { "type": "string", "format": "uuid" },
           "Name": { "type": "string" },
           "SystemPrompt": { "type": "string" },
+          "identity": { "type": "string" },
+          "soul": { "type": "string" },
+          "user_context": { "type": "string" },
+          "modular_prompt": { "type": "boolean" },
           "Tools": { "type": "array", "items": { "type": "string" } },
           "Provider": { "type": "string" },
           "Model": { "type": "string" },
@@ -452,11 +456,14 @@
       },
       "CreateOrReplaceAgentRequest": {
         "type": "object",
-        "description": "JSON field names are snake_case (Go struct tags). `name` is required. `autonomy_level` is validated (ReadOnly, Supervised, Full). Omitted or null `tools` is stored as [].",
+        "description": "`name` and `autonomy_level` are required. If any of `identity`, `soul`, or `user_context` is present in the JSON, they are assembled (with MiroClaw === markers) into `system_prompt` in the DB; otherwise the flat `system_prompt` string is used.",
         "required": ["name", "autonomy_level"],
         "properties": {
           "name": { "type": "string" },
           "system_prompt": { "type": "string" },
+          "identity": { "type": "string" },
+          "soul": { "type": "string" },
+          "user_context": { "type": "string" },
           "tools": { "type": "array", "items": { "type": "string" } },
           "provider": { "type": "string" },
           "model": { "type": "string" },
@@ -469,6 +476,9 @@
         "properties": {
           "name": { "type": "string" },
           "system_prompt": { "type": "string" },
+          "identity": { "type": "string" },
+          "soul": { "type": "string" },
+          "user_context": { "type": "string" },
           "tools": { "type": "array", "items": { "type": "string" } },
           "clear_tools": { "type": "boolean", "description": "If true, forces `tools` to []." },
           "provider": { "type": "string" },

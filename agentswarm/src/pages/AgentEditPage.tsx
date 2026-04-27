@@ -1,31 +1,23 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 import { fetchAgent, putAgent, type SwarmAgent, type PutAgentRequest } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { AppHeader } from "@/components/app-header";
+import { AutonomyLevelNote } from "@/components/autonomy-level-note";
 import { cn } from "@/lib/utils";
+import { MiroclawToolsField } from "@/components/miroclaw-tools-field";
 
 const AUTONOMY = ["ReadOnly", "Supervised", "Full"] as const;
-
-function toolsToText(tools: string[] | undefined): string {
-  return (tools ?? []).join("\n");
-}
-
-function textToTools(text: string): string[] {
-  return text
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
 
 function agentToPutRequest(a: SwarmAgent): PutAgentRequest {
   return {
     name: a.Name,
-    system_prompt: a.SystemPrompt,
+    identity: a.identity ?? "",
+    soul: a.soul ?? "",
+    user_context: a.user_context ?? "",
     tools: a.Tools ?? [],
     provider: a.Provider,
     model: a.Model,
@@ -42,6 +34,7 @@ export function AgentEditPage() {
   const [err, setErr] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState<PutAgentRequest | null>(null);
+  const [modularFromApi, setModularFromApi] = useState(true);
   const [originalId, setOriginalId] = useState("");
 
   useEffect(() => {
@@ -52,6 +45,7 @@ export function AgentEditPage() {
     setOriginalId(id);
     fetchAgent(id)
       .then((a) => {
+        setModularFromApi(a.modular_prompt !== false);
         setForm(agentToPutRequest(a));
         setLoading(false);
       })
@@ -67,8 +61,6 @@ export function AgentEditPage() {
     );
   }
 
-  const toolsText = form ? toolsToText(form.tools) : "";
-
   function update<K extends keyof PutAgentRequest>(key: K, value: PutAgentRequest[K]) {
     setSaved(false);
     setForm((f) => (f ? { ...f, [key]: value } : f));
@@ -81,7 +73,8 @@ export function AgentEditPage() {
     setSaving(true);
     setSaved(false);
     try {
-      await putAgent(originalId, form);
+      const updated = await putAgent(originalId, form);
+      setModularFromApi(updated.modular_prompt !== false);
       setSaved(true);
     } catch (caught: unknown) {
       setErr(caught instanceof Error ? caught.message : "Save failed");
@@ -92,19 +85,7 @@ export function AgentEditPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-border bg-surface-elevated/30">
-        <div className="container-app flex max-w-3xl flex-col gap-4 py-6">
-          <div className="flex items-center justify-between gap-4">
-            <Button type="button" variant="ghost" size="sm" asChild>
-              <Link to="/" className="text-nav gap-1">
-                <ArrowLeft className="size-4" />
-                Agents
-              </Link>
-            </Button>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <AppHeader maxWidthClassName="max-w-3xl" />
 
       <main className="container-app max-w-3xl py-8">
         <Card>
@@ -151,35 +132,76 @@ export function AgentEditPage() {
                 </div>
 
                 <div>
-                  <label className="text-caption text-muted-foreground block mb-1.5" htmlFor="system_prompt">
-                    System prompt
-                  </label>
-                  <Textarea
-                    id="system_prompt"
-                    name="system_prompt"
-                    className="min-h-32 font-mono text-caption"
-                    value={form.system_prompt}
-                    onChange={(e) => update("system_prompt", e.target.value)}
-                  />
+                  <p
+                    className="text-caption text-muted-foreground mb-2"
+                    id="prompt_parts_help"
+                    role="note"
+                  >
+                    {modularFromApi
+                      ? "MiroClaw hand prompt in three parts (also stored with === markers in SystemPrompt in the API)."
+                      : "This hand used a non-modular system prompt. The full text is in User context; saving rewrites to modular format."}
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <label
+                        className="text-caption text-muted-foreground block mb-1.5"
+                        htmlFor="identity"
+                      >
+                        Identity
+                      </label>
+                      <Textarea
+                        id="identity"
+                        name="identity"
+                        className="min-h-24 font-mono text-caption"
+                        value={form.identity}
+                        onChange={(e) => update("identity", e.target.value)}
+                        aria-describedby="prompt_parts_help"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-caption text-muted-foreground block mb-1.5" htmlFor="soul">
+                        Soul
+                      </label>
+                      <Textarea
+                        id="soul"
+                        name="soul"
+                        className="min-h-24 font-mono text-caption"
+                        value={form.soul}
+                        onChange={(e) => update("soul", e.target.value)}
+                        aria-describedby="prompt_parts_help"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        className="text-caption text-muted-foreground block mb-1.5"
+                        htmlFor="user_context"
+                      >
+                        User context
+                      </label>
+                      <Textarea
+                        id="user_context"
+                        name="user_context"
+                        className="min-h-24 font-mono text-caption"
+                        value={form.user_context}
+                        onChange={(e) => update("user_context", e.target.value)}
+                        aria-describedby="prompt_parts_help"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-caption text-muted-foreground block mb-1.5" htmlFor="tools">
-                    Tools (one per line)
-                  </label>
-                  <Textarea
-                    id="tools"
-                    name="tools"
-                    className="min-h-24 font-mono text-caption"
-                    value={toolsText}
-                    onChange={(e) => {
+                <fieldset>
+                  <legend className="text-caption text-muted-foreground mb-2">Tools</legend>
+                  <MiroclawToolsField
+                    id="edit_tools"
+                    value={form.tools}
+                    onChange={(next) => {
                       setSaved(false);
-                      setForm((f) =>
-                        f ? { ...f, tools: textToTools(e.target.value) } : f
-                      );
+                      setForm((f) => (f ? { ...f, tools: next } : f));
                     }}
+                    disabled={saving}
                   />
-                </div>
+                </fieldset>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
@@ -234,6 +256,7 @@ export function AgentEditPage() {
                         "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                       )}
                       aria-labelledby="autonomy_label"
+                      aria-describedby="edit_autonomy_help"
                       value={form.autonomy_level}
                       onChange={(e) => update("autonomy_level", e.target.value)}
                     >
@@ -250,6 +273,7 @@ export function AgentEditPage() {
                         </option>
                       ))}
                     </select>
+                    <AutonomyLevelNote id="edit_autonomy_help" />
                   </div>
                 </div>
 

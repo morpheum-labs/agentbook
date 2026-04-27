@@ -13,24 +13,30 @@ import (
 )
 
 type createAgentBody struct {
-	Name            string   `json:"name"`
-	SystemPrompt    string   `json:"system_prompt"`
+	Name            string  `json:"name"`
+	SystemPrompt    string  `json:"system_prompt"`
+	Identity        *string `json:"identity"`
+	Soul            *string `json:"soul"`
+	UserContext     *string `json:"user_context"`
 	Tools           []string `json:"tools"`
-	Provider        string   `json:"provider"`
-	Model           string   `json:"model"`
-	TimeoutSeconds  int      `json:"timeout_seconds"`
-	AutonomyLevel   string   `json:"autonomy_level"`
+	Provider        string  `json:"provider"`
+	Model           string  `json:"model"`
+	TimeoutSeconds  int     `json:"timeout_seconds"`
+	AutonomyLevel   string  `json:"autonomy_level"`
 }
 
 type patchAgentBody struct {
-	Name            *string   `json:"name"`
-	SystemPrompt    *string   `json:"system_prompt"`
-	Tools           []string  `json:"tools,omitempty"`
-	Provider        *string   `json:"provider"`
-	Model           *string   `json:"model"`
-	TimeoutSeconds  *int      `json:"timeout_seconds"`
-	AutonomyLevel   *string   `json:"autonomy_level"`
-	ClearTools      *bool     `json:"clear_tools"`
+	Name            *string `json:"name"`
+	SystemPrompt    *string `json:"system_prompt"`
+	Identity        *string `json:"identity"`
+	Soul            *string `json:"soul"`
+	UserContext     *string `json:"user_context"`
+	Tools           []string `json:"tools,omitempty"`
+	Provider        *string `json:"provider"`
+	Model           *string `json:"model"`
+	TimeoutSeconds  *int    `json:"timeout_seconds"`
+	AutonomyLevel   *string `json:"autonomy_level"`
+	ClearTools      *bool   `json:"clear_tools"`
 }
 
 func (s *Server) listAgents(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +48,11 @@ func (s *Server) listAgents(w http.ResponseWriter, r *http.Request) {
 	if out == nil {
 		out = []db.SwarmAgent{}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"agents": out})
+	agents := make([]swarmAgentResponse, 0, len(out))
+	for i := range out {
+		agents = append(agents, toSwarmAgentResponse(out[i]))
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"agents": agents})
 }
 
 func (s *Server) createAgent(w http.ResponseWriter, r *http.Request) {
@@ -59,9 +69,10 @@ func (s *Server) createAgent(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, httperr.BadRequest("validation", err))
 		return
 	}
+	sp := b.resolvedSystemPrompt()
 	agent := db.SwarmAgent{
 		Name:            strings.TrimSpace(b.Name),
-		SystemPrompt:    b.SystemPrompt,
+		SystemPrompt:    sp,
 		Tools:           b.Tools,
 		Provider:        b.Provider,
 		Model:           b.Model,
@@ -79,7 +90,7 @@ func (s *Server) createAgent(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, agent)
+	writeJSON(w, http.StatusCreated, toSwarmAgentResponse(agent))
 }
 
 func (s *Server) getAgent(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +104,7 @@ func (s *Server) getAgent(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, a)
+	writeJSON(w, http.StatusOK, toSwarmAgentResponse(a))
 }
 
 func (s *Server) getAgentByName(w http.ResponseWriter, r *http.Request) {
@@ -107,7 +118,7 @@ func (s *Server) getAgentByName(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, a)
+	writeJSON(w, http.StatusOK, toSwarmAgentResponse(a))
 }
 
 func (s *Server) putAgent(w http.ResponseWriter, r *http.Request) {
@@ -129,10 +140,11 @@ func (s *Server) putAgent(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, httperr.BadRequest("validation", err))
 		return
 	}
+	sp := b.resolvedSystemPrompt()
 	agent := db.SwarmAgent{
 		ID:             id,
 		Name:           strings.TrimSpace(b.Name),
-		SystemPrompt:   b.SystemPrompt,
+		SystemPrompt:   sp,
 		Tools:          b.Tools,
 		Provider:       b.Provider,
 		Model:          b.Model,
@@ -158,7 +170,7 @@ func (s *Server) putAgent(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, agent)
+	writeJSON(w, http.StatusOK, toSwarmAgentResponse(agent))
 }
 
 func (s *Server) patchAgent(w http.ResponseWriter, r *http.Request) {
@@ -181,8 +193,11 @@ func (s *Server) patchAgent(w http.ResponseWriter, r *http.Request) {
 	if b.Name != nil {
 		updates["name"] = strings.TrimSpace(*b.Name)
 	}
-	if b.SystemPrompt != nil {
-		updates["system_prompt"] = *b.SystemPrompt
+	if v, ok, err := applyPatchSystemPrompt(a.SystemPrompt, &b); err != nil {
+		httperr.Write(w, r, httperr.BadRequest("system_prompt", err))
+		return
+	} else if ok {
+		updates["system_prompt"] = v
 	}
 	if b.Tools != nil {
 		updates["tools"] = b.Tools
@@ -222,7 +237,7 @@ func (s *Server) patchAgent(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, a)
+	writeJSON(w, http.StatusOK, toSwarmAgentResponse(a))
 }
 
 func (s *Server) deleteAgent(w http.ResponseWriter, r *http.Request) {
