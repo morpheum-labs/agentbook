@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "newapi HTTP service",
+    "title": "newsapi HTTP service",
     "version": "1.0.0",
     "description": "HTTP wrapper around the [News API](https://newsapi.org) client. Upstream key is not exposed in the registry. Proxy routes return upstream JSON."
   },

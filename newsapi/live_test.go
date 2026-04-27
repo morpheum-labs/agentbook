@@ -1,6 +1,6 @@
 //go:build live
 
-package newapi
+package newsapi
 
 import (
 	"context"

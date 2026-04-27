@@ -60,7 +60,7 @@
     },
     {
       "name": "Capability services",
-      "description": "External API service registry (e.g. newapi, worldmon). `GET /api/v1/capability-services` is public. `POST` routes require `Authorization: Bearer` matching `service_registry_token` when configured; if not configured, POST returns 501."
+      "description": "External API service registry (e.g. newsapi, worldmon). `GET /api/v1/capability-services` is public. `POST` routes require `Authorization: Bearer` matching `service_registry_token` when configured; if not configured, POST returns 501."
     }
   ],
   "components": {

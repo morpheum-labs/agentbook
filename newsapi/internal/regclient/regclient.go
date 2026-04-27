@@ -24,7 +24,7 @@ type Client struct {
 // Token is SERVICE_REGISTRY_TOKEN.
 func NewClient(baseURL, token, userAgent string) *Client {
 	if userAgent == "" {
-		userAgent = "morpheumlabs/newapi"
+		userAgent = "morpheumlabs/newsapi"
 	}
 	return &Client{
 		BaseURL:   strings.TrimRight(strings.TrimSpace(baseURL), "/"),
@@ -61,10 +61,10 @@ func (c *Client) Register(ctx context.Context, r RegisterRequest) error {
 		ctx = context.Background()
 	}
 	if r.Tags == nil {
-		r.Tags = []string{"news", "newapi.org"}
+		r.Tags = []string{"news", "newsapi.org"}
 	}
 	if r.Metadata == nil {
-		r.Metadata = map[string]any{"kind": "newapi_server"}
+		r.Metadata = map[string]any{"kind": "newsapi_server"}
 	}
 	return c.post(ctx, c.BaseURL+"/api/v1/capability-services/register", r)
 }

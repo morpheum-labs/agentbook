@@ -1,4 +1,4 @@
-module github.com/morpheumlabs/agentbook/newapi
+module github.com/morpheumlabs/agentbook/newsapi
 
 go 1.22
 

@@ -17,7 +17,7 @@ type Config struct {
 	DatabaseURL        string `yaml:"database_url"`
 	Database           string `yaml:"database"` // sqlite path
 	AdminToken         string `yaml:"admin_token"`
-	// ServiceRegistryToken authenticates external API services (newapi, worldmon) to register.
+	// ServiceRegistryToken authenticates external API services (newsapi, worldmon) to register.
 	// When empty, service registry POSTs return 501. Env: SERVICE_REGISTRY_TOKEN.
 	ServiceRegistryToken string `yaml:"service_registry_token"`
 	AttachmentsDir     string `yaml:"attachments_dir"`

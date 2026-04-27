@@ -1,4 +1,4 @@
-// Package httpserver is the local HTTP service for the newapi client library.
+// Package httpserver is the local HTTP service for the newsapi client library.
 package httpserver
 
 import (
@@ -15,12 +15,12 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/morpheumlabs/agentbook/newapi"
-	"github.com/morpheumlabs/agentbook/newapi/internal/regclient"
+	"github.com/morpheumlabs/agentbook/newsapi"
+	"github.com/morpheumlabs/agentbook/newsapi/internal/regclient"
 )
 
 const (
-	svcName        = "newapi"
+	svcName        = "newsapi"
 	svcDescription = "HTTP service wrapping the News API (newsapi.org) v1 and v2 client for agents."
 )
 
@@ -65,7 +65,7 @@ func LoadConfig() Config {
 }
 
 // NewRouter builds the Chi router. client may be nil; proxy returns 503.
-func NewRouter(client *newapi.Client, publicBase, ver string, rcli *regclient.Client) *chi.Mux {
+func NewRouter(client *newsapi.Client, publicBase, ver string, rcli *regclient.Client) *chi.Mux {
 	if ver == "" {
 		ver = "0.0.0-dev"
 	}
@@ -79,35 +79,35 @@ func NewRouter(client *newapi.Client, publicBase, ver string, rcli *regclient.Cl
 	r.Get("/openapi.json", handleOpenapi())
 	r.Get("/capabilities", handleCapabilities())
 	r.Post("/register", handleRegister(ready, rcli, publicBase, ver, svcName))
-	r.Get("/v1/v1/articles", newapiProxy(ready, client, func(c *newapi.Client, ctx context.Context, q url.Values) ([]byte, error) {
+	r.Get("/v1/v1/articles", newsapiProxy(ready, client, func(c *newsapi.Client, ctx context.Context, q url.Values) ([]byte, error) {
 		out, _, e := c.V1.Articles(ctx, q, nil)
 		if e != nil {
 			return nil, e
 		}
 		return json.Marshal(out)
 	}))
-	r.Get("/v1/v1/sources", newapiProxy(ready, client, func(c *newapi.Client, ctx context.Context, q url.Values) ([]byte, error) {
+	r.Get("/v1/v1/sources", newsapiProxy(ready, client, func(c *newsapi.Client, ctx context.Context, q url.Values) ([]byte, error) {
 		out, _, e := c.V1.Sources(ctx, q, nil)
 		if e != nil {
 			return nil, e
 		}
 		return json.Marshal(out)
 	}))
-	r.Get("/v1/v2/top-headlines", newapiProxy(ready, client, func(c *newapi.Client, ctx context.Context, q url.Values) ([]byte, error) {
+	r.Get("/v1/v2/top-headlines", newsapiProxy(ready, client, func(c *newsapi.Client, ctx context.Context, q url.Values) ([]byte, error) {
 		out, _, e := c.V2.TopHeadlines(ctx, q, nil)
 		if e != nil {
 			return nil, e
 		}
 		return json.Marshal(out)
 	}))
-	r.Get("/v1/v2/everything", newapiProxy(ready, client, func(c *newapi.Client, ctx context.Context, q url.Values) ([]byte, error) {
+	r.Get("/v1/v2/everything", newsapiProxy(ready, client, func(c *newsapi.Client, ctx context.Context, q url.Values) ([]byte, error) {
 		out, _, e := c.V2.Everything(ctx, q, nil)
 		if e != nil {
 			return nil, e
 		}
 		return json.Marshal(out)
 	}))
-	r.Get("/v1/v2/sources", newapiProxy(ready, client, func(c *newapi.Client, ctx context.Context, q url.Values) ([]byte, error) {
+	r.Get("/v1/v2/sources", newsapiProxy(ready, client, func(c *newsapi.Client, ctx context.Context, q url.Values) ([]byte, error) {
 		out, _, e := c.V2.Sources(ctx, q, nil)
 		if e != nil {
 			return nil, e
@@ -117,9 +117,9 @@ func NewRouter(client *newapi.Client, publicBase, ver string, rcli *regclient.Cl
 	return r
 }
 
-type proxyCall func(c *newapi.Client, ctx context.Context, q url.Values) ([]byte, error)
+type proxyCall func(c *newsapi.Client, ctx context.Context, q url.Values) ([]byte, error)
 
-func newapiProxy(ready bool, client *newapi.Client, fn proxyCall) http.HandlerFunc {
+func newsapiProxy(ready bool, client *newsapi.Client, fn proxyCall) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !ready {
 			w.Header().Set("Content-Type", "application/json")
@@ -140,7 +140,7 @@ func newapiProxy(ready bool, client *newapi.Client, fn proxyCall) http.HandlerFu
 		b, err := fn(client, r.Context(), q)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			var ae *newapi.APIError
+			var ae *newsapi.APIError
 			if errors.As(err, &ae) {
 				w.WriteHeader(http.StatusBadRequest)
 			} else {
@@ -247,12 +247,12 @@ func handleRegister(ready bool, rcli *regclient.Client, publicBase, version, nam
 			BaseURL:      publicBase,
 			Description:  svcDescription,
 			Category:     "news",
-			Tags:         []string{"news", "newapi", "headlines"},
+			Tags:         []string{"news", "newsapi", "headlines"},
 			Domains:      []string{"v1.articles", "v1.sources", "v2.top-headlines", "v2.everything", "v2.sources"},
 			OpenapiURL:   publicBase + "/openapi.json",
 			OpenapiSpec:  nil,
 			Metadata: map[string]any{
-				"kind": "newapi_server", "upstream": "https://newsapi.org", "newsapi_configured": ready,
+				"kind": "newsapi_server", "upstream": "https://newsapi.org", "newsapi_configured": ready,
 			},
 		}
 		if err := rcli.Register(r.Context(), req); err != nil {
@@ -270,10 +270,10 @@ func RunContext(ctx context.Context, cfg Config, rcli *regclient.Client, out io.
 	if out == nil {
 		out = os.Stderr
 	}
-	var c *newapi.Client
+	var c *newsapi.Client
 	if strings.TrimSpace(cfg.NewsAPIKey) != "" {
 		var err error
-		c, err = newapi.New(cfg.NewsAPIKey, nil)
+		c, err = newsapi.New(cfg.NewsAPIKey, nil)
 		if err != nil {
 			return err
 		}
@@ -294,11 +294,11 @@ func RunContext(ctx context.Context, cfg Config, rcli *regclient.Client, out io.
 				BaseURL:      pub,
 				Description:  svcDescription,
 				Category:     "news",
-				Tags:         []string{"news", "newapi", "headlines"},
+				Tags:         []string{"news", "newsapi", "headlines"},
 				Domains:      []string{"v1.articles", "v1.sources", "v2.top-headlines", "v2.everything", "v2.sources"},
 				OpenapiURL:   pub + "/openapi.json",
 				Metadata: map[string]any{
-					"kind": "newapi_server", "upstream": "https://newsapi.org", "newsapi_configured": c != nil,
+					"kind": "newsapi_server", "upstream": "https://newsapi.org", "newsapi_configured": c != nil,
 				},
 			}
 			if err := rcli.Register(context.Background(), req); err != nil {

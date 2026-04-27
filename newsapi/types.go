@@ -1,4 +1,4 @@
-package newapi
+package newsapi
 
 // Article is a single item from the top-headlines or everything responses.
 // Field set follows https://newsapi.org/docs/ — unknown fields are ignored.

@@ -1,4 +1,4 @@
-package newapi
+package newsapi
 
 import (
 	"context"

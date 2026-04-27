@@ -1,12 +1,12 @@
-# News API (newapi) — system design and data format
+# News API (newsapi) — system design and data format
 
-This document describes the design of the Go package `newapi`, a client for [News API](https://newsapi.org) (third-party HTTP API, not a service run by this repo). Field shapes follow [News API’s documentation](https://newsapi.org/docs); the reference behavior matches the Node client [`github.com/bzarras/newsapi`](https://github.com/bzarras/newsapi).
+This document describes the design of the Go package `newsapi`, a client for [News API](https://newsapi.org) (third-party HTTP API, not a service run by this repo). Field shapes follow [News API’s documentation](https://newsapi.org/docs); the reference behavior matches the Node client [`github.com/bzarras/newsapi`](https://github.com/bzarras/newsapi).
 
 ## Package location
 
 | Path | Role |
 |------|------|
-| `newapi/` | Client, types, v1 and v2 API facades (`client.go`, `types.go`, `v1.go`, `v2.go`) |
+| `newsapi/` | Client, types, v1 and v2 API facades (`client.go`, `types.go`, `v1.go`, `v2.go`) |
 
 ## High-level design
 
@@ -85,7 +85,7 @@ When the API returns HTTP 200 but logical failure, the body may look like:
 { "status": "error", "code": "paramInvalid", "message": "nope" }
 ```
 
-The client maps this to `*newapi.APIError` with `Code` and `Message` (and `Error()` returns a combined string when both are set).
+The client maps this to `*newsapi.APIError` with `Code` and `Message` (and `Error()` returns a combined string when both are set).
 
 Non-2xx HTTP responses do not use this path; they are returned as a generic HTTP error (message includes status code).
 
@@ -102,4 +102,4 @@ Non-2xx HTTP responses do not use this path; they are returned as a generic HTTP
 ## References
 
 - [News API documentation](https://newsapi.org/docs) — canonical query parameters and field semantics.
-- Local API surface: from the module root, run `go doc ./newapi/...` (or `go doc newapi` if the package is on your module path).
+- Local API surface: from the module root, run `go doc ./newsapi/...` (or `go doc newsapi` if the package is on your module path).

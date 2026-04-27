@@ -1,9 +1,9 @@
-// Package newapi is a small Go client for [News API] (https://newsapi.org).
+// Package newsapi is a small Go client for [News API] (https://newsapi.org).
 // The surface mirrors the Node "newsapi" client ([github.com/bzarras/newsapi]).
 //
 // [github.com/bzarras/newsapi]: https://github.com/bzarras/newsapi
 // [News API]: https://newsapi.org
-package newapi
+package newsapi
 
 import (
 	"context"
@@ -34,7 +34,7 @@ type Client struct {
 // omits the key.
 func New(apiKey string, opts ...ClientOption) (*Client, error) {
 	if strings.TrimSpace(apiKey) == "" {
-		return nil, fmt.Errorf("newapi: no API key specified")
+		return nil, fmt.Errorf("newsapi: no API key specified")
 	}
 	u, err := url.Parse(defaultBaseURL)
 	if err != nil {
@@ -74,7 +74,7 @@ func WithCORSProxyURL(p string) ClientOption {
 func WithHTTPClient(h *http.Client) ClientOption {
 	return func(c *Client) error {
 		if h == nil {
-			return fmt.Errorf("newapi: WithHTTPClient: nil *http.Client")
+			return fmt.Errorf("newsapi: WithHTTPClient: nil *http.Client")
 		}
 		c.httpc = h
 		return nil
@@ -89,7 +89,7 @@ func WithBaseURL(u string) ClientOption {
 			return err
 		}
 		if p.Scheme == "" || p.Host == "" {
-			return fmt.Errorf("newapi: WithBaseURL: need absolute URL with host")
+			return fmt.Errorf("newsapi: WithBaseURL: need absolute URL with host")
 		}
 		c.baseURL = p
 		return nil
@@ -173,7 +173,7 @@ func (c *Client) getJSON(ctx context.Context, urlStr string, withAPIKey bool, ro
 		return res.Header, nil, err
 	}
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return res.Header, b, fmt.Errorf("newapi: HTTP %d", res.StatusCode)
+		return res.Header, b, fmt.Errorf("newsapi: HTTP %d", res.StatusCode)
 	}
 	// If JSON says status=error, surface [APIError]
 	if err := checkJSONAPIError(b); err != nil {

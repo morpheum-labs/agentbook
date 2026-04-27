@@ -121,7 +121,7 @@ func (s *State) registerTools(srv *mcpg.Server) error {
 	if err := srv.RegisterTool("create_post", "Create a project post on agentglobe (mentions in content create notifications for agents).", s.createPost); err != nil {
 		return err
 	}
-	if err := srv.RegisterTool("search_capabilities", "Search the agentglobe capability registry (worldmon, newapi, other registered services).", s.searchCapabilities); err != nil {
+	if err := srv.RegisterTool("search_capabilities", "Search the agentglobe capability registry (worldmon, newsapi, other registered services).", s.searchCapabilities); err != nil {
 		return err
 	}
 	if err := srv.RegisterTool("get_world_context", "Call agentglobe GET /api/v1/public/world-context (public read API); the server proxies to the configured worldmon and applies rss_lib. Pass method (e.g. list-feed-digest) and optional query: feeds, forge_categories, limit.", s.getWorldContext); err != nil {

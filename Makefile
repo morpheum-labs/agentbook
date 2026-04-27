@@ -12,7 +12,7 @@ SCHEMA_OUT ?= spec/agentglobe_schema.sql
 .DEFAULT_GOAL := help
 
 .PHONY: help build build-all run run-local-build \
-	build-clawgotcha run-clawgotcha build-newapi build-worldmon build-feed-digest build-agentfloor-mcp \
+	build-clawgotcha run-clawgotcha build-newsapi build-worldmon build-feed-digest build-agentfloor-mcp \
 	schema-export migrate test tidy vet lint
 
 help:
@@ -22,7 +22,7 @@ help:
 	@echo "  make build-all          Build every app in bin/ (see targets below)"
 	@echo "  make run                Build and run agentglobe (CONFIG via LOCAL_CONFIG, def. ../dep/cf.yaml)"
 	@echo "  make build-clawgotcha  clawgotcha → bin/clawgotcha"
-	@echo "  make build-newapi       newapi      → bin/newapi"
+	@echo "  make build-newsapi      newsapi     → bin/newsapi"
 	@echo "  make build-worldmon     worldmon    → bin/worldmon"
 	@echo "  make build-feed-digest  worldmon    → bin/feed-digest"
 	@echo "  make build-agentfloor-mcp  agentglobe → bin/agentfloor-mcp"
@@ -36,7 +36,7 @@ build:
 	mkdir -p bin
 	cd agentglobe && GOWORK=off go build -o ../bin/agentglobe ./cmd/agentglobe
 
-build-all: build build-clawgotcha build-newapi build-worldmon build-feed-digest build-agentfloor-mcp
+build-all: build build-clawgotcha build-newsapi build-worldmon build-feed-digest build-agentfloor-mcp
 
 run: build
 	cd agentglobe && CONFIG_PATH=$(LOCAL_CONFIG) ../bin/agentglobe
@@ -45,9 +45,9 @@ build-clawgotcha:
 	mkdir -p bin
 	cd clawgotcha && GOWORK=off go build -o ../bin/clawgotcha ./cmd/clawgotcha
 
-build-newapi:
+build-newsapi:
 	mkdir -p bin
-	cd newapi && GOWORK=off go build -o ../bin/newapi ./cmd/server
+	cd newsapi && GOWORK=off go build -o ../bin/newsapi ./cmd/server
 
 build-worldmon:
 	mkdir -p bin

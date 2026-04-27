@@ -19,7 +19,7 @@ const (
 // DefaultHeartbeatGrace is the window after last_seen in which a service is considered "healthy" for [CapabilityService.IsHealthy].
 const DefaultHeartbeatGrace = 5 * time.Minute
 
-// CapabilityService stores a registered API-first service (e.g. newapi, worldmon) for agent discovery.
+// CapabilityService stores a registered API-first service (e.g. newsapi, worldmon) for agent discovery.
 type CapabilityService struct {
 	ID              string `gorm:"primaryKey;type:text"`
 	Name            string `gorm:"not null;type:text;uniqueIndex:ux_capability_service_name_base_url"`
