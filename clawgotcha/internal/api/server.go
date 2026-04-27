@@ -14,9 +14,18 @@ import (
 // corsMiddleware allows browser UIs (e.g. a static SPA on another origin) to call the JSON API.
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Unauthenticated API + credentialess browser calls: * is enough; no Allow-Credentials.
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization")
+		// Echo requested headers on preflight so the browser’s exact set always matches
+		// (e.g. accept vs Accept, or future X-* headers) without a fragile static list.
+		if v := r.Header.Get("Access-Control-Request-Headers"); v != "" {
+			w.Header().Set("Access-Control-Allow-Headers", v)
+		} else {
+			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization")
+		}
+		// Optional for credentialess requests; reduces duplicate preflights in modern browsers.
+		w.Header().Set("Access-Control-Max-Age", "86400")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return

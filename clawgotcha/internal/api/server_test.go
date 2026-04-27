@@ -33,3 +33,39 @@ func TestOpenAPIRoute(t *testing.T) {
 		t.Fatalf("content-type: %q", rec.Header().Get("Content-Type"))
 	}
 }
+
+func TestCORS_PreflightEchoRequestHeaders(t *testing.T) {
+	r := NewRouter(nil)
+	req := httptest.NewRequest("OPTIONS", "/api/v1/agents", nil)
+	req.Header.Set("Origin", "https://app.example.com")
+	req.Header.Set("Access-Control-Request-Method", "POST")
+	req.Header.Set("Access-Control-Request-Headers", "accept,content-type,authorization")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("preflight status: got %d want %d", rec.Code, http.StatusNoContent)
+	}
+	if g, w := rec.Header().Get("Access-Control-Allow-Origin"), "*"; g != w {
+		t.Fatalf("Allow-Origin: got %q want %q", g, w)
+	}
+	if g, w := rec.Header().Get("Access-Control-Allow-Headers"), "accept,content-type,authorization"; g != w {
+		t.Fatalf("Allow-Headers echo: got %q want %q", g, w)
+	}
+	if g := rec.Header().Get("Access-Control-Allow-Methods"); g == "" {
+		t.Fatal("expected Access-Control-Allow-Methods on preflight")
+	}
+}
+
+func TestCORS_GETWithOrigin(t *testing.T) {
+	r := NewRouter(nil)
+	req := httptest.NewRequest("GET", "/healthz", nil)
+	req.Header.Set("Origin", "https://app.example.com")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status %d", rec.Code)
+	}
+	if g, w := rec.Header().Get("Access-Control-Allow-Origin"), "*"; g != w {
+		t.Fatalf("Allow-Origin: got %q want %q", g, w)
+	}
+}
