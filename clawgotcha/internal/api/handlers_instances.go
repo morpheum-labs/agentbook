@@ -184,6 +184,10 @@ func (s *Server) heartbeatInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listInstances(w http.ResponseWriter, r *http.Request) {
+	if err := db.MarkStaleRuntimeInstancesOffline(s.db); err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
 	q := s.db.Model(&db.SwarmRuntimeInstance{})
 	if st := strings.TrimSpace(r.URL.Query().Get("status")); st != "" {
 		q = q.Where("status = ?", st)
@@ -203,6 +207,10 @@ func (s *Server) getInstance(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimSpace(chi.URLParam(r, "instance_name"))
 	if name == "" {
 		httperr.Write(w, r, httperr.BadRequest("instance_name required", nil))
+		return
+	}
+	if err := db.MarkStaleRuntimeInstancesOffline(s.db); err != nil {
+		httperr.Write(w, r, err)
 		return
 	}
 	var inst db.SwarmRuntimeInstance

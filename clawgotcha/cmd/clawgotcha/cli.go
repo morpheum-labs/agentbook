@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/api"
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/config"
@@ -93,7 +94,21 @@ func runServer(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: api.NewRouter(g, api.RouterOptions{InternalToken: cfg.InternalToken})}
+	go func() {
+		t := time.NewTicker(30 * time.Second)
+		defer t.Stop()
+		for range t.C {
+			if err := db.MarkStaleRuntimeInstancesOffline(g); err != nil {
+				slog.Warn("mark stale runtimes", "err", err)
+			}
+		}
+	}()
+	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: api.NewRouter(g, api.RouterOptions{
+		InternalToken: cfg.InternalToken,
+		APIKey:        cfg.APIKey,
+		RateLimitRPS:  cfg.RateLimitRPS,
+		MaxBodyBytes:  cfg.MaxRequestBodyBytes,
+	})}
 	slog.Info("clawgotcha listening", "addr", cfg.HTTPAddr)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		_, _ = fmt.Fprintln(os.Stderr, err)

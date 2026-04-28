@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -67,5 +68,38 @@ func TestCORS_GETWithOrigin(t *testing.T) {
 	}
 	if g, w := rec.Header().Get("Access-Control-Allow-Origin"), "*"; g != w {
 		t.Fatalf("Allow-Origin: got %q want %q", g, w)
+	}
+}
+
+func TestMetricsRoute(t *testing.T) {
+	r := NewRouter(nil, RouterOptions{})
+	req := httptest.NewRequest("GET", "/metrics", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status %d", rec.Code)
+	}
+	if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/plain") {
+		t.Fatalf("content-type: %q", ct)
+	}
+}
+
+func TestAPIKey_BlocksAPIWithoutKey(t *testing.T) {
+	r := NewRouter(nil, RouterOptions{APIKey: "secret"})
+	req := httptest.NewRequest("GET", "/api/v1/agents", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("status %d body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestAPIKey_PublicRoutesWithoutKey(t *testing.T) {
+	r := NewRouter(nil, RouterOptions{APIKey: "secret"})
+	req := httptest.NewRequest("GET", "/healthz", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("healthz status %d", rec.Code)
 	}
 }

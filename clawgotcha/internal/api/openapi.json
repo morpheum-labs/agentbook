@@ -3,7 +3,7 @@
   "info": {
     "title": "clawgotcha",
     "version": "1.0.0",
-    "description": "HTTP API for MiroClaw/ZeroClaw-style swarm agent metadata: default provider/model, Hands ([[agents]]), and cron jobs ([[cron_jobs]]) backed by PostgreSQL. **Errors** return JSON `{\"error\":{\"code\":\"...\",\"detail\":\"...\"}}` (see `Error`). `4xx` and `5xx` use the same error envelope."
+    "description": "HTTP API for MiroClaw/ZeroClaw-style swarm agent metadata: default provider/model, Hands ([[agents]]), and cron jobs ([[cron_jobs]]) backed by PostgreSQL. **Errors** return JSON `{\"error\":{\"code\":\"...\",\"detail\":\"...\"}}` (see `Error`). `4xx` and `5xx` use the same error envelope.\n\n**Security (optional):** When `CLAWGOTCHA_API_KEY` is set, all `/api/v1/*` routes require `Authorization: Bearer <key>` or `X-API-Key: <key>`. Unauthenticated public routes: `GET /healthz`, `GET /openapi.json`, `GET /metrics`. Internal publish uses `CLAWGOTCHA_INTERNAL_TOKEN` for `POST /api/v1/events/publish`.\n\n**Webhooks:** On agent/cron/config changes, Clawgotcha POSTs JSON (same shape as SSE `change` events — see `ChangeEventPayload`) to each registered runtime `callback_url`. The raw body is signed with **HMAC-SHA256** using the per-runtime subscription secret created at registration; verify using header **`X-Clawgotcha-Signature: sha256=<hex>`** (the signature is **not** duplicated inside the JSON body). Optional: `X-Clawgotcha-Event-Type` repeats `event_type`."
   },
   "servers": [
     {
@@ -14,6 +14,7 @@
   "tags": [
     { "name": "Health" },
     { "name": "Meta" },
+    { "name": "Metrics" },
     { "name": "Config" },
     { "name": "Agents" },
     { "name": "Cron jobs" },
@@ -24,10 +25,18 @@
     "/healthz": {
       "get": {
         "tags": ["Health"],
-        "summary": "Liveness",
+        "summary": "Liveness and database connectivity",
         "responses": {
           "200": {
-            "description": "Service is up",
+            "description": "Service is up; database reachable when configured",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Healthz" }
+              }
+            }
+          },
+          "503": {
+            "description": "Database ping failed",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Healthz" }
@@ -44,6 +53,17 @@
         "responses": {
           "200": {
             "description": "OpenAPI 3 JSON"
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": ["Metrics"],
+        "summary": "Prometheus metrics (process + default collectors + clawgotcha_http_*)",
+        "responses": {
+          "200": {
+            "description": "text/plain Prometheus exposition format"
           }
         }
       }
@@ -397,6 +417,7 @@
       "post": {
         "tags": ["Instances"],
         "summary": "Register or upsert a Miroclaw runtime by instance_name",
+        "description": "Creates or updates the runtime row and ensures a webhook subscription exists (random secret for HMAC signing outbound callbacks). First registration returns `revision_summary` for sync.",
         "requestBody": {
           "required": true,
           "content": {
@@ -548,6 +569,7 @@
       "get": {
         "tags": ["Events"],
         "summary": "Server-Sent Events stream of change notifications",
+        "description": "Initial event `revision_summary`, then `change` events with JSON bodies matching `ChangeEventPayload` (same JSON POSTed to runtime callback URLs for webhooks; webhooks add `X-Clawgotcha-Signature`, see top-level API description).",
         "responses": {
           "200": {
             "description": "text/event-stream"
@@ -603,8 +625,26 @@
       "Healthz": {
         "type": "object",
         "properties": {
-          "status": { "type": "string", "example": "ok" },
-          "ts": { "type": "string", "format": "date-time", "description": "Server timestamp (RFC 3339 nanoseconds)" }
+          "status": { "type": "string", "enum": ["ok", "degraded"], "description": "`degraded` when DATABASE_URL is set but ping fails" },
+          "ts": { "type": "string", "format": "date-time", "description": "Server timestamp (RFC 3339 nanoseconds)" },
+          "database": {
+            "oneOf": [
+              { "type": "string", "enum": ["ok", "not_configured"] },
+              { "type": "object", "additionalProperties": { "type": "string" }, "description": "Error detail when ping fails" }
+            ]
+          },
+          "runtime_instances": { "type": "integer", "format": "int64", "description": "Count of rows in swarm_runtime_instances when DB is healthy" }
+        }
+      },
+      "ChangeEventPayload": {
+        "type": "object",
+        "description": "Broadcast over SSE and sent as the HTTP body for webhook POSTs to `callback_url`. Sign the exact raw bytes with HMAC-SHA256 using the subscription secret; compare to `X-Clawgotcha-Signature` header (`sha256=<hex>`).",
+        "properties": {
+          "event_type": { "type": "string", "example": "agent.updated" },
+          "affected_entity_type": { "type": "string", "example": "agent" },
+          "affected_ids": { "type": "array", "items": { "type": "string" } },
+          "new_revision": { "type": "integer", "format": "int64" },
+          "ts": { "type": "string", "description": "RFC3339Nano UTC" }
         }
       },
       "SwarmConfig": {

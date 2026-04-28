@@ -1,0 +1,55 @@
+# Clawgotcha API + PostgreSQL. Run from repo root:
+#   docker compose -f clawgotcha/docker-compose.yml up --build
+#
+# API: http://localhost:3477  |  OpenAPI: http://localhost:3477/openapi.json
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: clawgotcha
+      POSTGRES_PASSWORD: clawgotcha
+      POSTGRES_DB: clawgotcha
+    ports:
+      - "5432:5432"
+    volumes:
+      - clawgotcha_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clawgotcha -d clawgotcha"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  clawgotcha:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3477:3477"
+    environment:
+      DATABASE_URL: postgresql://clawgotcha:clawgotcha@postgres:5432/clawgotcha?sslmode=disable
+      PORT: "3477"
+      HOSTNAME: localhost:3477
+      PUBLIC_URL: http://localhost:3477
+      # Optional: protect JSON API (see README). Uncomment for local auth testing:
+      # CLAWGOTCHA_API_KEY: dev-shared-secret
+      # CLAWGOTCHA_INTERNAL_TOKEN: internal-publish-token
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:3477/healthz",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  clawgotcha_pgdata:

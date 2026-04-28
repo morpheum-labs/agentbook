@@ -1,11 +1,14 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	chimw "github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/db"
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/events"
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/httperr"
@@ -15,6 +18,9 @@ import (
 // RouterOptions configures optional HTTP router behavior.
 type RouterOptions struct {
 	InternalToken string // When set, POST /api/v1/events/publish requires Bearer or X-Internal-Token.
+	APIKey        string // When set, /api/v1/* requires Bearer or X-API-Key (healthz, openapi, metrics exempt).
+	RateLimitRPS  float64 // When > 0, rate-limit /api/v1/* per client IP (sustained RPS).
+	MaxBodyBytes  int64   // Max JSON body size for /api/v1/* (default 1 MiB when 0).
 }
 
 // corsMiddleware allows browser UIs (e.g. a static SPA on another origin) to call the JSON API.
@@ -38,18 +44,43 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 // NewRouter mounts REST handlers on r (caller may wrap with middleware).
 func NewRouter(gdb *gorm.DB, opts RouterOptions) http.Handler {
+	maxBody := opts.MaxBodyBytes
+	if maxBody <= 0 {
+		maxBody = 1 << 20
+	}
 	s := &Server{
 		db:            gdb,
 		hub:           events.NewHub(),
 		dispatcher:    &events.WebhookDispatcher{DB: gdb, Client: events.DefaultHTTPClient()},
 		internalToken: opts.InternalToken,
+		apiKey:        opts.APIKey,
+		maxBodyBytes:  maxBody,
 	}
 	r := chi.NewRouter()
 	r.Use(corsMiddleware)
+	r.Use(chimw.RequestID)
+	r.Use(chimw.RealIP)
+	r.Use(slogRequestLogger)
 	r.Get("/healthz", s.healthz)
 	r.Get("/openapi.json", handleOpenapi())
+	r.Handle("/metrics", promhttp.Handler())
+
+	var rl *ipRateLimiter
+	if opts.RateLimitRPS > 0 {
+		burst := int(opts.RateLimitRPS) + 5
+		if burst < 5 {
+			burst = 5
+		}
+		rl = newIPRateLimiter(opts.RateLimitRPS, burst, 15*time.Minute)
+		go rl.cleanupLoop(context.Background())
+	}
 
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Use(maxBodyBytes(maxBody))
+		if rl != nil {
+			r.Use(rl.middleware)
+		}
+		r.Use(s.requireAPIKey)
 		r.Get("/config", s.getConfig)
 		r.Put("/config", s.putConfig)
 
@@ -87,10 +118,38 @@ type Server struct {
 	hub           *events.Hub
 	dispatcher    *events.WebhookDispatcher
 	internalToken string
+	apiKey        string
+	maxBodyBytes  int64
 }
 
-func (s *Server) healthz(w http.ResponseWriter, _ *http.Request) {
-	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "ts": time.Now().UTC().Format(time.RFC3339Nano)})
+func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {
+	payload := map[string]any{
+		"status": "ok",
+		"ts":     time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	code := http.StatusOK
+	if s.db != nil {
+		sqlDB, err := s.db.DB()
+		if err != nil {
+			payload["status"] = "degraded"
+			payload["database"] = map[string]string{"error": err.Error()}
+			code = http.StatusServiceUnavailable
+		} else if err := sqlDB.PingContext(r.Context()); err != nil {
+			payload["status"] = "degraded"
+			payload["database"] = map[string]string{"error": err.Error()}
+			code = http.StatusServiceUnavailable
+		} else {
+			payload["database"] = "ok"
+			var n int64
+			_ = s.db.Model(&db.SwarmRuntimeInstance{}).Count(&n)
+			payload["runtime_instances"] = n
+		}
+	} else {
+		payload["database"] = "not_configured"
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(code)
+	_ = json.NewEncoder(w).Encode(payload)
 }
 
 func (s *Server) getConfig(w http.ResponseWriter, r *http.Request) {

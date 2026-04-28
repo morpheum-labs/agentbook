@@ -56,17 +56,10 @@ func ensurePartialUniqueNameIndexes(gdb *gorm.DB) error {
 }
 
 func ensureDefaultConfigRow(gdb *gorm.DB) error {
-	var n int64
-	if err := gdb.Model(&SwarmConfig{}).Where("id = ?", 1).Count(&n).Error; err != nil {
-		return err
-	}
-	if n > 0 {
-		return nil
-	}
-	return gdb.Create(&SwarmConfig{
-		ID:              1,
-		DefaultProvider: "openai",
-		DefaultModel:    "",
-		CurrentRevision: 1,
-	}).Error
+	// Single-statement insert avoids the race where two processes both see zero rows.
+	return gdb.Exec(`
+INSERT INTO swarm_config (id, default_provider, default_model, current_revision, created_at, updated_at)
+VALUES (1, 'openai', '', 1, NOW(), NOW())
+ON CONFLICT (id) DO NOTHING
+`).Error
 }

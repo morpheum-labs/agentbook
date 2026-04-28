@@ -20,6 +20,12 @@ type Config struct {
 	DatabaseURL string `yaml:"database_url"`
 	// InternalToken gates POST /api/v1/events/publish (Bearer or X-Internal-Token). Set via CLAWGOTCHA_INTERNAL_TOKEN.
 	InternalToken string `yaml:"-"`
+	// APIKey gates /api/v1/* when non-empty (Bearer or X-API-Key). Set via CLAWGOTCHA_API_KEY.
+	APIKey string `yaml:"-"`
+	// RateLimitRPS is max sustained requests per second per client IP on /api/v1/* (0 = disabled). CLAWGOTCHA_RATE_LIMIT_RPS.
+	RateLimitRPS float64 `yaml:"-"`
+	// MaxRequestBodyBytes caps JSON bodies on /api/v1/* (default 1 MiB). CLAWGOTCHA_MAX_REQUEST_BODY_BYTES.
+	MaxRequestBodyBytes int64 `yaml:"-"`
 	// HTTPAddr is the full listen address (e.g. :3477). Set by [Load] from env, or derived from Port; not read from YAML.
 	HTTPAddr string `yaml:"-"`
 }
@@ -39,7 +45,7 @@ func Load(configPath string) (*Config, error) {
 }
 
 func newDefaults() *Config {
-	return &Config{Port: 3477}
+	return &Config{Port: 3477, MaxRequestBodyBytes: 1 << 20}
 }
 
 func mergeYAMLFile(c *Config, path string) error {
@@ -73,6 +79,15 @@ func applyEnv(c *Config) {
 	if v := stringsTrimEnv("CLAWGOTCHA_INTERNAL_TOKEN"); v != nil {
 		c.InternalToken = *v
 	}
+	if v := stringsTrimEnv("CLAWGOTCHA_API_KEY"); v != nil {
+		c.APIKey = *v
+	}
+	if v, ok := floatFromEnv("CLAWGOTCHA_RATE_LIMIT_RPS"); ok {
+		c.RateLimitRPS = v
+	}
+	if v, ok := int64FromEnv("CLAWGOTCHA_MAX_REQUEST_BODY_BYTES"); ok {
+		c.MaxRequestBodyBytes = v
+	}
 }
 
 // deriveHTTPAddr fills HTTPAddr when not set by env, using Port (from defaults + yaml + env PORT).
@@ -94,6 +109,38 @@ func stringsTrimEnv(key string) *string {
 	}
 	s := strings.TrimSpace(v)
 	return &s
+}
+
+func floatFromEnv(key string) (float64, bool) {
+	v, ok := os.LookupEnv(key)
+	if !ok {
+		return 0, false
+	}
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return 0, false
+	}
+	n, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return 0, false
+	}
+	return n, true
+}
+
+func int64FromEnv(key string) (int64, bool) {
+	v, ok := os.LookupEnv(key)
+	if !ok {
+		return 0, false
+	}
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return 0, false
+	}
+	n, err := strconv.ParseInt(v, 10, 64)
+	if err != nil {
+		return 0, false
+	}
+	return n, true
 }
 
 func intFromEnv(key string) (int, bool) {

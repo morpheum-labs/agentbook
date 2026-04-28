@@ -41,6 +41,16 @@ func ServiceUnavailable(detail string) *PublicError {
 	return &PublicError{Code: "service_unavailable", Detail: detail}
 }
 
+// TooManyRequests is a 429 public error.
+func TooManyRequests(detail string) *PublicError {
+	return &PublicError{Code: "too_many_requests", Detail: detail}
+}
+
+// PayloadTooLarge is a 413 public error.
+func PayloadTooLarge(detail string) *PublicError {
+	return &PublicError{Code: "payload_too_large", Detail: detail}
+}
+
 // Write serializes err as JSON. Logs internal errors.
 func Write(w http.ResponseWriter, r *http.Request, err error) {
 	var pe *PublicError
@@ -54,6 +64,10 @@ func Write(w http.ResponseWriter, r *http.Request, err error) {
 			status = http.StatusForbidden
 		case "service_unavailable":
 			status = http.StatusServiceUnavailable
+		case "too_many_requests":
+			status = http.StatusTooManyRequests
+		case "payload_too_large":
+			status = http.StatusRequestEntityTooLarge
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(status)
