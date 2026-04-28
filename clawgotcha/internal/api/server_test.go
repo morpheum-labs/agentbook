@@ -22,7 +22,7 @@ func TestOpenAPISpec(t *testing.T) {
 }
 
 func TestOpenAPIRoute(t *testing.T) {
-	r := NewRouter(nil)
+	r := NewRouter(nil, RouterOptions{})
 	req := httptest.NewRequest("GET", "/openapi.json", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -35,7 +35,7 @@ func TestOpenAPIRoute(t *testing.T) {
 }
 
 func TestCORS_PreflightEchoRequestHeaders(t *testing.T) {
-	r := NewRouter(nil)
+	r := NewRouter(nil, RouterOptions{})
 	req := httptest.NewRequest("OPTIONS", "/api/v1/agents", nil)
 	req.Header.Set("Origin", "https://app.example.com")
 	req.Header.Set("Access-Control-Request-Method", "POST")
@@ -57,7 +57,7 @@ func TestCORS_PreflightEchoRequestHeaders(t *testing.T) {
 }
 
 func TestCORS_GETWithOrigin(t *testing.T) {
-	r := NewRouter(nil)
+	r := NewRouter(nil, RouterOptions{})
 	req := httptest.NewRequest("GET", "/healthz", nil)
 	req.Header.Set("Origin", "https://app.example.com")
 	rec := httptest.NewRecorder()

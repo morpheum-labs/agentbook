@@ -16,7 +16,9 @@
     { "name": "Meta" },
     { "name": "Config" },
     { "name": "Agents" },
-    { "name": "Cron jobs" }
+    { "name": "Cron jobs" },
+    { "name": "Instances" },
+    { "name": "Events" }
   ],
   "paths": {
     "/healthz": {
@@ -390,6 +392,169 @@
           "500": { "$ref": "#/components/responses/InternalError" }
         }
       }
+    },
+    "/api/v1/instances/register": {
+      "post": {
+        "tags": ["Instances"],
+        "summary": "Register or upsert a Miroclaw runtime by instance_name",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterInstanceRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registered instance and revision_summary",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RegisterInstanceResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/instances": {
+      "get": {
+        "tags": ["Instances"],
+        "summary": "List runtime instances",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "string", "description": "Filter by status (e.g. online)" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "instances array",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "instances": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/SwarmRuntimeInstance" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/instances/{instance_name}": {
+      "parameters": [
+        {
+          "name": "instance_name",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "tags": ["Instances"],
+        "summary": "Get one runtime instance",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SwarmRuntimeInstance" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "delete": {
+        "tags": ["Instances"],
+        "summary": "Deregister runtime (offline + disable webhooks)",
+        "responses": {
+          "204": { "description": "Deregistered" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/instances/{instance_name}/heartbeat": {
+      "parameters": [
+        {
+          "name": "instance_name",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "post": {
+        "tags": ["Instances"],
+        "summary": "Runtime heartbeat and health metadata",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/HeartbeatRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "revision_summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "revision_summary": { "$ref": "#/components/schemas/RevisionSummary" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/events/publish": {
+      "post": {
+        "tags": ["Events"],
+        "summary": "Publish a change event (requires CLAWGOTCHA_INTERNAL_TOKEN)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PublishEventRequest" }
+            }
+          }
+        },
+        "responses": {
+          "202": { "description": "Accepted" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "403": { "description": "Forbidden" },
+          "503": { "description": "Token not configured" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Server-Sent Events stream of change notifications",
+        "responses": {
+          "200": {
+            "description": "text/event-stream"
+          },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
     }
   },
   "components": {
@@ -444,13 +609,12 @@
       },
       "SwarmConfig": {
         "type": "object",
-        "description": "Response fields use the Go struct default (PascalCase) — no `json` tags on the model",
+        "description": "GET/PUT responses use snake_case keys including default_provider, default_model, current_revision, and revision_summary.",
         "properties": {
-          "ID": { "type": "integer" },
-          "DefaultProvider": { "type": "string" },
-          "DefaultModel": { "type": "string" },
-          "CreatedAt": { "type": "string", "format": "date-time" },
-          "UpdatedAt": { "type": "string", "format": "date-time" }
+          "default_provider": { "type": "string" },
+          "default_model": { "type": "string" },
+          "current_revision": { "type": "integer", "format": "int64" },
+          "revision_summary": { "$ref": "#/components/schemas/RevisionSummary" }
         }
       },
       "PutConfigRequest": {
@@ -481,6 +645,9 @@
           "Model": { "type": "string" },
           "TimeoutSeconds": { "type": "integer" },
           "AutonomyLevel": { "$ref": "#/components/schemas/AutonomyLevel" },
+          "current_revision": { "type": "integer", "format": "int64" },
+          "last_changed_at": { "type": "string", "format": "date-time" },
+          "deleted": { "type": "boolean" },
           "CreatedAt": { "type": "string", "format": "date-time" },
           "UpdatedAt": { "type": "string", "format": "date-time" }
         }
@@ -520,12 +687,13 @@
       },
       "AgentListResponse": {
         "type": "object",
-        "required": ["agents"],
+        "required": ["agents", "revision_summary"],
         "properties": {
           "agents": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/SwarmAgent" }
-          }
+          },
+          "revision_summary": { "$ref": "#/components/schemas/RevisionSummary" }
         }
       },
       "SwarmCronJob": {
@@ -539,8 +707,76 @@
           "TimeoutSeconds": { "type": "integer" },
           "Prompt": { "type": "string" },
           "Active": { "type": "boolean" },
+          "CurrentRevision": { "type": "integer", "format": "int64" },
+          "LastChangedAt": { "type": "string", "format": "date-time" },
           "CreatedAt": { "type": "string", "format": "date-time" },
           "UpdatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RevisionSummary": {
+        "type": "object",
+        "properties": {
+          "config_revision": { "type": "integer", "format": "int64" },
+          "agents_max_revision": { "type": "integer", "format": "int64" },
+          "cron_jobs_max_revision": { "type": "integer", "format": "int64" }
+        }
+      },
+      "RegisterInstanceRequest": {
+        "type": "object",
+        "required": ["instance_name", "hostname", "version", "callback_url"],
+        "properties": {
+          "instance_name": { "type": "string" },
+          "instance_type": { "type": "string", "default": "miroclaw" },
+          "version": { "type": "string" },
+          "hostname": { "type": "string" },
+          "public_url": { "type": "string" },
+          "callback_url": { "type": "string" },
+          "capabilities": { "type": "array", "items": { "type": "string" } },
+          "metadata": { "type": "object" },
+          "started_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RegisterInstanceResponse": {
+        "type": "object",
+        "properties": {
+          "instance": { "$ref": "#/components/schemas/SwarmRuntimeInstance" },
+          "revision_summary": { "$ref": "#/components/schemas/RevisionSummary" }
+        }
+      },
+      "SwarmRuntimeInstance": {
+        "type": "object",
+        "properties": {
+          "ID": { "type": "string", "format": "uuid" },
+          "InstanceName": { "type": "string" },
+          "InstanceType": { "type": "string" },
+          "Version": { "type": "string" },
+          "Hostname": { "type": "string" },
+          "PublicURL": { "type": "string" },
+          "CallbackURL": { "type": "string" },
+          "Capabilities": { "type": "array", "items": { "type": "string" } },
+          "LastHeartbeatAt": { "type": "string", "format": "date-time" },
+          "Status": { "type": "string" },
+          "StartedAt": { "type": "string", "format": "date-time" },
+          "Metadata": { "type": "object" },
+          "CreatedAt": { "type": "string", "format": "date-time" },
+          "UpdatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "HeartbeatRequest": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" },
+          "metadata": { "type": "object" }
+        }
+      },
+      "PublishEventRequest": {
+        "type": "object",
+        "required": ["event_type", "affected_entity_type"],
+        "properties": {
+          "event_type": { "type": "string" },
+          "affected_entity_type": { "type": "string" },
+          "affected_ids": { "type": "array", "items": { "type": "string" } },
+          "new_revision": { "type": "integer", "format": "int64" }
         }
       },
       "CreateOrReplaceCronJobRequest": {
@@ -569,12 +805,13 @@
       },
       "CronJobListResponse": {
         "type": "object",
-        "required": ["cron_jobs"],
+        "required": ["cron_jobs", "revision_summary"],
         "properties": {
           "cron_jobs": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/SwarmCronJob" }
-          }
+          },
+          "revision_summary": { "$ref": "#/components/schemas/RevisionSummary" }
         }
       },
       "CronScheduleTimelineResponse": {

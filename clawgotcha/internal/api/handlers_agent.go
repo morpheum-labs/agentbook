@@ -4,55 +4,81 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/db"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/events"
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/httperr"
 	"gorm.io/gorm"
 )
 
 type createAgentBody struct {
-	Name            string  `json:"name"`
-	SystemPrompt    string  `json:"system_prompt"`
-	Identity        *string `json:"identity"`
-	Soul            *string `json:"soul"`
-	UserContext     *string `json:"user_context"`
-	Tools           []string `json:"tools"`
-	Provider        string  `json:"provider"`
-	Model           string  `json:"model"`
-	TimeoutSeconds  int     `json:"timeout_seconds"`
-	AutonomyLevel   string  `json:"autonomy_level"`
+	Name           string   `json:"name"`
+	SystemPrompt   string   `json:"system_prompt"`
+	Identity       *string  `json:"identity"`
+	Soul           *string  `json:"soul"`
+	UserContext    *string  `json:"user_context"`
+	Tools          []string `json:"tools"`
+	Provider       string   `json:"provider"`
+	Model          string   `json:"model"`
+	TimeoutSeconds int      `json:"timeout_seconds"`
+	AutonomyLevel  string   `json:"autonomy_level"`
 }
 
 type patchAgentBody struct {
-	Name            *string `json:"name"`
-	SystemPrompt    *string `json:"system_prompt"`
-	Identity        *string `json:"identity"`
-	Soul            *string `json:"soul"`
-	UserContext     *string `json:"user_context"`
-	Tools           []string `json:"tools,omitempty"`
-	Provider        *string `json:"provider"`
-	Model           *string `json:"model"`
-	TimeoutSeconds  *int    `json:"timeout_seconds"`
-	AutonomyLevel   *string `json:"autonomy_level"`
-	ClearTools      *bool   `json:"clear_tools"`
+	Name           *string  `json:"name"`
+	SystemPrompt   *string  `json:"system_prompt"`
+	Identity       *string  `json:"identity"`
+	Soul           *string  `json:"soul"`
+	UserContext    *string  `json:"user_context"`
+	Tools          []string `json:"tools,omitempty"`
+	Provider       *string  `json:"provider"`
+	Model          *string  `json:"model"`
+	TimeoutSeconds *int     `json:"timeout_seconds"`
+	AutonomyLevel  *string  `json:"autonomy_level"`
+	ClearTools     *bool    `json:"clear_tools"`
 }
 
 func (s *Server) listAgents(w http.ResponseWriter, r *http.Request) {
+	sinceRev, updatedAfter, delta, qerr := parseRevisionQuery(r)
+	if qerr != nil {
+		httperr.Write(w, r, httperr.BadRequest("invalid query", qerr))
+		return
+	}
+	tx := s.db
+	if delta {
+		tx = tx.Unscoped()
+	}
+	tx = tx.Order("name")
+	if sinceRev > 0 {
+		tx = tx.Where("current_revision > ?", sinceRev)
+	}
+	if updatedAfter != nil {
+		tx = tx.Where("last_changed_at > ?", *updatedAfter)
+	}
 	var out []db.SwarmAgent
-	if err := s.db.Order("name").Find(&out).Error; err != nil {
+	if err := tx.Find(&out).Error; err != nil {
 		httperr.Write(w, r, err)
 		return
 	}
 	if out == nil {
 		out = []db.SwarmAgent{}
 	}
+	sum, err := db.LoadRevisionSummary(s.db)
+	if err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
 	agents := make([]swarmAgentResponse, 0, len(out))
 	for i := range out {
 		agents = append(agents, toSwarmAgentResponse(out[i]))
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"agents": agents})
+	writeJSON(w, http.StatusOK, map[string]any{
+		"agents":           agents,
+		"revision_summary": sum,
+	})
 }
 
 func (s *Server) createAgent(w http.ResponseWriter, r *http.Request) {
@@ -71,17 +97,18 @@ func (s *Server) createAgent(w http.ResponseWriter, r *http.Request) {
 	}
 	sp := b.resolvedSystemPrompt()
 	agent := db.SwarmAgent{
-		Name:            strings.TrimSpace(b.Name),
-		SystemPrompt:    sp,
-		Tools:           b.Tools,
-		Provider:        b.Provider,
-		Model:           b.Model,
-		TimeoutSeconds:  b.TimeoutSeconds,
-		AutonomyLevel:   strings.TrimSpace(b.AutonomyLevel),
+		Name:           strings.TrimSpace(b.Name),
+		SystemPrompt:   sp,
+		Tools:          b.Tools,
+		Provider:       b.Provider,
+		Model:          b.Model,
+		TimeoutSeconds: b.TimeoutSeconds,
+		AutonomyLevel:  strings.TrimSpace(b.AutonomyLevel),
 	}
 	if agent.Tools == nil {
 		agent.Tools = []string{}
 	}
+	db.TouchAgentRevision(&agent)
 	if err := s.db.Create(&agent).Error; err != nil {
 		if isUniqueViolation(err) {
 			httperr.Write(w, r, httperr.BadRequest("duplicate", err))
@@ -90,7 +117,22 @@ func (s *Server) createAgent(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, toSwarmAgentResponse(agent))
+	s.emit(events.ChangeEvent{
+		EventType:          events.EventAgentUpdated,
+		AffectedEntityType: events.EntityAgent,
+		AffectedIDs:        []string{agent.ID.String()},
+		NewRevision:        agent.CurrentRevision,
+		TS:                 events.NowRFC3339Nano(),
+	})
+	sum, err := db.LoadRevisionSummary(s.db)
+	if err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"agent":            toSwarmAgentResponse(agent),
+		"revision_summary": sum,
+	})
 }
 
 func (s *Server) getAgent(w http.ResponseWriter, r *http.Request) {
@@ -104,7 +146,15 @@ func (s *Server) getAgent(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, toSwarmAgentResponse(a))
+	sum, err := db.LoadRevisionSummary(s.db)
+	if err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"agent":            toSwarmAgentResponse(a),
+		"revision_summary": sum,
+	})
 }
 
 func (s *Server) getAgentByName(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +168,15 @@ func (s *Server) getAgentByName(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, toSwarmAgentResponse(a))
+	sum, err := db.LoadRevisionSummary(s.db)
+	if err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"agent":            toSwarmAgentResponse(a),
+		"revision_summary": sum,
+	})
 }
 
 func (s *Server) putAgent(w http.ResponseWriter, r *http.Request) {
@@ -141,28 +199,37 @@ func (s *Server) putAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sp := b.resolvedSystemPrompt()
-	agent := db.SwarmAgent{
-		ID:             id,
-		Name:           strings.TrimSpace(b.Name),
-		SystemPrompt:   sp,
-		Tools:          b.Tools,
-		Provider:       b.Provider,
-		Model:          b.Model,
-		TimeoutSeconds: b.TimeoutSeconds,
-		AutonomyLevel:  strings.TrimSpace(b.AutonomyLevel),
-	}
-	if agent.Tools == nil {
-		agent.Tools = []string{}
-	}
-	// Full replace: upsert on primary key, conflict on name if renamed to another row — detect
 	var existing db.SwarmAgent
 	if err := s.db.First(&existing, "id = ?", id).Error; err != nil {
 		httperr.Write(w, r, err)
 		return
 	}
-	agent.ID = existing.ID
-	agent.CreatedAt = existing.CreatedAt
-	if err := s.db.Save(&agent).Error; err != nil {
+	agent := db.SwarmAgent{
+		ID:              existing.ID,
+		CreatedAt:       existing.CreatedAt,
+		Name:            strings.TrimSpace(b.Name),
+		SystemPrompt:    sp,
+		Tools:           b.Tools,
+		Provider:        b.Provider,
+		Model:           b.Model,
+		TimeoutSeconds:  b.TimeoutSeconds,
+		AutonomyLevel:   strings.TrimSpace(b.AutonomyLevel),
+		CurrentRevision: existing.CurrentRevision,
+	}
+	if agent.Tools == nil {
+		agent.Tools = []string{}
+	}
+	var out db.SwarmAgent
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(&agent).Error; err != nil {
+			return err
+		}
+		if err := db.IncrementAgentRevision(tx, agent.ID); err != nil {
+			return err
+		}
+		return tx.First(&out, "id = ?", agent.ID).Error
+	})
+	if err != nil {
 		if isUniqueViolation(err) {
 			httperr.Write(w, r, httperr.BadRequest("duplicate name", err))
 			return
@@ -170,7 +237,22 @@ func (s *Server) putAgent(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, toSwarmAgentResponse(agent))
+	s.emit(events.ChangeEvent{
+		EventType:          events.EventAgentUpdated,
+		AffectedEntityType: events.EntityAgent,
+		AffectedIDs:        []string{out.ID.String()},
+		NewRevision:        out.CurrentRevision,
+		TS:                 events.NowRFC3339Nano(),
+	})
+	sum, err := db.LoadRevisionSummary(s.db)
+	if err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"agent":            toSwarmAgentResponse(out),
+		"revision_summary": sum,
+	})
 }
 
 func (s *Server) patchAgent(w http.ResponseWriter, r *http.Request) {
@@ -222,9 +304,21 @@ func (s *Server) patchAgent(w http.ResponseWriter, r *http.Request) {
 		updates["autonomy_level"] = strings.TrimSpace(*b.AutonomyLevel)
 	}
 	if len(updates) == 0 {
-		writeJSON(w, http.StatusOK, a)
+		sum, err := db.LoadRevisionSummary(s.db)
+		if err != nil {
+			httperr.Write(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"agent":            toSwarmAgentResponse(a),
+			"revision_summary": sum,
+		})
 		return
 	}
+	now := time.Now().UTC()
+	updates["current_revision"] = gorm.Expr("current_revision + 1")
+	updates["last_changed_at"] = now
+	updates["updated_at"] = now
 	if err := s.db.Model(&a).Updates(updates).Error; err != nil {
 		if isUniqueViolation(err) {
 			httperr.Write(w, r, httperr.BadRequest("duplicate name", err))
@@ -237,7 +331,22 @@ func (s *Server) patchAgent(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, toSwarmAgentResponse(a))
+	s.emit(events.ChangeEvent{
+		EventType:          events.EventAgentUpdated,
+		AffectedEntityType: events.EntityAgent,
+		AffectedIDs:        []string{a.ID.String()},
+		NewRevision:        a.CurrentRevision,
+		TS:                 events.NowRFC3339Nano(),
+	})
+	sum, err := db.LoadRevisionSummary(s.db)
+	if err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"agent":            toSwarmAgentResponse(a),
+		"revision_summary": sum,
+	})
 }
 
 func (s *Server) deleteAgent(w http.ResponseWriter, r *http.Request) {
@@ -246,14 +355,30 @@ func (s *Server) deleteAgent(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, httperr.BadRequest("invalid id", err))
 		return
 	}
-	tx := s.db.Delete(&db.SwarmAgent{}, "id = ?", id)
-	if err := tx.Error; err != nil {
+	var a db.SwarmAgent
+	if err := s.db.First(&a, "id = ?", id).Error; err != nil {
 		httperr.Write(w, r, err)
 		return
 	}
-	if tx.RowsAffected == 0 {
-		httperr.Write(w, r, gorm.ErrRecordNotFound)
+	now := time.Now().UTC()
+	if err := s.db.Model(&db.SwarmAgent{}).Unscoped().Where("id = ?", id).Updates(map[string]any{
+		"deleted_at":       now,
+		"current_revision": gorm.Expr("current_revision + 1"),
+		"last_changed_at":  now,
+	}).Error; err != nil {
+		httperr.Write(w, r, err)
 		return
 	}
+	if err := s.db.Unscoped().First(&a, "id = ?", id).Error; err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	s.emit(events.ChangeEvent{
+		EventType:          events.EventAgentDeleted,
+		AffectedEntityType: events.EntityAgent,
+		AffectedIDs:        []string{a.ID.String()},
+		NewRevision:        a.CurrentRevision,
+		TS:                 events.NowRFC3339Nano(),
+	})
 	w.WriteHeader(http.StatusNoContent)
 }

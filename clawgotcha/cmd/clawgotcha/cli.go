@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -92,7 +93,7 @@ func runServer(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: api.NewRouter(g)}
+	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: api.NewRouter(g, api.RouterOptions{InternalToken: cfg.InternalToken})}
 	slog.Info("clawgotcha listening", "addr", cfg.HTTPAddr)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		_, _ = fmt.Fprintln(os.Stderr, err)
@@ -114,12 +115,12 @@ func runPromptCompose(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tx := g.Model(&db.SwarmAgent{}).Where("name = ?", agentName).Update("system_prompt", combined)
-	if tx.Error != nil {
-		return tx.Error
-	}
-	if tx.RowsAffected == 0 {
-		return fmt.Errorf("no agent with name %q", agentName)
+	srv := api.NewSidecarServer(g)
+	if err := srv.UpdateAgentSystemPromptByName(agentName, combined); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("no agent with name %q", agentName)
+		}
+		return err
 	}
 	_, _ = fmt.Fprintf(os.Stdout, "updated system_prompt for %q from %s (IDENTITY, SOUL, USER)\n", agentName, strings.TrimSpace(workspaceW))
 	return nil

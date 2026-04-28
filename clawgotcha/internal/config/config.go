@@ -18,6 +18,8 @@ type Config struct {
 	Port        int    `yaml:"port"`
 	PublicURL   string `yaml:"public_url"`
 	DatabaseURL string `yaml:"database_url"`
+	// InternalToken gates POST /api/v1/events/publish (Bearer or X-Internal-Token). Set via CLAWGOTCHA_INTERNAL_TOKEN.
+	InternalToken string `yaml:"-"`
 	// HTTPAddr is the full listen address (e.g. :3477). Set by [Load] from env, or derived from Port; not read from YAML.
 	HTTPAddr string `yaml:"-"`
 }
@@ -67,6 +69,9 @@ func applyEnv(c *Config) {
 	}
 	if v := stringsTrimEnv("PUBLIC_URL"); v != nil {
 		c.PublicURL = *v
+	}
+	if v := stringsTrimEnv("CLAWGOTCHA_INTERNAL_TOKEN"); v != nil {
+		c.InternalToken = *v
 	}
 }
 

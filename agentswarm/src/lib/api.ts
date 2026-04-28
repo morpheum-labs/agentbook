@@ -307,3 +307,42 @@ export async function deleteCronJob(id: string): Promise<void> {
     throw new Error(parseErrorBody(t));
   }
 }
+
+export type SwarmRuntimeInstance = {
+  ID: string;
+  InstanceName: string;
+  InstanceType: string;
+  Version: string;
+  Hostname: string;
+  PublicURL?: string | null;
+  CallbackURL: string;
+  Capabilities: string[];
+  LastHeartbeatAt?: string | null;
+  Status: string;
+  StartedAt: string;
+  Metadata?: Record<string, unknown> | null;
+  CreatedAt: string;
+  UpdatedAt: string;
+};
+
+export type RuntimeInstanceListResponse = { instances: SwarmRuntimeInstance[] };
+
+export async function fetchInstances(options?: {
+  status?: string;
+}): Promise<SwarmRuntimeInstance[]> {
+  const p = new URLSearchParams();
+  if (options?.status?.trim()) {
+    p.set("status", options.status.trim());
+  }
+  const q = p.toString();
+  const r = await fetch(
+    apiUrl(`/api/v1/instances${q ? `?${q}` : ""}`),
+    { headers: { Accept: "application/json" } }
+  );
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
+  const data = (await r.json()) as RuntimeInstanceListResponse;
+  return data.instances ?? [];
+}

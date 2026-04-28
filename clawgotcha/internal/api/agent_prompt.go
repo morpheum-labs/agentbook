@@ -11,51 +11,33 @@ import (
 // swarmAgentResponse is the public JSON for agents: mixed PascalCase (GORM/legacy) plus
 // snake_case modular prompt fields (IDENTITY, SOUL, USER.md → identity, soul, user_context).
 type swarmAgentResponse struct {
-	ID              string    `json:"ID"`
-	Name            string    `json:"Name"`
-	SystemPrompt    string    `json:"SystemPrompt"`
-	Identity        string    `json:"identity"`
-	Soul            string    `json:"soul"`
-	UserContext     string    `json:"user_context"`
-	ModularPrompt   bool      `json:"modular_prompt"`
-	Tools           []string  `json:"Tools"`
-	Provider        string    `json:"Provider"`
-	Model           string    `json:"Model"`
-	TimeoutSeconds  int       `json:"TimeoutSeconds"`
-	AutonomyLevel   string    `json:"AutonomyLevel"`
-	CreatedAt       time.Time `json:"CreatedAt"`
-	UpdatedAt       time.Time `json:"UpdatedAt"`
+	ID              string     `json:"ID"`
+	Name            string     `json:"Name"`
+	SystemPrompt    string     `json:"SystemPrompt"`
+	Identity        string     `json:"identity"`
+	Soul            string     `json:"soul"`
+	UserContext     string     `json:"user_context"`
+	ModularPrompt   bool       `json:"modular_prompt"`
+	Tools           []string   `json:"Tools"`
+	Provider        string     `json:"Provider"`
+	Model           string     `json:"Model"`
+	TimeoutSeconds  int        `json:"TimeoutSeconds"`
+	AutonomyLevel   string     `json:"AutonomyLevel"`
+	CurrentRevision int64      `json:"current_revision"`
+	LastChangedAt   *time.Time `json:"last_changed_at,omitempty"`
+	Deleted         bool       `json:"deleted,omitempty"`
+	CreatedAt       time.Time  `json:"CreatedAt"`
+	UpdatedAt       time.Time  `json:"UpdatedAt"`
 }
 
 func toSwarmAgentResponse(a db.SwarmAgent) swarmAgentResponse {
-	p, err := prompt.ParseSections(a.SystemPrompt)
-	if err == nil {
-		return swarmAgentResponse{
-			ID:              a.ID.String(),
-			Name:            a.Name,
-			SystemPrompt:    a.SystemPrompt,
-			Identity:        p.Identity,
-			Soul:            p.Soul,
-			UserContext:     p.User,
-			ModularPrompt:   true,
-			Tools:           a.Tools,
-			Provider:        a.Provider,
-			Model:           a.Model,
-			TimeoutSeconds:  a.TimeoutSeconds,
-			AutonomyLevel:   a.AutonomyLevel,
-			CreatedAt:       a.CreatedAt,
-			UpdatedAt:       a.UpdatedAt,
-		}
-	}
-	// Legacy: full prompt in user_context for editing in the same three-field form; first two stay empty.
-	return swarmAgentResponse{
+	base := swarmAgentResponse{
 		ID:              a.ID.String(),
 		Name:            a.Name,
 		SystemPrompt:    a.SystemPrompt,
-		Identity:        "",
-		Soul:            "",
-		UserContext:     a.SystemPrompt,
-		ModularPrompt:   false,
+		CurrentRevision: a.CurrentRevision,
+		LastChangedAt:   a.LastChangedAt,
+		Deleted:         a.DeletedAt.Valid,
 		Tools:           a.Tools,
 		Provider:        a.Provider,
 		Model:           a.Model,
@@ -64,6 +46,19 @@ func toSwarmAgentResponse(a db.SwarmAgent) swarmAgentResponse {
 		CreatedAt:       a.CreatedAt,
 		UpdatedAt:       a.UpdatedAt,
 	}
+	p, err := prompt.ParseSections(a.SystemPrompt)
+	if err == nil {
+		base.Identity = p.Identity
+		base.Soul = p.Soul
+		base.UserContext = p.User
+		base.ModularPrompt = true
+		return base
+	}
+	base.Identity = ""
+	base.Soul = ""
+	base.UserContext = a.SystemPrompt
+	base.ModularPrompt = false
+	return base
 }
 
 func derefString(p *string) string {

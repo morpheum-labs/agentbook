@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { BarChart3, Home, Timer } from "lucide-react";
+import { BarChart3, Home, Server, Timer } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -83,6 +83,10 @@ export function AppHeader({ maxWidthClassName = "max-w-4xl" }: AppHeaderProps) {
           <NavLink to="/cron-jobs" className={navLinkClass}>
             <Timer className="size-4 shrink-0 opacity-90" />
             Cron jobs
+          </NavLink>
+          <NavLink to="/instances" className={navLinkClass}>
+            <Server className="size-4 shrink-0 opacity-90" />
+            Runtime instances
           </NavLink>
         </nav>
       </div>

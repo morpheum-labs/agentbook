@@ -23,13 +23,36 @@ func Open(dsn string) (*gorm.DB, error) {
 		&SwarmConfig{},
 		&SwarmAgent{},
 		&SwarmCronJob{},
+		&SwarmRuntimeInstance{},
+		&SwarmWebhookSubscription{},
 	); err != nil {
+		return nil, err
+	}
+	if err := ensurePartialUniqueNameIndexes(gdb); err != nil {
 		return nil, err
 	}
 	if err := ensureDefaultConfigRow(gdb); err != nil {
 		return nil, err
 	}
 	return gdb, nil
+}
+
+// ensurePartialUniqueNameIndexes enforces unique agent/cron names among non-deleted rows only.
+func ensurePartialUniqueNameIndexes(gdb *gorm.DB) error {
+	stmts := []string{
+		`DROP INDEX IF EXISTS idx_swarm_agents_name`,
+		`ALTER TABLE swarm_agents DROP CONSTRAINT IF EXISTS swarm_agents_name_key`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS swarm_agents_name_alive_idx ON swarm_agents (name) WHERE deleted_at IS NULL`,
+		`DROP INDEX IF EXISTS idx_swarm_cron_jobs_name`,
+		`ALTER TABLE swarm_cron_jobs DROP CONSTRAINT IF EXISTS swarm_cron_jobs_name_key`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS swarm_cron_jobs_name_alive_idx ON swarm_cron_jobs (name) WHERE deleted_at IS NULL`,
+	}
+	for _, q := range stmts {
+		if err := gdb.Exec(q).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ensureDefaultConfigRow(gdb *gorm.DB) error {
@@ -44,5 +67,6 @@ func ensureDefaultConfigRow(gdb *gorm.DB) error {
 		ID:              1,
 		DefaultProvider: "openai",
 		DefaultModel:    "",
+		CurrentRevision: 1,
 	}).Error
 }

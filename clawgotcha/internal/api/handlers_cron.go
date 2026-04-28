@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/db"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/events"
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/httperr"
 	"gorm.io/gorm"
 )
@@ -33,15 +34,39 @@ type patchCronBody struct {
 }
 
 func (s *Server) listCronJobs(w http.ResponseWriter, r *http.Request) {
+	sinceRev, updatedAfter, delta, qerr := parseRevisionQuery(r)
+	if qerr != nil {
+		httperr.Write(w, r, httperr.BadRequest("invalid query", qerr))
+		return
+	}
+	tx := s.db
+	if delta {
+		tx = tx.Unscoped()
+	}
+	tx = tx.Order("name")
+	if sinceRev > 0 {
+		tx = tx.Where("current_revision > ?", sinceRev)
+	}
+	if updatedAfter != nil {
+		tx = tx.Where("last_changed_at > ?", *updatedAfter)
+	}
 	var out []db.SwarmCronJob
-	if err := s.db.Order("name").Find(&out).Error; err != nil {
+	if err := tx.Find(&out).Error; err != nil {
 		httperr.Write(w, r, err)
 		return
 	}
 	if out == nil {
 		out = []db.SwarmCronJob{}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"cron_jobs": out})
+	sum, err := db.LoadRevisionSummary(s.db)
+	if err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"cron_jobs":        out,
+		"revision_summary": sum,
+	})
 }
 
 func (s *Server) createCronJob(w http.ResponseWriter, r *http.Request) {
@@ -79,6 +104,7 @@ func (s *Server) createCronJob(w http.ResponseWriter, r *http.Request) {
 		Prompt:         b.Prompt,
 		Active:         active,
 	}
+	db.TouchCronRevision(&cj)
 	if err := s.db.Create(&cj).Error; err != nil {
 		if isUniqueViolation(err) {
 			httperr.Write(w, r, httperr.BadRequest("duplicate", err))
@@ -87,7 +113,22 @@ func (s *Server) createCronJob(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, cj)
+	s.emit(events.ChangeEvent{
+		EventType:          events.EventCronUpdated,
+		AffectedEntityType: events.EntityCronJob,
+		AffectedIDs:        []string{cj.ID.String()},
+		NewRevision:        cj.CurrentRevision,
+		TS:                 events.NowRFC3339Nano(),
+	})
+	sum, err := db.LoadRevisionSummary(s.db)
+	if err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"cron_job":         cj,
+		"revision_summary": sum,
+	})
 }
 
 func (s *Server) getCronJob(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +142,15 @@ func (s *Server) getCronJob(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, cj)
+	sum, err := db.LoadRevisionSummary(s.db)
+	if err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"cron_job":         cj,
+		"revision_summary": sum,
+	})
 }
 
 func (s *Server) putCronJob(w http.ResponseWriter, r *http.Request) {
@@ -142,16 +191,27 @@ func (s *Server) putCronJob(w http.ResponseWriter, r *http.Request) {
 		active = *b.Active
 	}
 	cj := db.SwarmCronJob{
-		ID:             id,
-		CreatedAt:     existing.CreatedAt,
-		Name:           strings.TrimSpace(b.Name),
-		AgentName:      agentName,
-		Schedule:       strings.TrimSpace(b.Schedule),
-		TimeoutSeconds: b.TimeoutSeconds,
-		Prompt:         b.Prompt,
-		Active:         active,
+		ID:              id,
+		CreatedAt:       existing.CreatedAt,
+		Name:            strings.TrimSpace(b.Name),
+		AgentName:       agentName,
+		Schedule:        strings.TrimSpace(b.Schedule),
+		TimeoutSeconds:  b.TimeoutSeconds,
+		Prompt:          b.Prompt,
+		Active:          active,
+		CurrentRevision: existing.CurrentRevision,
 	}
-	if err := s.db.Save(&cj).Error; err != nil {
+	var out db.SwarmCronJob
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(&cj).Error; err != nil {
+			return err
+		}
+		if err := db.IncrementCronRevision(tx, cj.ID); err != nil {
+			return err
+		}
+		return tx.First(&out, "id = ?", cj.ID).Error
+	})
+	if err != nil {
 		if isUniqueViolation(err) {
 			httperr.Write(w, r, httperr.BadRequest("duplicate name", err))
 			return
@@ -159,7 +219,22 @@ func (s *Server) putCronJob(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, cj)
+	s.emit(events.ChangeEvent{
+		EventType:          events.EventCronUpdated,
+		AffectedEntityType: events.EntityCronJob,
+		AffectedIDs:        []string{out.ID.String()},
+		NewRevision:        out.CurrentRevision,
+		TS:                 events.NowRFC3339Nano(),
+	})
+	sum, err := db.LoadRevisionSummary(s.db)
+	if err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"cron_job":         out,
+		"revision_summary": sum,
+	})
 }
 
 func (s *Server) patchCronJob(w http.ResponseWriter, r *http.Request) {
@@ -211,12 +286,21 @@ func (s *Server) patchCronJob(w http.ResponseWriter, r *http.Request) {
 		updates["agent_name"] = an
 	}
 	if len(updates) == 0 {
-		writeJSON(w, http.StatusOK, cj)
+		sum, err := db.LoadRevisionSummary(s.db)
+		if err != nil {
+			httperr.Write(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"cron_job":         cj,
+			"revision_summary": sum,
+		})
 		return
 	}
-	// Map Updates do not run GORM's autoUpdateTime; bump so toggling `active` (or any
-	// field) refreshes the anchor for schedule execution logic that keys off updated_at.
-	updates["updated_at"] = time.Now()
+	now := time.Now().UTC()
+	updates["current_revision"] = gorm.Expr("current_revision + 1")
+	updates["last_changed_at"] = now
+	updates["updated_at"] = now
 	if err := s.db.Model(&cj).Updates(updates).Error; err != nil {
 		if isUniqueViolation(err) {
 			httperr.Write(w, r, httperr.BadRequest("duplicate name", err))
@@ -229,7 +313,22 @@ func (s *Server) patchCronJob(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, cj)
+	s.emit(events.ChangeEvent{
+		EventType:          events.EventCronUpdated,
+		AffectedEntityType: events.EntityCronJob,
+		AffectedIDs:        []string{cj.ID.String()},
+		NewRevision:        cj.CurrentRevision,
+		TS:                 events.NowRFC3339Nano(),
+	})
+	sum, err := db.LoadRevisionSummary(s.db)
+	if err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"cron_job":         cj,
+		"revision_summary": sum,
+	})
 }
 
 func (s *Server) deleteCronJob(w http.ResponseWriter, r *http.Request) {
@@ -238,14 +337,30 @@ func (s *Server) deleteCronJob(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, httperr.BadRequest("invalid id", err))
 		return
 	}
-	tx := s.db.Delete(&db.SwarmCronJob{}, "id = ?", id)
-	if err := tx.Error; err != nil {
+	var cj db.SwarmCronJob
+	if err := s.db.First(&cj, "id = ?", id).Error; err != nil {
 		httperr.Write(w, r, err)
 		return
 	}
-	if tx.RowsAffected == 0 {
-		httperr.Write(w, r, gorm.ErrRecordNotFound)
+	now := time.Now().UTC()
+	if err := s.db.Model(&db.SwarmCronJob{}).Unscoped().Where("id = ?", id).Updates(map[string]any{
+		"deleted_at":       now,
+		"current_revision": gorm.Expr("current_revision + 1"),
+		"last_changed_at":  now,
+	}).Error; err != nil {
+		httperr.Write(w, r, err)
 		return
 	}
+	if err := s.db.Unscoped().First(&cj, "id = ?", id).Error; err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	s.emit(events.ChangeEvent{
+		EventType:          events.EventCronDeleted,
+		AffectedEntityType: events.EntityCronJob,
+		AffectedIDs:        []string{cj.ID.String()},
+		NewRevision:        cj.CurrentRevision,
+		TS:                 events.NowRFC3339Nano(),
+	})
 	w.WriteHeader(http.StatusNoContent)
 }

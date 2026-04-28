@@ -31,14 +31,29 @@ func NotFound(what string) *PublicError {
 	return &PublicError{Code: "not_found", Detail: what + " not found"}
 }
 
+// Forbidden is a 403 public error.
+func Forbidden(detail string) *PublicError {
+	return &PublicError{Code: "forbidden", Detail: detail}
+}
+
+// ServiceUnavailable is a 503 public error.
+func ServiceUnavailable(detail string) *PublicError {
+	return &PublicError{Code: "service_unavailable", Detail: detail}
+}
+
 // Write serializes err as JSON. Logs internal errors.
 func Write(w http.ResponseWriter, r *http.Request, err error) {
 	var pe *PublicError
 	switch {
 	case errors.As(err, &pe):
 		status := http.StatusBadRequest
-		if pe.Code == "not_found" {
+		switch pe.Code {
+		case "not_found":
 			status = http.StatusNotFound
+		case "forbidden":
+			status = http.StatusForbidden
+		case "service_unavailable":
+			status = http.StatusServiceUnavailable
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(status)
