@@ -462,7 +462,8 @@
                     "instances": {
                       "type": "array",
                       "items": { "$ref": "#/components/schemas/SwarmRuntimeInstance" }
-                    }
+                    },
+                    "revision_summary": { "$ref": "#/components/schemas/RevisionSummary" }
                   }
                 }
               }

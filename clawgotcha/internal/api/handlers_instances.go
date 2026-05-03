@@ -200,7 +200,15 @@ func (s *Server) listInstances(w http.ResponseWriter, r *http.Request) {
 	if out == nil {
 		out = []db.SwarmRuntimeInstance{}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"instances": out})
+	sum, err := db.LoadRevisionSummary(s.db)
+	if err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"instances":        out,
+		"revision_summary": sum,
+	})
 }
 
 func (s *Server) getInstance(w http.ResponseWriter, r *http.Request) {

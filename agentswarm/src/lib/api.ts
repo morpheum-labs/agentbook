@@ -41,6 +41,9 @@ export type SwarmAgent = {
 
 export type AgentListResponse = { agents: SwarmAgent[] };
 
+/** Single-agent GET/POST/PUT responses wrap the hand in `agent` plus `revision_summary`. */
+type AgentSingleResponse = { agent: SwarmAgent };
+
 export type PutAgentRequest = {
   name: string;
   identity: string;
@@ -108,7 +111,8 @@ export async function postAgent(body: CreateAgentRequest): Promise<SwarmAgent> {
     const t = await r.text();
     throw new Error(parseErrorBody(t));
   }
-  return (await r.json()) as SwarmAgent;
+  const data = (await r.json()) as AgentSingleResponse;
+  return data.agent;
 }
 
 export async function fetchAgent(id: string): Promise<SwarmAgent> {
@@ -119,7 +123,8 @@ export async function fetchAgent(id: string): Promise<SwarmAgent> {
     const t = await r.text();
     throw new Error(parseErrorBody(t));
   }
-  return (await r.json()) as SwarmAgent;
+  const data = (await r.json()) as AgentSingleResponse;
+  return data.agent;
 }
 
 export async function putAgent(
@@ -138,7 +143,8 @@ export async function putAgent(
     const t = await r.text();
     throw new Error(parseErrorBody(t));
   }
-  return (await r.json()) as SwarmAgent;
+  const data = (await r.json()) as AgentSingleResponse;
+  return data.agent;
 }
 
 export type SwarmCronJob = {
@@ -325,7 +331,10 @@ export type SwarmRuntimeInstance = {
   UpdatedAt: string;
 };
 
-export type RuntimeInstanceListResponse = { instances: SwarmRuntimeInstance[] };
+export type RuntimeInstanceListResponse = {
+  instances: SwarmRuntimeInstance[];
+  revision_summary?: unknown;
+};
 
 export async function fetchInstances(options?: {
   status?: string;
@@ -335,14 +344,23 @@ export async function fetchInstances(options?: {
     p.set("status", options.status.trim());
   }
   const q = p.toString();
-  const r = await fetch(
-    apiUrl(`/api/v1/instances${q ? `?${q}` : ""}`),
-    { headers: { Accept: "application/json" } }
-  );
+  const path = `/api/v1/instances${q ? `?${q}` : ""}`;
+  const r = await fetch(apiUrl(path), { headers: { Accept: "application/json" } });
   if (!r.ok) {
     const t = await r.text();
-    throw new Error(parseErrorBody(t));
+    let msg = parseErrorBody(t);
+    if (r.status === 404) {
+      msg +=
+        " If this URL should exist, the control plane may be an older build without GET /api/v1/instances.";
+    }
+    throw new Error(msg);
   }
   const data = (await r.json()) as RuntimeInstanceListResponse;
-  return data.instances ?? [];
+  const list = data.instances;
+  if (!Array.isArray(list)) {
+    throw new Error(
+      "Invalid instances response: expected JSON object with an `instances` array."
+    );
+  }
+  return list;
 }
