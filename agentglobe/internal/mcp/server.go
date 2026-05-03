@@ -1,75 +1,97 @@
 // Package mcp implements the Model Context Protocol server for agentglobe (HTTP transport).
+// Tool handlers call the official agentglobe HTTP API only (no direct database access).
 package mcp
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"strings"
-	"sync"
-	"time"
 
 	mcpg "github.com/metoro-io/mcp-golang"
+	"github.com/metoro-io/mcp-golang/transport"
 	mcphttp "github.com/metoro-io/mcp-golang/transport/http"
-	"github.com/morpheumlabs/agentbook/agentglobe/internal/config"
-	"github.com/morpheumlabs/agentbook/agentglobe/internal/db"
-	"github.com/morpheumlabs/agentbook/agentglobe/internal/ratelimit"
-	"gorm.io/gorm"
 )
 
-// State holds dependencies shared by MCP tool handlers.
-type State struct {
-	DB   *gorm.DB
-	Cfg  *config.Config
-	RL   *ratelimit.Limiter
-	// AllMention tracks @all per project (same semantics as [httpapi.Server]).
-	AllMention map[string]time.Time
-	AllMu      sync.Mutex
-
-	// DailyNewsAPIBase e.g. https://ai.6551.io
-	DailyNewsAPIBase string
-	UserAgent        string
-	HTTPClient *http.Client
-
-	// McpAgent is the authenticated agent (from AGENTGLOBE_MCP_API_KEY); may be nil if the key is missing.
-	McpAgent *db.Agent
+// StateConfig configures an MCP server that talks to agentglobe over HTTP.
+type StateConfig struct {
+	// GlobeBaseURL is the origin of the running agentglobe server (e.g. https://globe.example.com), no trailing slash.
+	GlobeBaseURL string
+	// AgentAPIKey is an agent API key sent as Authorization: Bearer for agent-scoped tools.
+	AgentAPIKey string
+	// ServiceRegistryToken is optional; required for register_capability (same as agentglobe service_registry_token).
+	ServiceRegistryToken string
+	DailyNewsAPIBase     string
+	UserAgent            string
+	HTTPClient           *http.Client
 }
 
-// NewState builds State from process environment and an open database.
-// configFile is the path passed to [config.Load] (kept for signature compatibility; may be empty).
-func NewState(gdb *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter, configFile string) *State {
-	if rl == nil {
-		rl = ratelimit.New(cfg)
+// State holds HTTP client configuration shared by MCP tool handlers.
+type State struct {
+	GlobeBaseURL         string
+	AgentAPIKey          string
+	ServiceRegistryToken string
+	DailyNewsAPIBase     string
+	UserAgent            string
+	HTTPClient           *http.Client
+}
+
+// NewState builds State from StateConfig (callers typically populate from environment).
+func NewState(cfg *StateConfig) *State {
+	if cfg == nil {
+		cfg = &StateConfig{}
 	}
 	s := &State{
-		DB:         gdb,
-		Cfg:        cfg,
-		RL:         rl,
-		AllMention: make(map[string]time.Time),
-		HTTPClient: defaultHTTPClient(),
+		GlobeBaseURL:         strings.TrimSpace(cfg.GlobeBaseURL),
+		AgentAPIKey:          strings.TrimSpace(cfg.AgentAPIKey),
+		ServiceRegistryToken: strings.TrimSpace(cfg.ServiceRegistryToken),
+		DailyNewsAPIBase:     strings.TrimSpace(cfg.DailyNewsAPIBase),
+		UserAgent:            strings.TrimSpace(cfg.UserAgent),
+		HTTPClient:           cfg.HTTPClient,
 	}
-	if v := strings.TrimSpace(os.Getenv("DAILY_NEWS_API_BASE")); v != "" {
-		s.DailyNewsAPIBase = v
-	} else {
+	if s.GlobeBaseURL != "" {
+		s.GlobeBaseURL = strings.TrimRight(s.GlobeBaseURL, "/")
+	}
+	if s.DailyNewsAPIBase == "" {
 		s.DailyNewsAPIBase = DefaultDailyNewsAPIBase
 	}
-	if v := strings.TrimSpace(os.Getenv("MCP_USER_AGENT")); v != "" {
-		s.UserAgent = v
-	}
-	if key := strings.TrimSpace(os.Getenv("AGENTGLOBE_MCP_API_KEY")); key != "" {
-		s.McpAgent = lookupAgentByAPIKey(gdb, key)
+	if s.HTTPClient == nil {
+		s.HTTPClient = defaultHTTPClient()
 	}
 	return s
+}
+
+// ValidateAgentCredentials verifies AGENTGLOBE_MCP_API_KEY against GET /api/v1/agents/me.
+func (s *State) ValidateAgentCredentials(ctx context.Context) error {
+	if err := s.requireAgentKey(); err != nil {
+		return err
+	}
+	body, code, err := s.agentJSON(ctx, http.MethodGet, "/api/v1/agents/me", nil)
+	if err != nil {
+		return err
+	}
+	if code == http.StatusUnauthorized {
+		return fmt.Errorf("AGENTGLOBE_MCP_API_KEY is invalid (HTTP %d)", code)
+	}
+	if code < 200 || code >= 300 {
+		return fmt.Errorf("agentglobe agents/me: HTTP %d: %s", code, strings.TrimSpace(string(body)))
+	}
+	return nil
 }
 
 // BuildServer registers all tools and returns the mcp-golang server (call Serve() to block).
 func (s *State) BuildServer() (*mcpg.Server, error) {
 	tr := mcphttp.NewHTTPTransport(mcpHTTPEndpoint()).WithAddr(mcpHTTPAddr())
+	return s.buildServerWithTransport(tr)
+}
+
+func (s *State) buildServerWithTransport(tr transport.Transport) (*mcpg.Server, error) {
 	srv := mcpg.NewServer(
 		tr,
 		mcpg.WithName("agentfloor"),
 		mcpg.WithVersion("1.0.0"),
-		mcpg.WithInstructions("agentfloor: hot news, posts, capability discovery, worldmon context, and swarm memory (agentglobe)."),
+		mcpg.WithInstructions("agentfloor: hot news, posts, capability discovery, worldmon context, and swarm memory via the official agentglobe HTTP API."),
 	)
 	if err := s.registerTools(srv); err != nil {
 		return nil, err
@@ -103,13 +125,6 @@ func (s *State) Run() error {
 	return srv.Serve()
 }
 
-func (s *State) requireMCPAgent() (*db.Agent, error) {
-	if s == nil || s.McpAgent == nil {
-		return nil, fmt.Errorf("AGENTGLOBE_MCP_API_KEY is not set or does not match an agent in the database")
-	}
-	return s.McpAgent, nil
-}
-
 // registerTools wires all MCP tool handlers.
 func (s *State) registerTools(srv *mcpg.Server) error {
 	if err := srv.RegisterTool("get_hot_news", "Fetch hot news and tweets from the daily-news public API (6551) by category/subcategory.", s.getHotNews); err != nil {
@@ -118,22 +133,22 @@ func (s *State) registerTools(srv *mcpg.Server) error {
 	if err := srv.RegisterTool("get_news_categories", "List all news categories and subcategories from the daily-news public API.", s.getNewsCategories); err != nil {
 		return err
 	}
-	if err := srv.RegisterTool("create_post", "Create a project post on agentglobe (mentions in content create notifications for agents).", s.createPost); err != nil {
+	if err := srv.RegisterTool("create_post", "Create a project post on agentglobe via POST /api/v1/projects/{id}/posts (mentions notify agents).", s.createPost); err != nil {
 		return err
 	}
-	if err := srv.RegisterTool("search_capabilities", "Search the agentglobe capability registry (worldmon, newsapi, other registered services).", s.searchCapabilities); err != nil {
+	if err := srv.RegisterTool("search_capabilities", "Search the agentglobe capability registry via GET /api/v1/capability-services.", s.searchCapabilities); err != nil {
 		return err
 	}
 	if err := srv.RegisterTool("get_world_context", "Call agentglobe GET /api/v1/public/world-context (public read API); the server proxies to the configured worldmon and applies rss_lib. Pass method (e.g. list-feed-digest) and optional query: feeds, forge_categories, limit.", s.getWorldContext); err != nil {
 		return err
 	}
-	if err := srv.RegisterTool("save_to_memory", "Store a text blob in the agent-scoped mcp_memories table (agentglobe).", s.saveToMemory); err != nil {
+	if err := srv.RegisterTool("save_to_memory", "Store a text blob via POST /api/v1/agents/me/mcp-memories (agent-scoped mcp_memories on the server).", s.saveToMemory); err != nil {
 		return err
 	}
-	if err := srv.RegisterTool("notify_or_mention_agents", "Create in-app notifications for other agents (by their agent @name, not id).", s.notifyOrMention); err != nil {
+	if err := srv.RegisterTool("notify_or_mention_agents", "Create in-app notifications via POST /api/v1/agents/me/notify (agent @names, not ids).", s.notifyOrMention); err != nil {
 		return err
 	}
-	if err := srv.RegisterTool("register_capability", "Register or update a row in the capability service registry (same as HTTP POST /api/v1/capability-services/register, without a separate process).", s.registerCapability); err != nil {
+	if err := srv.RegisterTool("register_capability", "Register or update a capability service via POST /api/v1/capability-services/register using AGENTGLOBE_SERVICE_REGISTRY_TOKEN.", s.registerCapability); err != nil {
 		return err
 	}
 	return nil

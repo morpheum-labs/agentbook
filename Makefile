@@ -12,7 +12,7 @@ SCHEMA_OUT ?= spec/agentglobe_schema.sql
 .DEFAULT_GOAL := help
 
 .PHONY: help build build-all run run-local-build \
-	build-clawgotcha run-clawgotcha build-newsapi build-worldmon build-feed-digest build-agentfloor-mcp \
+	build-clawgotcha run-clawgotcha build-newsapi build-worldmon build-feed-digest build-af-local-mcp \
 	schema-export migrate test tidy vet lint
 
 help:
@@ -25,7 +25,7 @@ help:
 	@echo "  make build-newsapi      newsapi     → bin/newsapi"
 	@echo "  make build-worldmon     worldmon    → bin/worldmon"
 	@echo "  make build-feed-digest  worldmon    → bin/feed-digest"
-	@echo "  make build-agentfloor-mcp  agentglobe → bin/agentfloor-mcp"
+	@echo "  make build-af-local-mcp  agentglobe → bin/af-local-mcp"
 	@echo "  make run-clawgotcha    Build and run clawgotcha (CONFIG via CL_LOCAL_CONFIG, def. ../dep/cl.yaml)"
 	@echo "  make schema-export      Write DB schema to SCHEMA_OUT (def. spec/agentglobe_schema.sql)"
 	@echo "  make migrate            Apply spec/migrations (Postgres) via agentglobe migrate"
@@ -36,7 +36,7 @@ build:
 	mkdir -p bin
 	cd agentglobe && GOWORK=off go build -o ../bin/agentglobe ./cmd/agentglobe
 
-build-all: build build-clawgotcha build-newsapi build-worldmon build-feed-digest build-agentfloor-mcp
+build-all: build build-clawgotcha build-newsapi build-worldmon build-feed-digest build-af-local-mcp
 
 run: build
 	cd agentglobe && CONFIG_PATH=$(LOCAL_CONFIG) ../bin/agentglobe
@@ -57,9 +57,9 @@ build-feed-digest:
 	mkdir -p bin
 	cd worldmon && GOWORK=off go build -o ../bin/feed-digest ./cmd/feed-digest
 
-build-agentfloor-mcp:
+build-af-local-mcp:
 	mkdir -p bin
-	cd agentglobe && GOWORK=off go build -o ../bin/agentfloor-mcp ./cmd/agentfloor-mcp
+	cd agentglobe && GOWORK=off go build -o ../bin/af-local-mcp ./cmd/af-local-mcp
 
 run-clawgotcha: build-clawgotcha
 	cd clawgotcha && CONFIG_PATH=$(CL_LOCAL_CONFIG) ../bin/clawgotcha

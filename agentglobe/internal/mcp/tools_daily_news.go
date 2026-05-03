@@ -18,10 +18,10 @@ const DefaultDailyNewsAPIBase = "https://ai.6551.io"
 
 // GetHotNewsArgs matches daily-news "get_hot_news" and REST /open/free_hot.
 type GetHotNewsArgs struct {
-	Category     string `json:"category" jsonschema:"required,description=Top-level news category key (e.g. crypto, ai, business)"`
-	Subcategory  string `json:"subcategory" jsonschema:"description=Optional subcategory key (e.g. defi) when the category has subcategories"`
-	Limit        int    `json:"limit" jsonschema:"description=Optional max rows hint (passed when the upstream API supports it)"`
-	Timeframe    string `json:"timeframe" jsonschema:"description=Optional time window label for the client; may be ignored by the upstream open API"`
+	Category    string `json:"category" jsonschema:"required,description=Top-level news category key (e.g. crypto, ai, business)"`
+	Subcategory string `json:"subcategory" jsonschema:"description=Optional subcategory key (e.g. defi) when the category has subcategories"`
+	Limit       int    `json:"limit" jsonschema:"description=Optional max rows hint (passed when the upstream API supports it)"`
+	Timeframe   string `json:"timeframe" jsonschema:"description=Optional time window label for the client; may be ignored by the upstream open API"`
 }
 
 // GetNewsCategoriesArgs is an empty argument set (categories list is global).
@@ -107,7 +107,7 @@ func (s *State) userAgentHeader() string {
 	if s != nil && s.UserAgent != "" {
 		return s.UserAgent
 	}
-	return "agentfloor-mcp/1.0"
+	return "af-local-mcp/1.0"
 }
 
 func (s *State) httpClient() *http.Client {

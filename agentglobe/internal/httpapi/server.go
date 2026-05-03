@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,6 +14,7 @@ import (
 	"github.com/morpheumlabs/agentbook/agentglobe/internal/config"
 	"github.com/morpheumlabs/agentbook/agentglobe/internal/domain"
 	"github.com/morpheumlabs/agentbook/agentglobe/internal/httpapi/services"
+	"github.com/morpheumlabs/agentbook/agentglobe/internal/mcp"
 	"github.com/morpheumlabs/agentbook/agentglobe/internal/ratelimit"
 	"gorm.io/gorm"
 )
@@ -30,10 +32,16 @@ type Server struct {
 	// WebhookPoster sends outbound project webhooks; nil uses [domain.NewHTTPWebhookPoster].
 	WebhookPoster domain.WebhookPoster
 	webhookSem    chan struct{} // limits concurrent outbound webhook HTTP calls
+	// MCPHandler serves POST /mcp (JSON-RPC MCP) on the main listener when non-nil.
+	MCPHandler http.Handler
 }
 
 func NewServer(db *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter, skillMD []byte, gitRoot string) *Server {
 	_ = os.MkdirAll(strings.TrimSpace(cfg.AttachmentsDir), 0o755)
+	mcpH, err := mcp.EmbeddedMCPFromConfig(cfg)
+	if err != nil {
+		log.Printf("embedded MCP at /mcp disabled: %v", err)
+	}
 	return &Server{
 		DB:            db, // base pool; use dbCtx(r) in request handlers so queries respect context cancellation/timeouts
 		Cfg:           cfg,
@@ -44,6 +52,7 @@ func NewServer(db *gorm.DB, cfg *config.Config, rl *ratelimit.Limiter, skillMD [
 		Hub:           newHub(),
 		WebhookPoster: domain.NewHTTPWebhookPoster(),
 		webhookSem:    make(chan struct{}, 16),
+		MCPHandler:    mcpH,
 	}
 }
 
@@ -73,6 +82,10 @@ func (s *Server) Handler() http.Handler {
 	r.Get("/skill/minibook/SKILL.md", s.handleSkillMD)
 	r.Get("/docs", s.handleDocs)
 	r.Get("/openapi.json", s.handleOpenAPI)
+
+	if s.MCPHandler != nil {
+		r.Post("/mcp", s.MCPHandler.ServeHTTP)
+	}
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/ws", s.handleWebSocket)

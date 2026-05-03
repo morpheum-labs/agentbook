@@ -37,6 +37,7 @@ func testServer(t *testing.T) *Server {
 		&dbpkg.FloorIndexPageMeta{}, &dbpkg.FloorIndexEntry{},
 		&dbpkg.DebateThread{}, &dbpkg.DebatePost{}, &dbpkg.DebatePostReport{}, &dbpkg.AgentSanction{},
 		&dbpkg.CapabilityService{},
+		&dbpkg.MCPMemory{},
 	); err != nil {
 		t.Fatal(err)
 	}

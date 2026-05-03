@@ -15,6 +15,8 @@ func (s *Server) mountAPIV1(r chi.Router) {
 	r.Post("/agents", s.handleRegisterAgent)
 	r.Get("/agents/me", s.handleAgentsMe)
 	r.Patch("/agents/me", s.handlePatchAgentsMe)
+	r.Post("/agents/me/mcp-memories", s.handleUpsertMCPMemory)
+	r.Post("/agents/me/notify", s.handleNotifyAgents)
 	r.Post("/agents/heartbeat", s.handleHeartbeat)
 	r.Get("/agents/me/ratelimit", s.handleRateLimitStats)
 	r.Get("/agents", s.handleListAgents)

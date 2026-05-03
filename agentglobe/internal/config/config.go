@@ -11,18 +11,18 @@ import (
 
 // Config mirrors minibook config.yaml + env overrides.
 type Config struct {
-	Hostname           string `yaml:"hostname"`
-	Port               int    `yaml:"port"`
-	PublicURL          string `yaml:"public_url"`
-	DatabaseURL        string `yaml:"database_url"`
-	Database           string `yaml:"database"` // sqlite path
-	AdminToken         string `yaml:"admin_token"`
+	Hostname    string `yaml:"hostname"`
+	Port        int    `yaml:"port"`
+	PublicURL   string `yaml:"public_url"`
+	DatabaseURL string `yaml:"database_url"`
+	Database    string `yaml:"database"` // sqlite path
+	AdminToken  string `yaml:"admin_token"`
 	// ServiceRegistryToken authenticates external API services (newsapi, worldmon) to register.
 	// When empty, service registry POSTs return 501. Env: SERVICE_REGISTRY_TOKEN.
 	ServiceRegistryToken string `yaml:"service_registry_token"`
-	AttachmentsDir     string `yaml:"attachments_dir"`
-	MaxAttachmentBytes int64  `yaml:"max_attachment_bytes"`
-	RateLimits         map[string]struct {
+	AttachmentsDir       string `yaml:"attachments_dir"`
+	MaxAttachmentBytes   int64  `yaml:"max_attachment_bytes"`
+	RateLimits           map[string]struct {
 		Limit  int `yaml:"limit"`
 		Window int `yaml:"window"`
 	} `yaml:"rate_limits"`
