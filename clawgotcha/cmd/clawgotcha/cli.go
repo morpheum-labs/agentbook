@@ -11,6 +11,7 @@ import (
 
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/api"
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/config"
+	"github.com/morpheumlabs/agentbook/clawgotcha/internal/credentials"
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/db"
 	"github.com/morpheumlabs/agentbook/clawgotcha/internal/prompt"
 	"github.com/spf13/cobra"
@@ -103,11 +104,20 @@ func runServer(_ *cobra.Command, _ []string) error {
 			}
 		}
 	}()
+	var credKey []byte
+	if raw := strings.TrimSpace(os.Getenv("CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY")); raw != "" {
+		k, err := credentials.ParseMasterKey(raw)
+		if err != nil {
+			return fmt.Errorf("CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY: %w", err)
+		}
+		credKey = k
+	}
 	srv := &http.Server{Addr: cfg.HTTPAddr, Handler: api.NewRouter(g, api.RouterOptions{
-		InternalToken: cfg.InternalToken,
-		APIKey:        cfg.APIKey,
-		RateLimitRPS:  cfg.RateLimitRPS,
-		MaxBodyBytes:  cfg.MaxRequestBodyBytes,
+		InternalToken:        cfg.InternalToken,
+		APIKey:               cfg.APIKey,
+		RateLimitRPS:         cfg.RateLimitRPS,
+		MaxBodyBytes:         cfg.MaxRequestBodyBytes,
+		CredentialsMasterKey: credKey,
 	})}
 	slog.Info("clawgotcha listening", "addr", cfg.HTTPAddr)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

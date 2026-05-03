@@ -21,6 +21,8 @@ type RouterOptions struct {
 	APIKey        string // When set, /api/v1/* requires Bearer or X-API-Key (healthz, openapi, metrics exempt).
 	RateLimitRPS  float64 // When > 0, rate-limit /api/v1/* per client IP (sustained RPS).
 	MaxBodyBytes  int64   // Max JSON body size for /api/v1/* (default 1 MiB when 0).
+	// CredentialsMasterKey is a 32-byte AES-256 key for encrypting agent credentials at rest (optional).
+	CredentialsMasterKey []byte
 }
 
 // corsMiddleware allows browser UIs (e.g. a static SPA on another origin) to call the JSON API.
@@ -49,12 +51,13 @@ func NewRouter(gdb *gorm.DB, opts RouterOptions) http.Handler {
 		maxBody = 1 << 20
 	}
 	s := &Server{
-		db:            gdb,
-		hub:           events.NewHub(),
-		dispatcher:    &events.WebhookDispatcher{DB: gdb, Client: events.DefaultHTTPClient()},
-		internalToken: opts.InternalToken,
-		apiKey:        opts.APIKey,
-		maxBodyBytes:  maxBody,
+		db:             gdb,
+		hub:            events.NewHub(),
+		dispatcher:     &events.WebhookDispatcher{DB: gdb, Client: events.DefaultHTTPClient()},
+		internalToken:  opts.InternalToken,
+		apiKey:         opts.APIKey,
+		maxBodyBytes:   maxBody,
+		credMasterKey:  append([]byte(nil), opts.CredentialsMasterKey...),
 	}
 	r := chi.NewRouter()
 	r.Use(corsMiddleware)
@@ -92,6 +95,11 @@ func NewRouter(gdb *gorm.DB, opts RouterOptions) http.Handler {
 		r.Delete("/agents/{id}", s.deleteAgent)
 		r.Get("/agents/by-name/{name}", s.getAgentByName)
 
+		r.Get("/agents/{id}/credentials", s.listAgentCredentials)
+		r.Post("/agents/{id}/credentials", s.createAgentCredential)
+		r.Post("/agents/{id}/credentials/{bindingId}/rotate", s.rotateAgentCredential)
+		r.Delete("/agents/{id}/credentials/{bindingId}", s.deleteAgentCredential)
+
 		r.Get("/cron-jobs/schedule-timeline", s.listCronScheduleTimeline)
 		r.Get("/cron-jobs", s.listCronJobs)
 		r.Post("/cron-jobs", s.createCronJob)
@@ -114,12 +122,13 @@ func NewRouter(gdb *gorm.DB, opts RouterOptions) http.Handler {
 
 // Server holds shared dependencies.
 type Server struct {
-	db            *gorm.DB
-	hub           *events.Hub
-	dispatcher    *events.WebhookDispatcher
-	internalToken string
-	apiKey        string
-	maxBodyBytes  int64
+	db             *gorm.DB
+	hub            *events.Hub
+	dispatcher     *events.WebhookDispatcher
+	internalToken  string
+	apiKey         string
+	maxBodyBytes   int64
+	credMasterKey  []byte
 }
 
 func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {

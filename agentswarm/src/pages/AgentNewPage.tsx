@@ -236,6 +236,9 @@ export function AgentNewPage() {
                   Cancel
                 </Button>
               </div>
+              <p className="text-caption text-muted-foreground pt-1" role="note">
+                After the agent is created, add API tokens and MCP credentials on the edit page.
+              </p>
             </CardContent>
           </form>
         </Card>

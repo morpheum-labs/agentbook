@@ -25,10 +25,15 @@ func Open(dsn string) (*gorm.DB, error) {
 		&SwarmCronJob{},
 		&SwarmRuntimeInstance{},
 		&SwarmWebhookSubscription{},
+		&CredentialBinding{},
+		&CredentialSecretVersion{},
 	); err != nil {
 		return nil, err
 	}
 	if err := ensurePartialUniqueNameIndexes(gdb); err != nil {
+		return nil, err
+	}
+	if err := ensureCredentialBindingIndexes(gdb); err != nil {
 		return nil, err
 	}
 	if err := ensureDefaultConfigRow(gdb); err != nil {
@@ -46,6 +51,18 @@ func ensurePartialUniqueNameIndexes(gdb *gorm.DB) error {
 		`DROP INDEX IF EXISTS idx_swarm_cron_jobs_name`,
 		`ALTER TABLE swarm_cron_jobs DROP CONSTRAINT IF EXISTS swarm_cron_jobs_name_key`,
 		`CREATE UNIQUE INDEX IF NOT EXISTS swarm_cron_jobs_name_alive_idx ON swarm_cron_jobs (name) WHERE deleted_at IS NULL`,
+	}
+	for _, q := range stmts {
+		if err := gdb.Exec(q).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ensureCredentialBindingIndexes(gdb *gorm.DB) error {
+	stmts := []string{
+		`CREATE UNIQUE INDEX IF NOT EXISTS credential_bindings_agent_provider_label_alive_idx ON credential_bindings (swarm_agent_id, provider_slug, label) WHERE deleted_at IS NULL`,
 	}
 	for _, q := range stmts {
 		if err := gdb.Exec(q).Error; err != nil {

@@ -37,8 +37,22 @@ Priority: **environment variables** override **YAML**, which overrides **default
 | `CLAWGOTCHA_INTERNAL_TOKEN` | When set, `POST /api/v1/events/publish` requires `Bearer` or `X-Internal-Token`. |
 | `CLAWGOTCHA_RATE_LIMIT_RPS` | Max sustained requests per second per client IP on `/api/v1/*` (default `0` = disabled). |
 | `CLAWGOTCHA_MAX_REQUEST_BODY_BYTES` | Max JSON body size for `/api/v1/*` (default `1048576`). |
+| `CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY` | **32-byte** AES-256 key for the per-agent credential vault: raw 32 characters, **base64** (std encoding), or **64 hex** digits. When unset, `GET /api/v1/agents/{id}/credentials` still lists bindings; `POST` create and `POST …/rotate` return **503**. Invalid format prevents the server from starting. |
 
 YAML config (e.g. `-c /data/config.yaml`) supports `port`, `hostname`, `public_url`, `database_url` — see [`config.yaml`](config.yaml).
+
+### Agent credentials (vault)
+
+Bindings live under an agent UUID. Each binding has `provider_slug`, `label`, optional `mcp_server_name`, and `metadata` (JSON, non-secret). Encrypted material is stored in versioned rows; the API **never** returns `ciphertext`, nonces, or decrypted secrets.
+
+**`material_kind`** (allowlisted on the server): `api_key`, `bearer_token`, `github_pat`, `oauth_client`, `oauth_tokens`, `oauth_authorization_pending`, `totp_seed`, `recovery_code_hashes`.
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/agents/{id}/credentials` |
+| POST | `/api/v1/agents/{id}/credentials` |
+| DELETE | `/api/v1/agents/{id}/credentials/{bindingId}` |
+| POST | `/api/v1/agents/{id}/credentials/{bindingId}/rotate` |
 
 ## Integration with Miroclaw
 
@@ -76,7 +90,7 @@ Optional headers for debugging:
 | GET | `/openapi.json` | OpenAPI 3.0 spec |
 | GET | `/metrics` | Prometheus metrics (Go runtime + `clawgotcha_http_*`) |
 | | `/api/v1/config` | Swarm defaults |
-| | `/api/v1/agents`, `/api/v1/cron-jobs` | CRUD + delta query params |
+| | `/api/v1/agents`, `/api/v1/agents/{id}/credentials`, `/api/v1/cron-jobs` | CRUD + delta query params; nested credentials on agents |
 | | `/api/v1/instances/…` | Register, heartbeat, list, detail, delete |
 | GET | `/api/v1/events` | SSE stream |
 | POST | `/api/v1/events/publish` | Internal publish (token-gated) |

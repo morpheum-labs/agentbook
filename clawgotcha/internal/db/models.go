@@ -107,3 +107,38 @@ type SwarmWebhookSubscription struct {
 }
 
 func (SwarmWebhookSubscription) TableName() string { return "swarm_webhook_subscriptions" }
+
+// CredentialBinding groups one integration's metadata for a Hand (SwarmAgent).
+// Secret bytes live in CredentialSecretVersion rows (encrypted).
+type CredentialBinding struct {
+	ID             uuid.UUID       `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	SwarmAgentID   uuid.UUID       `gorm:"type:uuid;not null;index;column:swarm_agent_id"`
+	ProviderSlug   string          `gorm:"not null;type:text;column:provider_slug"`
+	Label          string          `gorm:"not null;type:text"`
+	McpServerName  *string         `gorm:"type:text;column:mcp_server_name"`
+	Metadata       json.RawMessage `gorm:"type:jsonb;not null;default:'{}'"`
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
+
+	Agent *SwarmAgent `gorm:"foreignKey:SwarmAgentID;references:ID"`
+}
+
+func (CredentialBinding) TableName() string { return "credential_bindings" }
+
+// CredentialSecretVersion is one encrypted material snapshot for a binding (rotation = new row, higher version).
+type CredentialSecretVersion struct {
+	ID            uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	BindingID     uuid.UUID `gorm:"type:uuid;not null;index;column:binding_id;uniqueIndex:ux_cred_secret_binding_version"`
+	Version       int       `gorm:"not null;uniqueIndex:ux_cred_secret_binding_version"`
+	MaterialKind  string    `gorm:"not null;type:text;column:material_kind"`
+	Ciphertext    []byte    `gorm:"not null;type:bytea;column:ciphertext"`
+	Nonce         []byte    `gorm:"not null;type:bytea;column:nonce"`
+	KekID         string    `gorm:"not null;type:text;default:'env:v1';column:kek_id"`
+	ExpiresAt     *time.Time `gorm:"column:expires_at"`
+	CreatedAt     time.Time `gorm:"not null;column:created_at"`
+
+	Binding *CredentialBinding `gorm:"foreignKey:BindingID;references:ID"`
+}
+
+func (CredentialSecretVersion) TableName() string { return "credential_secret_versions" }

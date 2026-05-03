@@ -86,8 +86,25 @@ function parseErrorBody(text: string): string {
   return text || "Request failed";
 }
 
+/**
+ * Central fetch for Clawgotcha JSON API. When `VITE_CLAWGOTCHA_API_KEY` is set at build time,
+ * sends `Authorization: Bearer …` (unless headers already include auth). The value ships in the
+ * static bundle — for production, prefer a BFF or reverse proxy that adds server-side auth.
+ */
+function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  const headers = new Headers(init?.headers);
+  if (!headers.has("Accept")) {
+    headers.set("Accept", "application/json");
+  }
+  const k = (import.meta.env.VITE_CLAWGOTCHA_API_KEY as string | undefined)?.trim();
+  if (k && !headers.has("Authorization") && !headers.has("X-API-Key")) {
+    headers.set("Authorization", `Bearer ${k}`);
+  }
+  return fetch(apiUrl(path), { ...init, headers });
+}
+
 export async function fetchAgents(): Promise<SwarmAgent[]> {
-  const r = await fetch(apiUrl("/api/v1/agents"), {
+  const r = await apiFetch("/api/v1/agents", {
     headers: { Accept: "application/json" },
   });
   if (!r.ok) {
@@ -99,7 +116,7 @@ export async function fetchAgents(): Promise<SwarmAgent[]> {
 }
 
 export async function postAgent(body: CreateAgentRequest): Promise<SwarmAgent> {
-  const r = await fetch(apiUrl("/api/v1/agents"), {
+  const r = await apiFetch("/api/v1/agents", {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -116,7 +133,7 @@ export async function postAgent(body: CreateAgentRequest): Promise<SwarmAgent> {
 }
 
 export async function fetchAgent(id: string): Promise<SwarmAgent> {
-  const r = await fetch(apiUrl(`/api/v1/agents/${encodeURIComponent(id)}`), {
+  const r = await apiFetch(`/api/v1/agents/${encodeURIComponent(id)}`, {
     headers: { Accept: "application/json" },
   });
   if (!r.ok) {
@@ -131,7 +148,7 @@ export async function putAgent(
   id: string,
   body: PutAgentRequest
 ): Promise<SwarmAgent> {
-  const r = await fetch(apiUrl(`/api/v1/agents/${encodeURIComponent(id)}`), {
+  const r = await apiFetch(`/api/v1/agents/${encodeURIComponent(id)}`, {
     method: "PUT",
     headers: {
       Accept: "application/json",
@@ -213,10 +230,9 @@ export async function fetchCronScheduleTimeline(
     p.set("max_runs", String(options.maxRuns));
   }
   const q = p.toString();
-  const r = await fetch(
-    apiUrl(`/api/v1/cron-jobs/schedule-timeline${q ? `?${q}` : ""}`),
-    { headers: { Accept: "application/json" } }
-  );
+  const r = await apiFetch(`/api/v1/cron-jobs/schedule-timeline${q ? `?${q}` : ""}`, {
+    headers: { Accept: "application/json" },
+  });
   if (!r.ok) {
     const t = await r.text();
     throw new Error(parseErrorBody(t));
@@ -225,7 +241,7 @@ export async function fetchCronScheduleTimeline(
 }
 
 export async function fetchCronJobs(): Promise<SwarmCronJob[]> {
-  const r = await fetch(apiUrl("/api/v1/cron-jobs"), {
+  const r = await apiFetch("/api/v1/cron-jobs", {
     headers: { Accept: "application/json" },
   });
   if (!r.ok) {
@@ -239,7 +255,7 @@ export async function fetchCronJobs(): Promise<SwarmCronJob[]> {
 export async function postCronJob(
   body: CreateOrReplaceCronJobRequest
 ): Promise<SwarmCronJob> {
-  const r = await fetch(apiUrl("/api/v1/cron-jobs"), {
+  const r = await apiFetch("/api/v1/cron-jobs", {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -255,7 +271,7 @@ export async function postCronJob(
 }
 
 export async function fetchCronJob(id: string): Promise<SwarmCronJob> {
-  const r = await fetch(apiUrl(`/api/v1/cron-jobs/${encodeURIComponent(id)}`), {
+  const r = await apiFetch(`/api/v1/cron-jobs/${encodeURIComponent(id)}`, {
     headers: { Accept: "application/json" },
   });
   if (!r.ok) {
@@ -269,7 +285,7 @@ export async function putCronJob(
   id: string,
   body: CreateOrReplaceCronJobRequest
 ): Promise<SwarmCronJob> {
-  const r = await fetch(apiUrl(`/api/v1/cron-jobs/${encodeURIComponent(id)}`), {
+  const r = await apiFetch(`/api/v1/cron-jobs/${encodeURIComponent(id)}`, {
     method: "PUT",
     headers: {
       Accept: "application/json",
@@ -288,7 +304,7 @@ export async function patchCronJob(
   id: string,
   body: PatchCronJobRequest
 ): Promise<SwarmCronJob> {
-  const r = await fetch(apiUrl(`/api/v1/cron-jobs/${encodeURIComponent(id)}`), {
+  const r = await apiFetch(`/api/v1/cron-jobs/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: {
       Accept: "application/json",
@@ -304,7 +320,7 @@ export async function patchCronJob(
 }
 
 export async function deleteCronJob(id: string): Promise<void> {
-  const r = await fetch(apiUrl(`/api/v1/cron-jobs/${encodeURIComponent(id)}`), {
+  const r = await apiFetch(`/api/v1/cron-jobs/${encodeURIComponent(id)}`, {
     method: "DELETE",
     headers: { Accept: "application/json" },
   });
@@ -345,7 +361,7 @@ export async function fetchInstances(options?: {
   }
   const q = p.toString();
   const path = `/api/v1/instances${q ? `?${q}` : ""}`;
-  const r = await fetch(apiUrl(path), { headers: { Accept: "application/json" } });
+  const r = await apiFetch(path, { headers: { Accept: "application/json" } });
   if (!r.ok) {
     const t = await r.text();
     let msg = parseErrorBody(t);
@@ -363,4 +379,108 @@ export async function fetchInstances(options?: {
     );
   }
   return list;
+}
+
+/** Allowlisted `material_kind` values (must match Clawgotcha server). */
+export const CREDENTIAL_MATERIAL_KINDS = [
+  "api_key",
+  "bearer_token",
+  "github_pat",
+  "oauth_client",
+  "oauth_tokens",
+  "oauth_authorization_pending",
+  "totp_seed",
+  "recovery_code_hashes",
+] as const;
+
+export type CredentialMaterialKind = (typeof CREDENTIAL_MATERIAL_KINDS)[number];
+
+export type AgentCredentialBinding = {
+  id: string;
+  provider_slug: string;
+  label: string;
+  mcp_server_name?: string | null;
+  metadata?: Record<string, unknown>;
+  current_version: number;
+  material_kind: CredentialMaterialKind | string | null;
+  has_secret: boolean;
+  expires_at?: string | null;
+  secret_updated_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AgentCredentialListResponse = {
+  credentials: AgentCredentialBinding[];
+};
+
+export type PostAgentCredentialRequest = {
+  provider_slug: string;
+  label: string;
+  mcp_server_name?: string;
+  metadata?: Record<string, unknown>;
+  material_kind: CredentialMaterialKind | string;
+  /** String (single secret) or structured object (e.g. OAuth). */
+  plaintext: string | Record<string, unknown>;
+};
+
+export async function fetchAgentCredentials(agentId: string): Promise<AgentCredentialBinding[]> {
+  const r = await apiFetch(`/api/v1/agents/${encodeURIComponent(agentId)}/credentials`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
+  const data = (await r.json()) as AgentCredentialListResponse;
+  return data.credentials ?? [];
+}
+
+export async function postAgentCredential(
+  agentId: string,
+  body: PostAgentCredentialRequest
+): Promise<AgentCredentialBinding> {
+  const r = await apiFetch(`/api/v1/agents/${encodeURIComponent(agentId)}/credentials`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
+  const wrap = (await r.json()) as { credential: AgentCredentialBinding };
+  return wrap.credential;
+}
+
+export async function deleteAgentCredential(agentId: string, bindingId: string): Promise<void> {
+  const r = await apiFetch(
+    `/api/v1/agents/${encodeURIComponent(agentId)}/credentials/${encodeURIComponent(bindingId)}`,
+    { method: "DELETE", headers: { Accept: "application/json" } }
+  );
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
+}
+
+export async function rotateAgentCredential(
+  agentId: string,
+  bindingId: string,
+  plaintext: string | Record<string, unknown>
+): Promise<AgentCredentialBinding> {
+  const r = await apiFetch(
+    `/api/v1/agents/${encodeURIComponent(agentId)}/credentials/${encodeURIComponent(bindingId)}/rotate`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plaintext }),
+    }
+  );
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(parseErrorBody(t));
+  }
+  const wrap = (await r.json()) as { credential: AgentCredentialBinding };
+  return wrap.credential;
 }

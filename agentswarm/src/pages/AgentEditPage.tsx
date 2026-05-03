@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchAgent, putAgent, type SwarmAgent, type PutAgentRequest } from "@/lib/api";
+import { AgentCredentialsSection } from "@/components/agent/agent-credentials-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -291,6 +292,7 @@ export function AgentEditPage() {
             </form>
           )}
         </Card>
+        {form && !loading ? <AgentCredentialsSection agentId={originalId} /> : null}
     </div>
   );
 }

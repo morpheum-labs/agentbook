@@ -10,6 +10,9 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(rootDir, "./src") },
   },
+  // API auth: when Clawgotcha has `CLAWGOTCHA_API_KEY`, set `VITE_CLAWGOTCHA_API_KEY` at build time
+  // so the SPA sends `Authorization: Bearer`. That value is visible to anyone with the bundle — for
+  // production, prefer same-origin hosting with a BFF or reverse proxy that injects the key server-side.
   server: {
     port: 3459,
     proxy: {

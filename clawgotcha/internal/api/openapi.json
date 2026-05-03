@@ -3,7 +3,7 @@
   "info": {
     "title": "clawgotcha",
     "version": "1.0.0",
-    "description": "HTTP API for MiroClaw/ZeroClaw-style swarm agent metadata: default provider/model, Hands ([[agents]]), and cron jobs ([[cron_jobs]]) backed by PostgreSQL. **Errors** return JSON `{\"error\":{\"code\":\"...\",\"detail\":\"...\"}}` (see `Error`). `4xx` and `5xx` use the same error envelope.\n\n**Security (optional):** When `CLAWGOTCHA_API_KEY` is set, all `/api/v1/*` routes require `Authorization: Bearer <key>` or `X-API-Key: <key>`. Unauthenticated public routes: `GET /healthz`, `GET /openapi.json`, `GET /metrics`. Internal publish uses `CLAWGOTCHA_INTERNAL_TOKEN` for `POST /api/v1/events/publish`.\n\n**Webhooks:** On agent/cron/config changes, Clawgotcha POSTs JSON (same shape as SSE `change` events — see `ChangeEventPayload`) to each registered runtime `callback_url`. The raw body is signed with **HMAC-SHA256** using the per-runtime subscription secret created at registration; verify using header **`X-Clawgotcha-Signature: sha256=<hex>`** (the signature is **not** duplicated inside the JSON body). Optional: `X-Clawgotcha-Event-Type` repeats `event_type`."
+    "description": "HTTP API for MiroClaw/ZeroClaw-style swarm agent metadata: default provider/model, Hands ([[agents]]), and cron jobs ([[cron_jobs]]) backed by PostgreSQL. **Errors** return JSON `{\"error\":{\"code\":\"...\",\"detail\":\"...\"}}` (see `Error`). `4xx` and `5xx` use the same error envelope.\n\n**Security (optional):** When `CLAWGOTCHA_API_KEY` is set, all `/api/v1/*` routes require `Authorization: Bearer <key>` or `X-API-Key: <key>`. Unauthenticated public routes: `GET /healthz`, `GET /openapi.json`, `GET /metrics`. Internal publish uses `CLAWGOTCHA_INTERNAL_TOKEN` for `POST /api/v1/events/publish`.\n\n**Credential vault:** Set `CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY` (32-byte raw, base64, or 64-char hex) so `POST` create and `POST` rotate can encrypt secrets at rest. Without it, those endpoints return **503**; `GET` list still works for inventory. Responses never include ciphertext or decrypted secrets.\n\n**Webhooks:** On agent/cron/config changes, Clawgotcha POSTs JSON (same shape as SSE `change` events — see `ChangeEventPayload`) to each registered runtime `callback_url`. The raw body is signed with **HMAC-SHA256** using the per-runtime subscription secret created at registration; verify using header **`X-Clawgotcha-Signature: sha256=<hex>`** (the signature is **not** duplicated inside the JSON body). Optional: `X-Clawgotcha-Event-Type` repeats `event_type`."
   },
   "servers": [
     {
@@ -17,6 +17,7 @@
     { "name": "Metrics" },
     { "name": "Config" },
     { "name": "Agents" },
+    { "name": "Agent credentials" },
     { "name": "Cron jobs" },
     { "name": "Instances" },
     { "name": "Events" }
@@ -230,6 +231,143 @@
           "204": { "description": "Deleted" },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/agents/{id}/credentials": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "get": {
+        "tags": ["Agent credentials"],
+        "summary": "List credential bindings for an agent",
+        "description": "Metadata and latest version summary only (no secrets).",
+        "responses": {
+          "200": {
+            "description": "credentials array + revision_summary",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CredentialListResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "post": {
+        "tags": ["Agent credentials"],
+        "summary": "Create a credential binding and initial encrypted version",
+        "description": "Requires `CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY` on the server (503 otherwise). `plaintext` is JSON: a string (API key, PAT, bearer token) or an object for structured kinds (e.g. OAuth).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCredentialRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created binding + version 1",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CredentialSingleResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/agents/{id}/credentials/{bindingId}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        },
+        {
+          "name": "bindingId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "delete": {
+        "tags": ["Agent credentials"],
+        "summary": "Soft-delete a credential binding",
+        "responses": {
+          "200": {
+            "description": "ok + revision_summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "revision_summary": { "$ref": "#/components/schemas/RevisionSummary" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/agents/{id}/credentials/{bindingId}/rotate": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        },
+        {
+          "name": "bindingId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "post": {
+        "tags": ["Agent credentials"],
+        "summary": "Rotate secret (append new version)",
+        "description": "Requires encryption key (503 if unset). Keeps the same `material_kind` as the latest version.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RotateCredentialRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated binding summary",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CredentialSingleResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "503": { "$ref": "#/components/responses/ServiceUnavailable" },
           "500": { "$ref": "#/components/responses/InternalError" }
         }
       }
@@ -605,6 +743,14 @@
             "schema": { "$ref": "#/components/schemas/ErrorResponse" }
           }
         }
+      },
+      "ServiceUnavailable": {
+        "description": "Service unavailable (e.g. credential encrypt key not configured)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
       }
     },
     "schemas": {
@@ -882,6 +1028,79 @@
           "ScheduleParsed": { "type": "boolean" },
           "ParseError": { "type": "string" },
           "ProjectedRuns": { "type": "array", "items": { "type": "string", "format": "date-time" } }
+        }
+      },
+      "CredentialMaterialKind": {
+        "type": "string",
+        "description": "Allowlisted material_kind values",
+        "enum": [
+          "api_key",
+          "bearer_token",
+          "github_pat",
+          "oauth_client",
+          "oauth_tokens",
+          "oauth_authorization_pending",
+          "totp_seed",
+          "recovery_code_hashes"
+        ]
+      },
+      "CredentialBindingSummary": {
+        "type": "object",
+        "description": "One binding plus latest secret metadata (never ciphertext)",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "provider_slug": { "type": "string" },
+          "label": { "type": "string" },
+          "mcp_server_name": { "type": "string", "nullable": true },
+          "metadata": { "type": "object", "additionalProperties": true },
+          "current_version": { "type": "integer" },
+          "material_kind": { "oneOf": [{ "$ref": "#/components/schemas/CredentialMaterialKind" }, { "type": "null" }] },
+          "has_secret": { "type": "boolean" },
+          "expires_at": { "type": "string", "format": "date-time", "nullable": true },
+          "secret_updated_at": { "type": "string", "format": "date-time", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CredentialListResponse": {
+        "type": "object",
+        "properties": {
+          "credentials": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CredentialBindingSummary" }
+          },
+          "revision_summary": { "$ref": "#/components/schemas/RevisionSummary" }
+        }
+      },
+      "CredentialSingleResponse": {
+        "type": "object",
+        "properties": {
+          "credential": { "$ref": "#/components/schemas/CredentialBindingSummary" },
+          "revision_summary": { "$ref": "#/components/schemas/RevisionSummary" }
+        }
+      },
+      "CreateCredentialRequest": {
+        "type": "object",
+        "required": ["provider_slug", "label", "material_kind", "plaintext"],
+        "properties": {
+          "provider_slug": { "type": "string" },
+          "label": { "type": "string" },
+          "mcp_server_name": { "type": "string" },
+          "metadata": { "type": "object", "additionalProperties": true },
+          "material_kind": { "$ref": "#/components/schemas/CredentialMaterialKind" },
+          "plaintext": {
+            "description": "JSON string or object; serialized to JSON bytes then encrypted",
+            "oneOf": [{ "type": "string" }, { "type": "object", "additionalProperties": true }]
+          }
+        }
+      },
+      "RotateCredentialRequest": {
+        "type": "object",
+        "required": ["plaintext"],
+        "properties": {
+          "plaintext": {
+            "oneOf": [{ "type": "string" }, { "type": "object", "additionalProperties": true }]
+          }
         }
       }
     }
