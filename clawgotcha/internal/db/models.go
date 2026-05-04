@@ -75,11 +75,13 @@ func (SwarmCronJob) TableName() string { return "swarm_cron_jobs" }
 
 // SwarmRuntimeInstance is the registry row for a Miroclaw runtime.
 type SwarmRuntimeInstance struct {
-	ID              uuid.UUID       `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	InstanceName    string          `gorm:"uniqueIndex;not null;type:text;column:instance_name"`
-	InstanceType    string          `gorm:"not null;default:miroclaw;type:text;column:instance_type"`
-	Version         string          `gorm:"not null;type:text"`
-	Hostname        string          `gorm:"not null;type:text"`
+	ID           uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	InstanceName string    `gorm:"uniqueIndex;not null;type:text;column:instance_name"`
+	InstanceType string    `gorm:"not null;default:miroclaw;type:text;column:instance_type"`
+	Version      string    `gorm:"not null;type:text"`
+	Hostname     string    `gorm:"not null;type:text"`
+	// PublicURL is the HTTP(S) origin clients use to reach this MiroClaw/ZeroClaw gateway (same host/port as GET /ws/chat).
+	// UIs may derive ws/wss chat bases from it; paths are ignored when building WebSocket URLs.
 	PublicURL       *string         `gorm:"type:text;column:public_url"`
 	CallbackURL     string          `gorm:"not null;type:text;column:callback_url"`
 	Capabilities    []string        `gorm:"serializer:json;type:jsonb;not null;default:'[]'"`
@@ -91,8 +93,8 @@ type SwarmRuntimeInstance struct {
 	ApiSecretHash     string     `gorm:"type:text;column:api_secret_hash" json:"-"`
 	ApiSecretPrefix   string     `gorm:"type:text;column:api_secret_prefix" json:"api_secret_prefix,omitempty"`
 	ApiSecretIssuedAt *time.Time `gorm:"column:api_secret_issued_at" json:"api_secret_issued_at,omitempty"`
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 func (SwarmRuntimeInstance) TableName() string { return "swarm_runtime_instances" }
@@ -115,15 +117,15 @@ func (SwarmWebhookSubscription) TableName() string { return "swarm_webhook_subsc
 // CredentialBinding groups one integration's metadata for a Hand (SwarmAgent).
 // Secret bytes live in CredentialSecretVersion rows (encrypted).
 type CredentialBinding struct {
-	ID             uuid.UUID       `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	SwarmAgentID   uuid.UUID       `gorm:"type:uuid;not null;index;column:swarm_agent_id"`
-	ProviderSlug   string          `gorm:"not null;type:text;column:provider_slug"`
-	Label          string          `gorm:"not null;type:text"`
-	McpServerName  *string         `gorm:"type:text;column:mcp_server_name"`
-	Metadata       json.RawMessage `gorm:"type:jsonb;not null;default:'{}'"`
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
+	ID            uuid.UUID       `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	SwarmAgentID  uuid.UUID       `gorm:"type:uuid;not null;index;column:swarm_agent_id"`
+	ProviderSlug  string          `gorm:"not null;type:text;column:provider_slug"`
+	Label         string          `gorm:"not null;type:text"`
+	McpServerName *string         `gorm:"type:text;column:mcp_server_name"`
+	Metadata      json.RawMessage `gorm:"type:jsonb;not null;default:'{}'"`
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 
 	Agent *SwarmAgent `gorm:"foreignKey:SwarmAgentID;references:ID"`
 }
@@ -132,15 +134,15 @@ func (CredentialBinding) TableName() string { return "credential_bindings" }
 
 // CredentialSecretVersion is one encrypted material snapshot for a binding (rotation = new row, higher version).
 type CredentialSecretVersion struct {
-	ID            uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	BindingID     uuid.UUID `gorm:"type:uuid;not null;index;column:binding_id;uniqueIndex:ux_cred_secret_binding_version"`
-	Version       int       `gorm:"not null;uniqueIndex:ux_cred_secret_binding_version"`
-	MaterialKind  string    `gorm:"not null;type:text;column:material_kind"`
-	Ciphertext    []byte    `gorm:"not null;type:bytea;column:ciphertext"`
-	Nonce         []byte    `gorm:"not null;type:bytea;column:nonce"`
-	KekID         string    `gorm:"not null;type:text;default:'env:v1';column:kek_id"`
-	ExpiresAt     *time.Time `gorm:"column:expires_at"`
-	CreatedAt     time.Time `gorm:"not null;column:created_at"`
+	ID           uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	BindingID    uuid.UUID  `gorm:"type:uuid;not null;index;column:binding_id;uniqueIndex:ux_cred_secret_binding_version"`
+	Version      int        `gorm:"not null;uniqueIndex:ux_cred_secret_binding_version"`
+	MaterialKind string     `gorm:"not null;type:text;column:material_kind"`
+	Ciphertext   []byte     `gorm:"not null;type:bytea;column:ciphertext"`
+	Nonce        []byte     `gorm:"not null;type:bytea;column:nonce"`
+	KekID        string     `gorm:"not null;type:text;default:'env:v1';column:kek_id"`
+	ExpiresAt    *time.Time `gorm:"column:expires_at"`
+	CreatedAt    time.Time  `gorm:"not null;column:created_at"`
 
 	Binding *CredentialBinding `gorm:"foreignKey:BindingID;references:ID"`
 }

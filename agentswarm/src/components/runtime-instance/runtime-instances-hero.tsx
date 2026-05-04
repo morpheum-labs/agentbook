@@ -1,16 +1,20 @@
-import { RefreshCw, Server } from "lucide-react";
+import { MessagesSquare, RefreshCw, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type RuntimeInstancesHeroProps = {
   onRefresh: () => void;
   refreshDisabled?: boolean;
+  onPairAndChat?: () => void;
+  pairChatDisabled?: boolean;
   className?: string;
 };
 
 export function RuntimeInstancesHero({
   onRefresh,
   refreshDisabled,
+  onPairAndChat,
+  pairChatDisabled,
   className,
 }: RuntimeInstancesHeroProps) {
   return (
@@ -45,6 +49,24 @@ export function RuntimeInstancesHero({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
+          {onPairAndChat && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={onPairAndChat}
+              disabled={pairChatDisabled}
+              className={cn(
+                "h-9 rounded-lg border-0",
+                "bg-pure-white/18 text-surface-hero-foreground",
+                "hover:bg-pure-white/26",
+                "disabled:opacity-50"
+              )}
+            >
+              <MessagesSquare className="size-4" />
+              Pair & chat
+            </Button>
+          )}
           <Button
             type="button"
             variant="secondary"

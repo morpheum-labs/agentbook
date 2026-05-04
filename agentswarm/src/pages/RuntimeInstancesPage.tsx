@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchInstances, type SwarmRuntimeInstance } from "@/lib/api";
+import { RuntimeGatewayPairModal } from "@/components/runtime-instance/runtime-gateway-pair-modal";
 import { RuntimeInstanceCard } from "@/components/runtime-instance/runtime-instance-card";
 import { RuntimeInstanceEmptyState } from "@/components/runtime-instance/runtime-instance-empty-state";
 import { RuntimeInstanceListSkeleton } from "@/components/runtime-instance/runtime-instance-list-skeleton";
@@ -8,6 +9,9 @@ import { RuntimeInstancesHero } from "@/components/runtime-instance/runtime-inst
 export function RuntimeInstancesPage() {
   const [instances, setInstances] = useState<SwarmRuntimeInstance[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [pairModalInstance, setPairModalInstance] = useState<SwarmRuntimeInstance | null>(null);
+  const [pairModalOpen, setPairModalOpen] = useState(false);
 
   function load() {
     setErr(null);
@@ -23,11 +27,26 @@ export function RuntimeInstancesPage() {
     void load();
   }, []);
 
+  function openPairModal(inst: SwarmRuntimeInstance) {
+    setPairModalInstance(inst);
+    setPairModalOpen(true);
+  }
+
+  function heroPairAndChat() {
+    if (!instances?.length || !selectedId) return;
+    const sel = instances.find((i) => i.ID === selectedId);
+    if (!sel) return;
+    setErr(null);
+    openPairModal(sel);
+  }
+
   return (
     <div className="container-app max-w-4xl space-y-8 py-8 sm:py-10">
       <RuntimeInstancesHero
         onRefresh={() => void load()}
         refreshDisabled={instances === null && !err}
+        onPairAndChat={heroPairAndChat}
+        pairChatDisabled={!instances?.length || !selectedId}
       />
 
       {err && (
@@ -46,14 +65,35 @@ export function RuntimeInstancesPage() {
       )}
 
       {instances && instances.length > 0 && (
+        <p className="text-caption-body text-muted-foreground">
+          Click a card to select it for the hero <span className="font-medium text-foreground">Pair & chat</span>{" "}
+          action, or use <span className="font-medium text-foreground">Pair gateway & multi-agent chat</span> on a
+          card.
+        </p>
+      )}
+
+      {instances && instances.length > 0 && (
         <ul className="flex flex-col gap-4" aria-label="Runtime instance list">
           {instances.map((inst) => (
             <li key={inst.ID}>
-              <RuntimeInstanceCard instance={inst} />
+              <RuntimeInstanceCard
+                instance={inst}
+                selected={selectedId === inst.ID}
+                onSelect={() =>
+                  setSelectedId((prev) => (prev === inst.ID ? null : inst.ID))
+                }
+                onPairAndChat={() => openPairModal(inst)}
+              />
             </li>
           ))}
         </ul>
       )}
+
+      <RuntimeGatewayPairModal
+        instance={pairModalInstance}
+        open={pairModalOpen}
+        onOpenChange={setPairModalOpen}
+      />
     </div>
   );
 }

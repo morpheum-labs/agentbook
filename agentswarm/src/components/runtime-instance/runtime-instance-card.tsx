@@ -1,9 +1,15 @@
-import { Activity, ArrowUpRight, Globe, Server } from "lucide-react";
+import { Activity, ArrowUpRight, Globe, MessagesSquare, Server } from "lucide-react";
 import type { SwarmRuntimeInstance } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type RuntimeInstanceCardProps = {
   instance: SwarmRuntimeInstance;
+  /** Highlights card when this runtime is selected for hero actions. */
+  selected?: boolean;
+  onSelect?: () => void;
+  /** Open gateway pairing, then multi-agent chat. */
+  onPairAndChat?: () => void;
   className?: string;
 };
 
@@ -37,9 +43,16 @@ function statusChipClass(status: string): string {
   return "border-border/80 bg-muted/40 text-muted-foreground";
 }
 
-export function RuntimeInstanceCard({ instance, className }: RuntimeInstanceCardProps) {
+export function RuntimeInstanceCard({
+  instance,
+  selected,
+  onSelect,
+  onPairAndChat,
+  className,
+}: RuntimeInstanceCardProps) {
   const pub = instance.PublicURL?.trim();
   const statusLower = instance.Status?.toLowerCase() ?? "unknown";
+  const selectable = Boolean(onSelect);
 
   return (
     <article
@@ -48,6 +61,7 @@ export function RuntimeInstanceCard({ instance, className }: RuntimeInstanceCard
         "group relative overflow-hidden rounded-2xl border border-border/80 bg-card shadow-elevation-2",
         "transition-shadow duration-300 hover:shadow-elevation-3",
         "dark:border-white/[0.08] dark:shadow-[0_8px_32px_rgba(0,0,0,0.35)]",
+        selected && "border-primary/50 ring-2 ring-primary/25",
         className
       )}
     >
@@ -59,7 +73,28 @@ export function RuntimeInstanceCard({ instance, className }: RuntimeInstanceCard
         )}
         aria-hidden
       />
-      <div className="relative p-5 sm:p-6">
+      <div
+        role={selectable ? "button" : undefined}
+        tabIndex={selectable ? 0 : undefined}
+        onClick={selectable ? () => onSelect?.() : undefined}
+        onKeyDown={
+          selectable
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSelect?.();
+                }
+              }
+            : undefined
+        }
+        aria-pressed={selectable ? selected : undefined}
+        aria-label={selectable ? `Select ${instance.InstanceName}` : undefined}
+        className={cn(
+          "relative p-5 sm:p-6",
+          selectable &&
+            "cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card rounded-none"
+        )}
+      >
         <div
           className={cn(
             "absolute -right-16 -top-20 size-48 rounded-full opacity-[0.12]",
@@ -129,6 +164,7 @@ export function RuntimeInstanceCard({ instance, className }: RuntimeInstanceCard
                     href={pub}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                     className={cn(
                       "inline-flex max-w-full items-center gap-1 rounded-full border border-border/80",
                       "bg-muted/40 px-3 py-1 text-caption-semi text-primary hover:underline",
@@ -157,6 +193,20 @@ export function RuntimeInstanceCard({ instance, className }: RuntimeInstanceCard
           </div>
         </div>
       </div>
+
+      {onPairAndChat && (
+        <div className="relative border-t border-border/60 bg-muted/20 px-5 py-4 sm:px-6">
+          <Button type="button" size="sm" variant="secondary" className="rounded-lg" onClick={onPairAndChat}>
+            <MessagesSquare className="size-4" />
+            Pair gateway & multi-agent chat
+          </Button>
+          <p className="text-micro text-muted-foreground mt-2 max-w-xl leading-relaxed">
+            Generates or uses a code via{" "}
+            <span className="font-mono text-[0.65rem]">GET /admin/paircode</span>, exchanges at{" "}
+            <span className="font-mono text-[0.65rem]">POST /pair</span>, then opens chat with this instance selected.
+          </p>
+        </div>
+      )}
     </article>
   );
 }

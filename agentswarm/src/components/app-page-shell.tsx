@@ -13,6 +13,9 @@ function headerMaxWidthForPath(pathname: string) {
   if (pathname === "/cron-jobs/new" || /^\/cron-jobs\/[^/]+$/.test(pathname)) {
     return "max-w-5xl";
   }
+  if (pathname === "/multi-chat") {
+    return "max-w-6xl";
+  }
   return "max-w-4xl";
 }
 

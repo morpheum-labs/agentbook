@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { BarChart3, Home, Server, Timer } from "lucide-react";
+import { BarChart3, Home, MessagesSquare, Server, Timer } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -75,6 +75,10 @@ export function AppHeader({ maxWidthClassName = "max-w-4xl" }: AppHeaderProps) {
           <NavLink to="/" className={navLinkClass} end>
             <Home className="size-4 shrink-0 opacity-90" />
             Home
+          </NavLink>
+          <NavLink to="/multi-chat" className={navLinkClass}>
+            <MessagesSquare className="size-4 shrink-0 opacity-90" />
+            Multi chat
           </NavLink>
           <NavLink to="/chart" className={navLinkClass}>
             <BarChart3 className="size-4 shrink-0 opacity-90" />

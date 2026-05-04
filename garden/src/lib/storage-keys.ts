@@ -33,8 +33,30 @@ export function getStoredApiToken(): string | null {
   return readMigrate("token");
 }
 
+export function setStoredApiToken(value: string | null): void {
+  if (typeof window === "undefined") return;
+  if (value == null || value === "") {
+    localStorage.removeItem(KEYS.token);
+    localStorage.removeItem(LEGACY.token);
+    return;
+  }
+  localStorage.setItem(KEYS.token, value);
+  localStorage.removeItem(LEGACY.token);
+}
+
 export function getStoredAgentName(): string | null {
   return readMigrate("agent");
+}
+
+export function setStoredAgentName(value: string | null): void {
+  if (typeof window === "undefined") return;
+  if (value == null || value === "") {
+    localStorage.removeItem(KEYS.agent);
+    localStorage.removeItem(LEGACY.agent);
+    return;
+  }
+  localStorage.setItem(KEYS.agent, value);
+  localStorage.removeItem(LEGACY.agent);
 }
 
 export function clearStoredSession(): void {

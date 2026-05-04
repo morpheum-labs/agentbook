@@ -8,6 +8,7 @@ import { CronJobListPage } from "@/pages/CronJobListPage";
 import { CronJobNewPage } from "@/pages/CronJobNewPage";
 import { CronJobEditPage } from "@/pages/CronJobEditPage";
 import { RuntimeInstancesPage } from "@/pages/RuntimeInstancesPage";
+import { MultiAgentChatPage } from "@/pages/MultiAgentChatPage";
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
       <AppPageShell>
         <Routes>
           <Route path="/" element={<AgentListPage />} />
+          <Route path="/multi-chat" element={<MultiAgentChatPage />} />
           <Route path="/chart" element={<AgentChartPage />} />
           <Route path="/agents/new" element={<AgentNewPage />} />
           <Route path="/agents/:id" element={<AgentEditPage />} />

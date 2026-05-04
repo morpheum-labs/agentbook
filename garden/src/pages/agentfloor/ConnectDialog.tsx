@@ -7,6 +7,14 @@ import {
   getSiteConfig,
   resolvedSkillUrl,
 } from "@/lib/site-config";
+import { cn } from "@/lib/utils";
+import {
+  WALLET_CHAIN_OPTIONS,
+  connectWalletForChain,
+  getBestWallet,
+  type ChainType,
+  type WalletConnectedSession,
+} from "@/lib/wallet";
 
 const DEFAULT_AGENT_FLOOR_DOCS_URL = "https://agentfloor.io/docs";
 
@@ -14,6 +22,9 @@ const DEFAULT_AGENT_FLOOR_DOCS_URL = "https://agentfloor.io/docs";
 const HUMAN_SIGNIN_X_GOOGLE_GITHUB_DISABLED = true;
 
 type ConnectTab = "human" | "agent";
+
+/** Human tab: main providers vs wallet chain picker (slides in). */
+type HumanWalletStep = "providers" | "chains";
 
 export type AgentFloorConnectDialogProps = {
   /** Mount the portal inside AgentFloor so DESIGN tokens from `.agentfloor` apply. */
@@ -28,7 +39,8 @@ export type AgentFloorConnectDialogProps = {
   onSignInX?: () => void | Promise<void>;
   onSignInGoogle?: () => void | Promise<void>;
   onSignInGithub?: () => void | Promise<void>;
-  onSignInWallet?: () => void | Promise<void>;
+  /** After a successful Ethereum / Solana / Bitcoin wallet connection (address authorized in the extension). */
+  onWalletConnected?: (session: WalletConnectedSession) => void | Promise<void>;
   /** AgentFloor documentation URL (opens in a new tab from the agent step). */
   agentFloorDocsUrl?: string;
   termsUrl?: string;
@@ -77,7 +89,7 @@ export function AgentFloorConnectDialog({
   onSignInX,
   onSignInGoogle,
   onSignInGithub,
-  onSignInWallet,
+  onWalletConnected,
   agentFloorDocsUrl = DEFAULT_AGENT_FLOOR_DOCS_URL,
   termsUrl,
   privacyUrl,
@@ -88,6 +100,9 @@ export function AgentFloorConnectDialog({
   const [skillUrl, setSkillUrl] = useState("");
   const [showAgentPrompt, setShowAgentPrompt] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [walletConnecting, setWalletConnecting] = useState<ChainType | null>(null);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [humanWalletStep, setHumanWalletStep] = useState<HumanWalletStep>("providers");
 
   useEffect(() => {
     void getSiteConfig().then((cfg) => setSkillUrl(resolvedSkillUrl(cfg)));
@@ -99,17 +114,29 @@ export function AgentFloorConnectDialog({
   const controlled = openProp !== undefined;
   const open = controlled ? openProp : internalOpen;
 
+  const walletDetection = WALLET_CHAIN_OPTIONS.map(({ chain }) => ({
+    chain,
+    walletName: getBestWallet(chain),
+  }));
+
   function handleOpenChange(next: boolean) {
     onOpenChange?.(next);
     if (!controlled) setInternalOpen(next);
     if (!next) {
       setTab("human");
       setShowAgentPrompt(false);
+      setWalletError(null);
+      setWalletConnecting(null);
+      setHumanWalletStep("providers");
     }
   }
 
   function handleTabChange(next: ConnectTab) {
     if (next !== "agent") setShowAgentPrompt(false);
+    if (next !== "human") {
+      setHumanWalletStep("providers");
+      setWalletError(null);
+    }
     setTab(next);
   }
 
@@ -134,10 +161,32 @@ export function AgentFloorConnectDialog({
     }
   }
 
-  const title = tab === "human" ? "Connect as human" : "Connect as agent";
+  async function runWalletConnect(chain: ChainType): Promise<void> {
+    if (walletConnecting !== null || signingIn) return;
+    setWalletConnecting(chain);
+    setWalletError(null);
+    try {
+      const session = await connectWalletForChain(chain);
+      await Promise.resolve(onWalletConnected?.(session));
+      handleOpenChange(false);
+    } catch (err) {
+      setWalletError(err instanceof Error ? err.message : "Wallet connection failed");
+    } finally {
+      setWalletConnecting(null);
+    }
+  }
+
+  const title =
+    tab === "human"
+      ? humanWalletStep === "chains"
+        ? "Choose a network"
+        : "Connect as human"
+      : "Connect as agent";
   const supportText =
     tab === "human"
-      ? "For people using AgentFloor as participants or administrators."
+      ? humanWalletStep === "chains"
+        ? "Connect with Ethereum, Solana, or Bitcoin using a browser wallet extension."
+        : "For people using AgentFloor as participants or administrators."
       : "Connect an AI agent that can operate inside AgentFloor with defined permissions and scopes.";
 
   return (
@@ -176,101 +225,191 @@ export function AgentFloorConnectDialog({
               </div>
 
               <Tabs.Content className="af-connect-tab-panel" value="human">
-                <div className="af-connect-provider-stack">
-                  <button
-                    type="button"
-                    className="af-connect-provider-btn"
-                    disabled={HUMAN_SIGNIN_X_GOOGLE_GITHUB_DISABLED || !onSignInX || signingIn}
-                    onClick={() => void runHumanSignIn(onSignInX)}
-                  >
-                    <IconXLogo className="af-connect-provider-icon af-connect-provider-icon--x" />
-                    <span>Sign in with X</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="af-connect-provider-btn"
-                    disabled={HUMAN_SIGNIN_X_GOOGLE_GITHUB_DISABLED || !onSignInGoogle || signingIn}
-                    onClick={() => void runHumanSignIn(onSignInGoogle)}
-                  >
-                    <IconGoogle className="af-connect-provider-icon" />
-                    <span>Sign in with Google</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="af-connect-provider-btn"
-                    disabled={HUMAN_SIGNIN_X_GOOGLE_GITHUB_DISABLED || !onSignInGithub || signingIn}
-                    onClick={() => void runHumanSignIn(onSignInGithub)}
-                  >
-                    <Github
-                      className="af-connect-provider-icon"
-                      strokeWidth={2}
-                      width={20}
-                      height={20}
-                      aria-hidden
-                    />
-                    <span>Sign in with GitHub</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="af-connect-provider-btn"
-                    disabled={!onSignInWallet || signingIn}
-                    onClick={() => void runHumanSignIn(onSignInWallet)}
-                  >
-                    <Wallet
-                      className="af-connect-provider-icon"
-                      strokeWidth={2}
-                      width={20}
-                      height={20}
-                      aria-hidden
-                    />
-                    <span>Sign in with Wallet</span>
-                  </button>
-                </div>
-                {(termsUrl || privacyUrl) && (
-                  <p className="af-connect-legal">
-                    By continuing you agree to our{" "}
-                    {termsUrl && privacyUrl ? (
-                      <>
-                        <a
-                          href={termsUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="af-connect-legal-link"
-                        >
-                          Terms
-                        </a>
-                        {" and "}
-                        <a
-                          href={privacyUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="af-connect-legal-link"
-                        >
-                          Privacy Policy
-                        </a>
-                      </>
-                    ) : termsUrl ? (
-                      <a
-                        href={termsUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="af-connect-legal-link"
-                      >
-                        Terms
-                      </a>
-                    ) : (
-                      <a
-                        href={privacyUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="af-connect-legal-link"
-                      >
-                        Privacy Policy
-                      </a>
+                <div className="af-connect-human-slide-root">
+                  <div
+                    className={cn(
+                      "af-connect-human-slide-track",
+                      humanWalletStep === "chains" && "af-connect-human-slide-track--chains",
                     )}
-                    .
-                  </p>
-                )}
+                  >
+                    <div className="af-connect-human-slide-panel">
+                      <div className="af-connect-provider-stack">
+                        <button
+                          type="button"
+                          className="af-connect-provider-btn"
+                          disabled={
+                            HUMAN_SIGNIN_X_GOOGLE_GITHUB_DISABLED ||
+                            !onSignInX ||
+                            signingIn ||
+                            walletConnecting !== null
+                          }
+                          onClick={() => void runHumanSignIn(onSignInX)}
+                        >
+                          <IconXLogo className="af-connect-provider-icon af-connect-provider-icon--x" />
+                          <span>Sign in with X</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="af-connect-provider-btn"
+                          disabled={
+                            HUMAN_SIGNIN_X_GOOGLE_GITHUB_DISABLED ||
+                            !onSignInGoogle ||
+                            signingIn ||
+                            walletConnecting !== null
+                          }
+                          onClick={() => void runHumanSignIn(onSignInGoogle)}
+                        >
+                          <IconGoogle className="af-connect-provider-icon" />
+                          <span>Sign in with Google</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="af-connect-provider-btn"
+                          disabled={
+                            HUMAN_SIGNIN_X_GOOGLE_GITHUB_DISABLED ||
+                            !onSignInGithub ||
+                            signingIn ||
+                            walletConnecting !== null
+                          }
+                          onClick={() => void runHumanSignIn(onSignInGithub)}
+                        >
+                          <Github
+                            className="af-connect-provider-icon"
+                            strokeWidth={2}
+                            width={20}
+                            height={20}
+                            aria-hidden
+                          />
+                          <span>Sign in with GitHub</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="af-connect-provider-btn"
+                          disabled={signingIn || walletConnecting !== null}
+                          onClick={() => {
+                            setWalletError(null);
+                            setHumanWalletStep("chains");
+                          }}
+                        >
+                          <Wallet
+                            className="af-connect-provider-icon"
+                            strokeWidth={2}
+                            width={20}
+                            height={20}
+                            aria-hidden
+                          />
+                          <span>Wallet Connect</span>
+                        </button>
+                      </div>
+                      {(termsUrl || privacyUrl) && (
+                        <p className="af-connect-legal">
+                          By continuing you agree to our{" "}
+                          {termsUrl && privacyUrl ? (
+                            <>
+                              <a
+                                href={termsUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="af-connect-legal-link"
+                              >
+                                Terms
+                              </a>
+                              {" and "}
+                              <a
+                                href={privacyUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="af-connect-legal-link"
+                              >
+                                Privacy Policy
+                              </a>
+                            </>
+                          ) : termsUrl ? (
+                            <a
+                              href={termsUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="af-connect-legal-link"
+                            >
+                              Terms
+                            </a>
+                          ) : (
+                            <a
+                              href={privacyUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="af-connect-legal-link"
+                            >
+                              Privacy Policy
+                            </a>
+                          )}
+                          .
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="af-connect-human-slide-panel">
+                      <button
+                        type="button"
+                        className="af-connect-wallet-back"
+                        disabled={walletConnecting !== null}
+                        onClick={() => {
+                          setHumanWalletStep("providers");
+                          setWalletError(null);
+                        }}
+                      >
+                        ← Back
+                      </button>
+                      <div className="af-connect-wallet-stack" role="group" aria-label="Wallet networks">
+                        {WALLET_CHAIN_OPTIONS.map(({ chain, label, icon }) => {
+                          const walletName = walletDetection.find((d) => d.chain === chain)?.walletName;
+                          const available = !!walletName;
+                          const busyGlobal = walletConnecting !== null || signingIn;
+                          return (
+                            <button
+                              key={chain}
+                              type="button"
+                              className={cn(
+                                "af-wallet-chain-row",
+                                (!available || busyGlobal) && "af-wallet-chain-row--disabled",
+                                walletConnecting === chain && "af-wallet-chain-row--loading",
+                              )}
+                              disabled={!available || busyGlobal}
+                              onClick={() => void runWalletConnect(chain)}
+                            >
+                              <div className="af-wallet-chain-left">
+                                <span className="af-wallet-chain-icon" aria-hidden>
+                                  {icon}
+                                </span>
+                                <div className="af-wallet-chain-text">
+                                  <span className="af-wallet-chain-label">{label}</span>
+                                  <span
+                                    className={cn(
+                                      "af-wallet-chain-detected",
+                                      !available && "af-wallet-chain-detected--muted",
+                                    )}
+                                  >
+                                    {available ? walletName : "No wallet detected"}
+                                  </span>
+                                </div>
+                              </div>
+                              {available ? (
+                                <span className="af-wallet-chain-action">
+                                  {walletConnecting === chain ? "Connecting…" : "Connect"}
+                                </span>
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {walletError ? (
+                        <p className="af-wallet-chain-error" role="alert">
+                          {walletError}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
               </Tabs.Content>
 
               <Tabs.Content className="af-connect-tab-panel" value="agent">

@@ -7,7 +7,7 @@ import {
   setAgentFloorColorMode,
   type AgentFloorColorMode,
 } from "@/lib/agentfloor-theme";
-import { AgentFloorShellProvider } from "./agent-floor-shell";
+import { AgentFloorShellProvider, useAgentFloorShell } from "./agent-floor-shell";
 import { AgentFloorToastProvider } from "./agent-floor-toast";
 import { AgentFloorConnectDialog } from "./ConnectDialog";
 import { AgentFloorFooter } from "./Footer";
@@ -15,6 +15,21 @@ import "@/styles/agentfloor.css";
 
 function nvClass({ isActive }: { isActive: boolean }) {
   return "nv" + (isActive ? " a" : "");
+}
+
+function AgentFloorHeaderConnect({ portalContainer }: { portalContainer: HTMLElement | null }) {
+  const { setWalletSession } = useAgentFloorShell();
+  return (
+    <AgentFloorConnectDialog
+      portalContainer={portalContainer}
+      onWalletConnected={(session) => setWalletSession(session)}
+      onConnectAgent={() => {
+        /* Stub: agent onboarding (scopes, permissions, boundaries). */
+      }}
+      termsUrl="https://agentfloor.io/terms"
+      privacyUrl="https://agentfloor.io/privacy"
+    />
+  );
 }
 
 export default function AgentFloorLayout() {
@@ -175,17 +190,7 @@ export default function AgentFloorLayout() {
                 <Moon className="af-theme-toggle-icon" aria-hidden />
               )}
             </button>
-            <AgentFloorConnectDialog
-              portalContainer={agentFloorRoot}
-              onConnectAgent={() => {
-                /* Stub: agent onboarding (scopes, permissions, boundaries). */
-              }}
-              onSignInWallet={async () => {
-                /* Stub: wallet connect. */
-              }}
-              termsUrl="https://agentfloor.io/terms"
-              privacyUrl="https://agentfloor.io/privacy"
-            />
+            <AgentFloorHeaderConnect portalContainer={agentFloorRoot} />
             <Link to="/subscribe" className="btn-paid">
               Subscribe ↗
             </Link>

@@ -61,6 +61,9 @@ func (s *Server) registerInstance(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, httperr.BadRequest("invalid json body", err))
 		return
 	}
+	b.Metadata = mergeRegisterIngressMetadata(b.Metadata, r)
+	effectivePublicURL := effectiveInstancePublicURL(b.PublicURL, b.CallbackURL)
+
 	name := strings.TrimSpace(b.InstanceName)
 	if name == "" || strings.TrimSpace(b.CallbackURL) == "" || strings.TrimSpace(b.Hostname) == "" || strings.TrimSpace(b.Version) == "" {
 		httperr.Write(w, r, httperr.BadRequest("instance_name, callback_url, hostname, and version are required", nil))
@@ -91,7 +94,7 @@ func (s *Server) registerInstance(w http.ResponseWriter, r *http.Request) {
 			InstanceType:      instType,
 			Version:           strings.TrimSpace(b.Version),
 			Hostname:          strings.TrimSpace(b.Hostname),
-			PublicURL:         b.PublicURL,
+			PublicURL:         effectivePublicURL,
 			CallbackURL:       strings.TrimSpace(b.CallbackURL),
 			Capabilities:      caps,
 			LastHeartbeatAt:   &now,
@@ -113,7 +116,7 @@ func (s *Server) registerInstance(w http.ResponseWriter, r *http.Request) {
 		inst.InstanceType = instType
 		inst.Version = strings.TrimSpace(b.Version)
 		inst.Hostname = strings.TrimSpace(b.Hostname)
-		inst.PublicURL = b.PublicURL
+		inst.PublicURL = effectivePublicURL
 		inst.CallbackURL = strings.TrimSpace(b.CallbackURL)
 		inst.Capabilities = caps
 		inst.LastHeartbeatAt = &now
