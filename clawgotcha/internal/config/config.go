@@ -12,12 +12,17 @@ import (
 
 // Config holds clawgotcha process settings from defaults, optional YAML, and the environment.
 // Override priority: environment > YAML file > default (see [Load]).
-// YAML keys match shared deploy config (e.g. dep/cl.yaml): database_url, port, hostname, public_url.
+// YAML keys match shared deploy config (e.g. dep/cl.yaml): database_url, port, hostname, public_url,
+// credentials_encryption_key (optional; env CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY overrides when set).
 type Config struct {
 	Hostname    string `yaml:"hostname"`
 	Port        int    `yaml:"port"`
 	PublicURL   string `yaml:"public_url"`
 	DatabaseURL string `yaml:"database_url"`
+	// CredentialsEncryptionKey is the AES-256 master key for the per-agent credential vault (optional).
+	// Formats: 32-byte raw string, base64.StdEncoding, or 64 hex digits (see credentials.ParseMasterKey).
+	// Env CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY overrides this field when present in the environment.
+	CredentialsEncryptionKey string `yaml:"credentials_encryption_key,omitempty"`
 	// InternalToken gates POST /api/v1/events/publish (Bearer or X-Internal-Token). Set via CLAWGOTCHA_INTERNAL_TOKEN.
 	InternalToken string `yaml:"-"`
 	// APIKey gates /api/v1/* when non-empty (Bearer or X-API-Key). Set via CLAWGOTCHA_API_KEY.
@@ -87,6 +92,9 @@ func applyEnv(c *Config) {
 	}
 	if v, ok := int64FromEnv("CLAWGOTCHA_MAX_REQUEST_BODY_BYTES"); ok {
 		c.MaxRequestBodyBytes = v
+	}
+	if v := stringsTrimEnv("CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY"); v != nil {
+		c.CredentialsEncryptionKey = *v
 	}
 }
 

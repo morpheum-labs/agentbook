@@ -105,10 +105,10 @@ func runServer(_ *cobra.Command, _ []string) error {
 		}
 	}()
 	var credKey []byte
-	if raw := strings.TrimSpace(os.Getenv("CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY")); raw != "" {
+	if raw := strings.TrimSpace(cfg.CredentialsEncryptionKey); raw != "" {
 		k, err := credentials.ParseMasterKey(raw)
 		if err != nil {
-			return fmt.Errorf("CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY: %w", err)
+			return fmt.Errorf("credentials encryption key (YAML credentials_encryption_key or CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY): %w", err)
 		}
 		credKey = k
 	}

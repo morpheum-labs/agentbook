@@ -7,3 +7,8 @@ public_url: ""
 
 # Set at deploy time, or set DATABASE_URL in the environment.
 database_url: ""
+
+# Optional: enables POST /api/v1/agents/{id}/credentials and rotate (AES-256-GCM at rest).
+# Same formats as env CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY: 32-char raw, std base64, or 64 hex.
+# Env overrides YAML when set.
+# credentials_encryption_key: ""

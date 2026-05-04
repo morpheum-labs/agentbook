@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { nativeSelectClass } from "@/lib/native-select-class";
 
-type DialogMode = "closed" | "add" | "rotate";
+type DialogMode = "closed" | "add" | "rotate" | "detail";
 
 const emptyAdd = {
   provider_slug: "",
@@ -45,6 +45,7 @@ export function AgentCredentialsSection({ agentId }: { agentId: string }) {
   const [rotateJson, setRotateJson] = useState("{}");
   const [rotateUseJson, setRotateUseJson] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [detailRow, setDetailRow] = useState<AgentCredentialBinding | null>(null);
 
   const reload = useCallback(async () => {
     setErr(null);
@@ -74,6 +75,16 @@ export function AgentCredentialsSection({ agentId }: { agentId: string }) {
     setRotateJson("{}");
     setRotateUseJson(false);
     setDialog("rotate");
+  }
+
+  function openDetail(row: AgentCredentialBinding) {
+    setDetailRow(row);
+    setDialog("detail");
+  }
+
+  function closeDetail() {
+    setDetailRow(null);
+    setDialog("closed");
   }
 
   async function submitAdd() {
@@ -149,7 +160,8 @@ export function AgentCredentialsSection({ agentId }: { agentId: string }) {
         <CardTitle className="text-subheading-lg">Credentials</CardTitle>
         <CardDescription>
           API tokens and MCP-related secrets are stored encrypted on Clawgotcha. The UI never shows
-          stored values — only metadata and version.{" "}
+          stored values — the table shows provider and kind; label, MCP server, and version are in{" "}
+          <span className="text-muted-foreground">View detail</span>.{" "}
           <span className="text-muted-foreground">
             Allowed <code className="text-caption">material_kind</code> values match the Clawgotcha
             OpenAPI enum (e.g. <code className="text-caption">api_key</code>,{" "}
@@ -175,14 +187,11 @@ export function AgentCredentialsSection({ agentId }: { agentId: string }) {
           <p className="text-muted-foreground text-body">No credentials yet.</p>
         ) : (
           <div className="overflow-x-auto rounded-md border border-border/60">
-            <table className="w-full min-w-[640px] text-left text-caption">
+            <table className="w-full min-w-[420px] text-left text-caption">
               <thead className="border-b border-border/60 bg-muted/40">
                 <tr>
-                  <th className="p-2 font-medium">Label</th>
                   <th className="p-2 font-medium">Provider</th>
-                  <th className="p-2 font-medium">MCP server</th>
                   <th className="p-2 font-medium">Kind</th>
-                  <th className="p-2 font-medium">Ver.</th>
                   <th className="p-2 font-medium">Secret updated</th>
                   <th className="p-2 font-medium text-right">Actions</th>
                 </tr>
@@ -190,13 +199,8 @@ export function AgentCredentialsSection({ agentId }: { agentId: string }) {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id} className="border-b border-border/40 last:border-0">
-                    <td className="p-2 align-top">{row.label}</td>
-                    <td className="p-2 align-top">{row.provider_slug}</td>
-                    <td className="p-2 align-top text-muted-foreground">
-                      {row.mcp_server_name?.trim() || "—"}
-                    </td>
+                    <td className="p-2 align-top font-medium">{row.provider_slug}</td>
                     <td className="p-2 align-top">{row.material_kind ?? "—"}</td>
-                    <td className="p-2 align-top">{row.current_version}</td>
                     <td className="p-2 align-top text-muted-foreground">
                       {fmtTime(row.secret_updated_at ?? undefined)}
                     </td>
@@ -207,18 +211,18 @@ export function AgentCredentialsSection({ agentId }: { agentId: string }) {
                         size="sm"
                         className="mr-2"
                         disabled={busy}
-                        onClick={() => openRotate(row)}
+                        onClick={() => openDetail(row)}
                       >
-                        Rotate
+                        View detail
                       </Button>
                       <Button
                         type="button"
                         variant="secondary"
                         size="sm"
                         disabled={busy}
-                        onClick={() => void onDelete(row)}
+                        onClick={() => openRotate(row)}
                       >
-                        Delete
+                        Rotate
                       </Button>
                     </td>
                   </tr>
@@ -321,7 +325,7 @@ export function AgentCredentialsSection({ agentId }: { agentId: string }) {
                 </label>
                 <Input
                   id="cred_secret"
-                  type="password"
+                  type="text"
                   value={addForm.secretText}
                   onChange={(e) => setAddForm((f) => ({ ...f, secretText: e.target.value }))}
                   autoComplete="new-password"
@@ -346,6 +350,89 @@ export function AgentCredentialsSection({ agentId }: { agentId: string }) {
             >
               {busy ? "Saving…" : "Save"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={dialog === "detail" && detailRow != null}
+        onOpenChange={(o) => {
+          if (!o) closeDetail();
+        }}
+      >
+        <DialogContent className="max-w-lg gap-0 border-border/80 p-0">
+          <DialogHeader className="border-0 px-6 pt-6">
+            <DialogTitle>Credential detail</DialogTitle>
+            <DialogDescription>
+              Metadata only — secret values are never shown.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody className="space-y-3 px-6 pb-2 text-body">
+            {detailRow && (
+              <dl className="grid grid-cols-[minmax(0,8rem)_1fr] gap-x-3 gap-y-2 text-caption">
+                <dt className="text-muted-foreground">Provider</dt>
+                <dd className="font-mono">{detailRow.provider_slug}</dd>
+                <dt className="text-muted-foreground">Label</dt>
+                <dd>{detailRow.label || "—"}</dd>
+                <dt className="text-muted-foreground">MCP server</dt>
+                <dd className="font-mono">{detailRow.mcp_server_name?.trim() || "—"}</dd>
+                <dt className="text-muted-foreground">Material kind</dt>
+                <dd>{detailRow.material_kind ?? "—"}</dd>
+                <dt className="text-muted-foreground">Version</dt>
+                <dd>{detailRow.current_version}</dd>
+                <dt className="text-muted-foreground">Has secret</dt>
+                <dd>{detailRow.has_secret ? "Yes" : "No"}</dd>
+                <dt className="text-muted-foreground">Expires</dt>
+                <dd>{fmtTime(detailRow.expires_at ?? undefined)}</dd>
+                <dt className="text-muted-foreground">Secret updated</dt>
+                <dd>{fmtTime(detailRow.secret_updated_at ?? undefined)}</dd>
+                <dt className="text-muted-foreground">Created</dt>
+                <dd>{fmtTime(detailRow.created_at)}</dd>
+                <dt className="text-muted-foreground">Updated</dt>
+                <dd>{fmtTime(detailRow.updated_at)}</dd>
+              </dl>
+            )}
+            {detailRow?.metadata != null && Object.keys(detailRow.metadata).length > 0 && (
+              <div>
+                <p className="text-caption text-muted-foreground mb-1.5">Metadata</p>
+                <pre className="max-h-48 overflow-auto rounded-md border border-border/60 bg-muted/30 p-3 font-mono text-caption">
+                  {JSON.stringify(detailRow.metadata, null, 2)}
+                </pre>
+              </div>
+            )}
+          </DialogBody>
+          <DialogFooter className="flex flex-wrap gap-2 px-6 pb-6">
+            <Button type="button" variant="secondary" onClick={closeDetail}>
+              Close
+            </Button>
+            {detailRow && (
+              <>
+                <Button
+                  type="button"
+                  disabled={busy}
+                  variant="secondary"
+                  onClick={() => {
+                    const row = detailRow;
+                    closeDetail();
+                    openRotate(row);
+                  }}
+                >
+                  Rotate
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={busy}
+                  onClick={() => {
+                    const row = detailRow;
+                    closeDetail();
+                    void onDelete(row);
+                  }}
+                >
+                  Delete
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

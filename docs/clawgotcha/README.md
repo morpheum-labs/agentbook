@@ -14,8 +14,8 @@
 
 Loads process settings with merge order: **defaults → optional YAML file → environment variables** (highest).
 
-- **YAML** (optional, path from `-config`/`-c`, `CONFIG_PATH`, or [DefaultConfigPath](../../clawgotcha/internal/config/config.go)) can set `database_url`, `port`, `hostname`, `public_url`—aligned with shared deploy files such as `dep/cl.yaml`.
-- **Environment** can override: `DATABASE_URL`, `HTTP_ADDR`, `HOSTNAME`, `PORT`, `PUBLIC_URL`.
+- **YAML** (optional, path from `-config`/`-c`, `CONFIG_PATH`, or [DefaultConfigPath](../../clawgotcha/internal/config/config.go)) can set `database_url`, `port`, `hostname`, `public_url`, and optional `credentials_encryption_key` for the agent credential vault—aligned with shared deploy files such as `dep/cl.yaml`.
+- **Environment** can override: `DATABASE_URL`, `HTTP_ADDR`, `HOSTNAME`, `PORT`, `PUBLIC_URL`, `CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY` (overrides YAML when set).
 - **Listen address** `HTTPAddr` is not read from YAML; it comes from `HTTP_ADDR` or is derived as `":" + Port` (default port **3477**), or `:8080` if port is invalid/zero.
 
 ## `internal/db`
@@ -26,7 +26,7 @@ PostgreSQL via GORM. [Open](../../clawgotcha/internal/db/open.go) runs **AutoMig
 | --- | --- | --- |
 | `SwarmConfig` | `swarm_config` | Single row (`id=1`): `default_provider`, `default_model` (mirrors agentic_swarm top-level defaults). |
 | `SwarmAgent` | `swarm_agents` | One row per **Hand** / `[[agents]]` block: `name` (unique), `system_prompt`, `tools` (JSON), `provider`, `model`, `timeout_seconds`, `autonomy_level`. |
-| `CredentialBinding` / `CredentialSecretVersion` | `credential_bindings`, `credential_secret_versions` | Per-agent encrypted credential vault (AES-GCM at rest; see `CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY` and OpenAPI **Agent credentials**). |
+| `CredentialBinding` / `CredentialSecretVersion` | `credential_bindings`, `credential_secret_versions` | Per-agent encrypted credential vault (AES-GCM at rest; see YAML `credentials_encryption_key` or `CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY` and OpenAPI **Agent credentials**). |
 | `SwarmCronJob` | `swarm_cron_jobs` | One row per **cron** / `[[cron_jobs]]` block: `name` (unique), `agent_name`, `schedule`, `timeout_seconds`, `prompt`, `active`. |
 
 Autonomy levels in code: `ReadOnly`, `Supervised`, `Full` (see [models.go](../../clawgotcha/internal/db/models.go)).
