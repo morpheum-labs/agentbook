@@ -87,6 +87,10 @@ type SwarmRuntimeInstance struct {
 	Status          string          `gorm:"not null;default:unknown;type:text;index"`
 	StartedAt       time.Time       `gorm:"not null;column:started_at"`
 	Metadata        json.RawMessage `gorm:"type:jsonb"`
+	// ApiSecretHash is SHA256(instance_api_secret) as 64-char lowercase hex (constant-time verify).
+	ApiSecretHash     string     `gorm:"type:text;column:api_secret_hash" json:"-"`
+	ApiSecretPrefix   string     `gorm:"type:text;column:api_secret_prefix" json:"api_secret_prefix,omitempty"`
+	ApiSecretIssuedAt *time.Time `gorm:"column:api_secret_issued_at" json:"api_secret_issued_at,omitempty"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

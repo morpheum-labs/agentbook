@@ -33,7 +33,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 		if v := r.Header.Get("Access-Control-Request-Headers"); v != "" {
 			w.Header().Set("Access-Control-Allow-Headers", v)
 		} else {
-			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization")
+			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization, X-Instance-Secret, X-API-Key")
 		}
 		w.Header().Set("Access-Control-Max-Age", "86400")
 		if r.Method == http.MethodOptions {
@@ -113,6 +113,9 @@ func NewRouter(gdb *gorm.DB, opts RouterOptions) http.Handler {
 		r.Get("/instances", s.listInstances)
 		r.Get("/instances/{instance_name}", s.getInstance)
 		r.Delete("/instances/{instance_name}", s.deleteInstance)
+
+		r.With(s.requireInstanceAuth).Get("/instances/{instance_name}/agents/by-name/{agent_name}/mcp-credentials", s.getAgentMcpCredentialsByName)
+		r.With(s.requireInstanceAuth).Get("/instances/{instance_name}/agents/{agent_id}/mcp-credentials", s.getAgentMcpCredentialsByID)
 
 		r.With(s.requireInternalToken).Post("/events/publish", s.publishEvent)
 		r.Get("/events", s.streamEvents)

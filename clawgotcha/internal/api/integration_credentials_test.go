@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -167,5 +168,114 @@ func TestIntegration_CredentialCreateRequiresEncryptionKey(t *testing.T) {
 	h.ServeHTTP(recC, reqC)
 	if recC.Code != http.StatusServiceUnavailable {
 		t.Fatalf("create without key: status %d body %s", recC.Code, recC.Body.String())
+	}
+}
+
+// TestIntegration_McpCredentialsReveal exercises instance secret + GET mcp-credentials.
+func TestIntegration_McpCredentialsReveal(t *testing.T) {
+	dsn := strings.TrimSpace(os.Getenv("DATABASE_URL"))
+	if dsn == "" {
+		t.Skip("DATABASE_URL not set")
+	}
+	g, err := db.Open(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mk, err := credentials.ParseMasterKey("0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20")
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := api.NewRouter(g, api.RouterOptions{CredentialsMasterKey: mk})
+
+	inst := "mcp-inst-" + strings.ReplaceAll(t.Name(), "/", "_")
+	regBody := map[string]any{
+		"instance_name": inst,
+		"hostname":      "test",
+		"version":       "1",
+		"callback_url":  "http://127.0.0.1:9/cb",
+	}
+	rb, _ := json.Marshal(regBody)
+	reqReg := httptest.NewRequest(http.MethodPost, "/api/v1/instances/register", bytes.NewReader(rb))
+	reqReg.Header.Set("Content-Type", "application/json")
+	recReg := httptest.NewRecorder()
+	h.ServeHTTP(recReg, reqReg)
+	if recReg.Code != http.StatusOK {
+		t.Fatalf("register: %d %s", recReg.Code, recReg.Body.String())
+	}
+	var regWrap map[string]any
+	if err := json.Unmarshal(recReg.Body.Bytes(), &regWrap); err != nil {
+		t.Fatal(err)
+	}
+	sec, _ := regWrap["instance_api_secret"].(string)
+	if sec == "" {
+		t.Fatalf("expected instance_api_secret on first register: %v", regWrap)
+	}
+
+	agentName := "mcp-agent-" + strings.ReplaceAll(strings.ReplaceAll(t.Name(), "/", "_"), " ", "_")
+	agentBody := map[string]any{
+		"name":            agentName,
+		"autonomy_level":  "ReadOnly",
+		"system_prompt":   "x",
+		"timeout_seconds": 30,
+	}
+	ab, _ := json.Marshal(agentBody)
+	reqA := httptest.NewRequest(http.MethodPost, "/api/v1/agents", bytes.NewReader(ab))
+	reqA.Header.Set("Content-Type", "application/json")
+	recA := httptest.NewRecorder()
+	h.ServeHTTP(recA, reqA)
+	if recA.Code != http.StatusCreated {
+		t.Fatalf("create agent: %d %s", recA.Code, recA.Body.String())
+	}
+	var agentWrap map[string]any
+	if err := json.Unmarshal(recA.Body.Bytes(), &agentWrap); err != nil {
+		t.Fatal(err)
+	}
+	ag, _ := agentWrap["agent"].(map[string]any)
+	agentID, _ := ag["ID"].(string)
+
+	mcpName := "github-enterprise"
+	createBody := map[string]any{
+		"provider_slug":   "github",
+		"label":           "default",
+		"material_kind":   "github_pat",
+		"mcp_server_name": mcpName,
+		"plaintext":       "ghp_reveal_test_token",
+	}
+	cb, _ := json.Marshal(createBody)
+	reqC := httptest.NewRequest(http.MethodPost, "/api/v1/agents/"+agentID+"/credentials", bytes.NewReader(cb))
+	reqC.Header.Set("Content-Type", "application/json")
+	recC := httptest.NewRecorder()
+	h.ServeHTTP(recC, reqC)
+	if recC.Code != http.StatusCreated {
+		t.Fatalf("create credential: %d %s", recC.Code, recC.Body.String())
+	}
+
+	revealPath := "/api/v1/instances/" + url.PathEscape(inst) + "/agents/by-name/" + url.PathEscape(agentName) + "/mcp-credentials"
+	reqBad := httptest.NewRequest(http.MethodGet, revealPath, nil)
+	reqBad.Header.Set("X-Instance-Secret", "deadbeef")
+	recBad := httptest.NewRecorder()
+	h.ServeHTTP(recBad, reqBad)
+	if recBad.Code != http.StatusForbidden {
+		t.Fatalf("wrong secret want 403 got %d %s", recBad.Code, recBad.Body.String())
+	}
+
+	reqOk := httptest.NewRequest(http.MethodGet, revealPath, nil)
+	reqOk.Header.Set("X-Instance-Secret", sec)
+	recOk := httptest.NewRecorder()
+	h.ServeHTTP(recOk, reqOk)
+	if recOk.Code != http.StatusOK {
+		t.Fatalf("reveal: %d %s", recOk.Code, recOk.Body.String())
+	}
+	var reveal map[string]any
+	if err := json.Unmarshal(recOk.Body.Bytes(), &reveal); err != nil {
+		t.Fatal(err)
+	}
+	bindings, _ := reveal["mcp_bindings"].([]any)
+	if len(bindings) != 1 {
+		t.Fatalf("expected 1 binding, got %v", reveal)
+	}
+	b0, _ := bindings[0].(map[string]any)
+	if b0["mcp_server_name"] != mcpName {
+		t.Fatalf("server name: %v", b0)
 	}
 }

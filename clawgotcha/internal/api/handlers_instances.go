@@ -32,6 +32,17 @@ func randomSecretHex(nBytes int) string {
 	return hex.EncodeToString(b)
 }
 
+// mintInstanceAPISecret returns plaintext token (64 hex chars), SHA256 hex hash for storage, and short prefix for ops.
+func mintInstanceAPISecret() (token, hashHex, prefix string) {
+	token = randomSecretHex(32)
+	hashHex = hashInstanceAPISecretHex(token)
+	prefix = token
+	if len(prefix) > 8 {
+		prefix = prefix[:8]
+	}
+	return token, hashHex, prefix
+}
+
 type registerInstanceBody struct {
 	InstanceName string          `json:"instance_name"`
 	InstanceType string          `json:"instance_type"`
@@ -70,20 +81,26 @@ func (s *Server) registerInstance(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC()
 
 	var inst db.SwarmRuntimeInstance
+	var instanceAPISecretOnce string // returned only when minted this response
 	err := s.db.Where("instance_name = ?", name).First(&inst).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
+		tok, hashHex, prefix := mintInstanceAPISecret()
+		instanceAPISecretOnce = tok
 		inst = db.SwarmRuntimeInstance{
-			InstanceName:    name,
-			InstanceType:    instType,
-			Version:         strings.TrimSpace(b.Version),
-			Hostname:        strings.TrimSpace(b.Hostname),
-			PublicURL:       b.PublicURL,
-			CallbackURL:     strings.TrimSpace(b.CallbackURL),
-			Capabilities:    caps,
-			LastHeartbeatAt: &now,
-			Status:          db.RuntimeStatusOnline,
-			StartedAt:       started,
-			Metadata:        b.Metadata,
+			InstanceName:      name,
+			InstanceType:      instType,
+			Version:           strings.TrimSpace(b.Version),
+			Hostname:          strings.TrimSpace(b.Hostname),
+			PublicURL:         b.PublicURL,
+			CallbackURL:       strings.TrimSpace(b.CallbackURL),
+			Capabilities:      caps,
+			LastHeartbeatAt:   &now,
+			Status:            db.RuntimeStatusOnline,
+			StartedAt:         started,
+			Metadata:          b.Metadata,
+			ApiSecretHash:     hashHex,
+			ApiSecretPrefix:   prefix,
+			ApiSecretIssuedAt: &now,
 		}
 		if err := s.db.Create(&inst).Error; err != nil {
 			httperr.Write(w, r, err)
@@ -104,6 +121,13 @@ func (s *Server) registerInstance(w http.ResponseWriter, r *http.Request) {
 		inst.StartedAt = started
 		if len(b.Metadata) > 0 {
 			inst.Metadata = b.Metadata
+		}
+		if strings.TrimSpace(inst.ApiSecretHash) == "" {
+			tok, hashHex, prefix := mintInstanceAPISecret()
+			instanceAPISecretOnce = tok
+			inst.ApiSecretHash = hashHex
+			inst.ApiSecretPrefix = prefix
+			inst.ApiSecretIssuedAt = &now
 		}
 		if err := s.db.Save(&inst).Error; err != nil {
 			httperr.Write(w, r, err)
@@ -134,10 +158,14 @@ func (s *Server) registerInstance(w http.ResponseWriter, r *http.Request) {
 		httperr.Write(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
+	out := map[string]any{
 		"instance":         inst,
 		"revision_summary": sum,
-	})
+	}
+	if instanceAPISecretOnce != "" {
+		out["instance_api_secret"] = instanceAPISecretOnce
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 type heartbeatBody struct {

@@ -3,7 +3,7 @@
   "info": {
     "title": "clawgotcha",
     "version": "1.0.0",
-    "description": "HTTP API for MiroClaw/ZeroClaw-style swarm agent metadata: default provider/model, Hands ([[agents]]), and cron jobs ([[cron_jobs]]) backed by PostgreSQL. **Errors** return JSON `{\"error\":{\"code\":\"...\",\"detail\":\"...\"}}` (see `Error`). `4xx` and `5xx` use the same error envelope.\n\n**Security (optional):** When `CLAWGOTCHA_API_KEY` is set, all `/api/v1/*` routes require `Authorization: Bearer <key>` or `X-API-Key: <key>`. Unauthenticated public routes: `GET /healthz`, `GET /openapi.json`, `GET /metrics`. Internal publish uses `CLAWGOTCHA_INTERNAL_TOKEN` for `POST /api/v1/events/publish`.\n\n**Credential vault:** Set `CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY` (32-byte raw, base64, or 64-char hex) so `POST` create and `POST` rotate can encrypt secrets at rest. Without it, those endpoints return **503**; `GET` list still works for inventory. Responses never include ciphertext or decrypted secrets.\n\n**Webhooks:** On agent/cron/config changes, Clawgotcha POSTs JSON (same shape as SSE `change` events — see `ChangeEventPayload`) to each registered runtime `callback_url`. The raw body is signed with **HMAC-SHA256** using the per-runtime subscription secret created at registration; verify using header **`X-Clawgotcha-Signature: sha256=<hex>`** (the signature is **not** duplicated inside the JSON body). Optional: `X-Clawgotcha-Event-Type` repeats `event_type`."
+    "description": "HTTP API for MiroClaw/ZeroClaw-style swarm agent metadata: default provider/model, Hands ([[agents]]), and cron jobs ([[cron_jobs]]) backed by PostgreSQL. **Errors** return JSON `{\"error\":{\"code\":\"...\",\"detail\":\"...\"}}` (see `Error`). `4xx` and `5xx` use the same error envelope.\n\n**Security (optional):** When `CLAWGOTCHA_API_KEY` is set, all `/api/v1/*` routes require `Authorization: Bearer <key>` or `X-API-Key: <key>`. Unauthenticated public routes: `GET /healthz`, `GET /openapi.json`, `GET /metrics`. Internal publish uses `CLAWGOTCHA_INTERNAL_TOKEN` for `POST /api/v1/events/publish`.\n\n**Runtime instance API secret:** On first registration (or when an existing row has no secret yet), `POST /api/v1/instances/register` returns `instance_api_secret` once. Runtimes send `Authorization: Bearer <instance_api_secret>` or `X-Instance-Secret` together with the global API key (when configured) to call `GET …/mcp-credentials` under `/instances/{instance_name}/…`.\n\n**Credential vault:** Set `CLAWGOTCHA_CREDENTIALS_ENCRYPTION_KEY` (32-byte raw, base64, or 64-char hex) so `POST` create and `POST` rotate can encrypt secrets at rest. Without it, those endpoints return **503**; `GET` list still works for inventory. Responses never include ciphertext or decrypted secrets.\n\n**Webhooks:** On agent/cron/config changes, Clawgotcha POSTs JSON (same shape as SSE `change` events — see `ChangeEventPayload`) to each registered runtime `callback_url`. The raw body is signed with **HMAC-SHA256** using the per-runtime subscription secret created at registration; verify using header **`X-Clawgotcha-Signature: sha256=<hex>`** (the signature is **not** duplicated inside the JSON body). Optional: `X-Clawgotcha-Event-Type` repeats `event_type`."
   },
   "servers": [
     {
@@ -645,6 +645,72 @@
         }
       }
     },
+    "/api/v1/instances/{instance_name}/agents/by-name/{agent_name}/mcp-credentials": {
+      "parameters": [
+        {
+          "name": "instance_name",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "agent_name",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "get": {
+        "tags": ["Instances"],
+        "summary": "Reveal MCP credential payloads for one agent (instance-authenticated)",
+        "description": "Requires `Authorization: Bearer <instance_api_secret>` or `X-Instance-Secret` (plus global API key when configured). Server decrypts vault rows where `mcp_server_name` is set; audit logged without payloads.",
+        "responses": {
+          "200": {
+            "description": "Plaintext MCP bindings",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/McpCredentialsRevealResponse" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "503": { "$ref": "#/components/responses/InternalError" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/instances/{instance_name}/agents/{agent_id}/mcp-credentials": {
+      "parameters": [
+        {
+          "name": "instance_name",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "agent_id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }
+      ],
+      "get": {
+        "tags": ["Instances"],
+        "summary": "Reveal MCP credential payloads by agent UUID (instance-authenticated)",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/McpCredentialsRevealResponse" }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "503": { "$ref": "#/components/responses/InternalError" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
     "/api/v1/instances/{instance_name}/heartbeat": {
       "parameters": [
         {
@@ -927,7 +993,11 @@
         "type": "object",
         "properties": {
           "instance": { "$ref": "#/components/schemas/SwarmRuntimeInstance" },
-          "revision_summary": { "$ref": "#/components/schemas/RevisionSummary" }
+          "revision_summary": { "$ref": "#/components/schemas/RevisionSummary" },
+          "instance_api_secret": {
+            "type": "string",
+            "description": "Returned only when a new secret was minted (new instance or legacy row without secret). Store securely; never logged."
+          }
         }
       },
       "SwarmRuntimeInstance": {
@@ -946,7 +1016,27 @@
           "StartedAt": { "type": "string", "format": "date-time" },
           "Metadata": { "type": "object" },
           "CreatedAt": { "type": "string", "format": "date-time" },
-          "UpdatedAt": { "type": "string", "format": "date-time" }
+          "UpdatedAt": { "type": "string", "format": "date-time" },
+          "api_secret_prefix": { "type": "string", "description": "Short prefix of instance API secret for ops display" },
+          "api_secret_issued_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "McpCredentialBindingReveal": {
+        "type": "object",
+        "required": ["mcp_server_name", "material_kind", "payload"],
+        "properties": {
+          "mcp_server_name": { "type": "string", "description": "Must match Miroclaw `[[mcp.servers]].name`" },
+          "material_kind": { "type": "string", "example": "github_pat" },
+          "payload": { "description": "Decrypted JSON (shape depends on material_kind)" }
+        }
+      },
+      "McpCredentialsRevealResponse": {
+        "type": "object",
+        "required": ["agent_name", "mcp_bindings", "revision"],
+        "properties": {
+          "agent_name": { "type": "string" },
+          "mcp_bindings": { "type": "array", "items": { "$ref": "#/components/schemas/McpCredentialBindingReveal" } },
+          "revision": { "type": "integer", "format": "int64", "description": "Agent `current_revision` (bumps on credential changes)" }
         }
       },
       "HeartbeatRequest": {

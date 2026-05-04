@@ -235,6 +235,9 @@ func (s *Server) createAgentCredential(w http.ResponseWriter, r *http.Request) {
 		if err := tx.Create(&ver).Error; err != nil {
 			return err
 		}
+		if err := db.IncrementAgentRevision(tx, agentID); err != nil {
+			return err
+		}
 		return tx.First(&out, "id = ?", bind.ID).Error
 	}); err != nil {
 		if isUniqueViolation(err) {
@@ -277,6 +280,10 @@ func (s *Server) deleteAgentCredential(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.db.Delete(&bind).Error; err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	if err := db.IncrementAgentRevision(s.db, agentID); err != nil {
 		httperr.Write(w, r, err)
 		return
 	}
@@ -347,6 +354,10 @@ func (s *Server) rotateAgentCredential(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:    now,
 	}
 	if err := s.db.Create(&ver).Error; err != nil {
+		httperr.Write(w, r, err)
+		return
+	}
+	if err := db.IncrementAgentRevision(s.db, agentID); err != nil {
 		httperr.Write(w, r, err)
 		return
 	}
