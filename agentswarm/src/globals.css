@@ -644,3 +644,20 @@ textarea:focus-visible {
     padding-inline: 0.75rem;
   }
 }
+
+/*
+ * Do not pin these to light-theme literals in @layer utilities — it overrides Tailwind’s
+ * semantic colors and breaks dark mode:
+ *   `.text-foreground { color: var(--terminal-ink); }`
+ *   `.text-muted-foreground { color: #4a5c46; }`
+ * Theme tokens: @theme sets light values; `.dark` sets `--color-foreground` / `--color-muted-foreground`.
+ */
+@layer utilities {
+  .dark .text-foreground {
+    color: var(--color-foreground);
+  }
+
+  .dark .text-muted-foreground {
+    color: var(--color-muted-foreground);
+  }
+}

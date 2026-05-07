@@ -184,7 +184,7 @@ export function RuntimeInstanceCard({
 
       {onPairAndChat && (
         <div className="relative border-t border-border/60 bg-muted/20 px-5 py-4 sm:px-6">
-          <Button type="button" size="sm" variant="secondary" className="rounded-none" onClick={onPairAndChat}>
+          <Button type="button" size="sm" variant="secondary" onClick={onPairAndChat}>
             <MessagesSquare className="size-4" />
             Pair gateway & multi-agent chat
           </Button>

@@ -153,7 +153,7 @@ export function RuntimeGatewayPairView({ instance, onBack }: RuntimeGatewayPairV
           type="button"
           variant="ghost"
           size="sm"
-          className="-ml-2 mb-3 rounded-lg gap-1.5 text-muted-foreground hover:text-foreground"
+          className="-ml-2 mb-3 gap-1.5 text-muted-foreground hover:text-foreground"
           onClick={onBack}
         >
           <ArrowLeft className="size-4" aria-hidden />
@@ -204,7 +204,6 @@ export function RuntimeGatewayPairView({ instance, onBack }: RuntimeGatewayPairV
             type="button"
             size="sm"
             variant="secondary"
-            className="rounded-lg"
             disabled={!httpBase || !!busy}
             onClick={() => void onFetchCurrent()}
           >
@@ -213,7 +212,6 @@ export function RuntimeGatewayPairView({ instance, onBack }: RuntimeGatewayPairV
           <Button
             type="button"
             size="sm"
-            className="rounded-lg"
             disabled={!httpBase || !!busy}
             onClick={() => void onGenerateNew()}
           >
@@ -246,7 +244,7 @@ export function RuntimeGatewayPairView({ instance, onBack }: RuntimeGatewayPairV
         <Button
           type="button"
           size="sm"
-          className="w-full rounded-lg sm:w-auto"
+          className="w-full sm:w-auto"
           disabled={!httpBase || !!busy}
           onClick={() => void onPairAndOpenChat()}
         >
@@ -266,7 +264,7 @@ export function RuntimeGatewayPairView({ instance, onBack }: RuntimeGatewayPairV
             rows={2}
             className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring mt-1 flex w-full resize-y rounded-md border px-3 py-2 font-mono text-caption-body shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           />
-          <Button type="button" variant="outline" size="sm" className="mt-2 rounded-lg" onClick={onSavePastedToken}>
+          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={onSavePastedToken}>
             Save token & open chat
           </Button>
         </div>

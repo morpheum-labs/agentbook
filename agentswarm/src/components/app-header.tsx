@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { TerminalFxHeroDecor } from "@/components/terminal-fx-context";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TerminalFxToggle } from "@/components/terminal-fx-toggle";
 import { cn } from "@/lib/utils";
@@ -40,13 +41,15 @@ export function AppHeader() {
   return (
     <header
       className={cn(
+        "terminal-fx-hero relative isolate overflow-hidden",
         "app-header-preview-dark border-b border-dotted backdrop-blur-[var(--terminal-tab-blur)]",
         "sticky top-0 z-[var(--z-app-header)]",
         "border-primary bg-[color-mix(in_srgb,var(--pure-white)_78%,transparent)]",
         "dark:border-primary dark:bg-[rgba(var(--terminal-bg-rgb),0.32)]"
       )}
     >
-      <div className="container-app flex flex-col gap-0 py-4 sm:py-5">
+      <TerminalFxHeroDecor />
+      <div className="relative z-10 container-app flex flex-col gap-0 py-4 sm:py-5">
         <div className="flex w-full flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-2">
             <h2 id="themes">Clawgotcha</h2>

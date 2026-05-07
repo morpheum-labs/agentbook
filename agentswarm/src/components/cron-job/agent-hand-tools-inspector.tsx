@@ -121,9 +121,8 @@ export function AgentHandToolsInspector({
                 setSelected(n);
               }}
               className={cn(
-                "h-8 max-w-full shrink-0 cursor-pointer rounded-md px-2.5 text-caption",
-                "font-mono",
-                !inCatalog && "border-amber-500/40 bg-amber-500/5"
+                "h-8 max-w-full shrink-0 cursor-pointer px-2.5 text-caption font-mono",
+                !inCatalog && "text-amber-800 dark:text-amber-200"
               )}
               title={inCatalog ? "In local reference" : "Not in bundled reference — click for name only"}
               aria-pressed={selected === n}

@@ -219,11 +219,7 @@ export function AgentNewPage() {
               </div>
 
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  className="h-9 rounded-lg border-0 bg-primary text-primary-foreground hover:opacity-95 shadow-sm"
-                >
+                <Button type="submit" disabled={saving}>
                   {saving ? "Creating…" : "Create agent"}
                 </Button>
                 <Button

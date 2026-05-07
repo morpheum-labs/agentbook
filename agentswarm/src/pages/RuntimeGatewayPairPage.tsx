@@ -55,7 +55,7 @@ export function RuntimeGatewayPairPage() {
           <p className="text-destructive text-body" role="alert">
             {err}
           </p>
-          <Button type="button" variant="secondary" size="sm" className="rounded-lg" asChild>
+          <Button type="button" variant="secondary" size="sm" asChild>
             <Link to="/instances">Back to runtimes</Link>
           </Button>
         </div>

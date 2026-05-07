@@ -337,7 +337,6 @@ export function MultiAgentChatPanel({
             size="sm"
             disabled={inFlight || sendDisabled}
             onClick={() => void onSend()}
-            className="rounded-lg"
           >
             <Send className="size-4" />
             Send

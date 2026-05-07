@@ -35,19 +35,11 @@ export function AgentListPage() {
               size="sm"
               onClick={load}
               disabled={agents === null && !err}
-              className={cn(
-                "h-9 rounded-lg border border-border/60 bg-accent/50 shadow-sm",
-                "text-foreground hover:bg-accent/80"
-              )}
             >
               <RefreshCw className="size-4" />
               Refresh
             </Button>
-            <Button
-              size="sm"
-              asChild
-              className="h-9 rounded-lg border-0 bg-primary text-primary-foreground hover:opacity-95 shadow-sm"
-            >
+            <Button size="sm" asChild>
               <Link to="/agents/new" className="inline-flex items-center gap-1.5">
                 <PlusCircle className="size-4" />
                 New agent
@@ -83,12 +75,7 @@ export function AgentListPage() {
                           {a.ID}
                         </p>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="h-9 rounded-xl border border-border/60 bg-accent/50 shadow-sm hover:bg-accent/80"
-                        asChild
-                      >
+                      <Button size="sm" variant="secondary" asChild>
                         <Link
                           to={`/agents/${a.ID}`}
                           className="inline-flex items-center gap-1.5"

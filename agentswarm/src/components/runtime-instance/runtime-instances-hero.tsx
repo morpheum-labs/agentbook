@@ -1,4 +1,5 @@
 import { MessagesSquare, RefreshCw, Server } from "lucide-react";
+import { TerminalFxHeroDecor } from "@/components/terminal-fx-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -20,13 +21,14 @@ export function RuntimeInstancesHero({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-none border border-surface-hero-border bg-surface-hero-gradient",
+        "terminal-fx-hero relative isolate overflow-hidden rounded-none border border-surface-hero-border bg-surface-hero-gradient",
         "px-6 py-8 sm:px-8 sm:py-10 text-surface-hero-foreground",
         "shadow-elevation-2",
         className
       )}
     >
-      <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <TerminalFxHeroDecor />
+      <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-2">
           <p className="text-caption text-surface-hero-muted inline-flex items-center gap-2">
             <Server className="size-3.5 shrink-0 opacity-90" aria-hidden />
@@ -48,11 +50,6 @@ export function RuntimeInstancesHero({
               size="sm"
               onClick={onPairAndChat}
               disabled={pairChatDisabled}
-              className={cn(
-                "h-9 rounded-none border border-primary/50 bg-card/40",
-                "text-surface-hero-foreground hover:bg-card/70",
-                "disabled:opacity-50"
-              )}
             >
               <MessagesSquare className="size-4" />
               Pair & chat
@@ -64,11 +61,6 @@ export function RuntimeInstancesHero({
             size="sm"
             onClick={onRefresh}
             disabled={refreshDisabled}
-            className={cn(
-              "h-9 rounded-none border border-primary/50 bg-card/40",
-              "text-surface-hero-foreground hover:bg-card/70",
-              "disabled:opacity-50"
-            )}
           >
             <RefreshCw className="size-4" />
             Refresh

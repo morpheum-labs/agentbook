@@ -141,7 +141,7 @@ export function CronJobEditPage() {
           <p className="text-destructive text-body" role="alert">
             {err}
           </p>
-          <Button className="mt-6 rounded-xl" variant="outline" asChild>
+          <Button className="mt-6" variant="outline" asChild>
             <Link to="/cron-jobs">Back to cron jobs</Link>
           </Button>
         </div>
@@ -319,7 +319,7 @@ export function CronJobEditPage() {
             </CronJobFieldGroup>
 
             <div className="flex flex-wrap gap-2 border-t border-border/60 pt-5">
-              <Button type="submit" disabled={saving || deleting} className="rounded-xl">
+              <Button type="submit" disabled={saving || deleting}>
                 {saving ? "Saving…" : "Save changes"}
               </Button>
               <Button
@@ -330,7 +330,6 @@ export function CronJobEditPage() {
                   void fetchCronJob(id).then((cj) => setForm(cronToForm(cj)));
                 }}
                 disabled={saving || deleting}
-                className="rounded-xl"
               >
                 Revert
               </Button>
@@ -343,7 +342,6 @@ export function CronJobEditPage() {
               variant="destructive"
               onClick={() => void onDelete()}
               disabled={saving || deleting}
-              className="rounded-xl"
             >
               {deleting ? "Deleting…" : "Delete job"}
             </Button>

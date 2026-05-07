@@ -199,7 +199,7 @@ export function CronScheduleModal({ open, onOpenChange, value, onApply }: CronSc
             Cancel
           </Button>
           <div className="flex gap-2">
-            <Button type="button" variant="outline" className="rounded-lg" onClick={handleApply}>
+            <Button type="button" variant="outline" onClick={handleApply}>
               Apply
             </Button>
           </div>

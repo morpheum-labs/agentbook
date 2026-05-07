@@ -19,7 +19,7 @@ export function CronJobCard({ job, className }: CronJobCardProps) {
     <article
       aria-label={`Cron job: ${job.Name}, ${isActive ? "active" : "paused"}`}
       className={cn(
-        "group relative overflow-hidden rounded-none border border-border bg-card shadow-elevation-2",
+        "group relative overflow-hidden rounded-none border border-border bg-card text-card-foreground shadow-elevation-2",
         "transition-[box-shadow,filter] duration-300 hover:shadow-elevation-3 hover:contrast-[1.02]",
         !isActive && "opacity-95"
       )}
@@ -126,12 +126,7 @@ export function CronJobCard({ job, className }: CronJobCardProps) {
               </div>
             </div>
             <div className="shrink-0 sm:pt-0.5">
-              <Button
-                size="sm"
-                variant="secondary"
-                className="h-9 rounded-none border-border bg-accent/60 hover:bg-accent"
-                asChild
-              >
+              <Button size="sm" variant="secondary" asChild>
                 <Link to={`/cron-jobs/${job.ID}`} className="inline-flex items-center gap-1.5">
                   Edit
                   <ArrowUpRight className="size-4" aria-hidden />

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Gantt, Willow } from "@svar-ui/react-gantt";
+import { Gantt, Willow, WillowDark } from "@svar-ui/react-gantt";
 import type { IColumnConfig } from "@svar-ui/react-gantt";
 import type { IConfig, ITask, IApi, IScaleConfig } from "@svar-ui/gantt-store";
 import type { ICellProps } from "@svar-ui/react-grid";
@@ -9,6 +9,7 @@ import { Timer } from "lucide-react";
 import type { CronScheduleTimelineResponse, CronScheduleTimelineRow } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useHtmlTheme } from "@/lib/theme-utils";
 import { cn } from "@/lib/utils";
 
 import "@svar-ui/react-gantt/all.css";
@@ -357,9 +358,11 @@ function renderCell(props: ICellProps) {
 }
 
 export function CronScheduleGantt({ data, loading, error, className }: CronScheduleGanttProps) {
+  const htmlTheme = useHtmlTheme();
+  const GanttShell = htmlTheme === "dark" ? WillowDark : Willow;
   const ganttRef = useRef<IApi | null>(null);
   const [timeScale, setTimeScale] = useState<TimeScaleId>("hour");
-  const ganttKey = data ? `${data.as_of}-${data.horizon_ends}-${timeScale}` : "empty";
+  const ganttKey = data ? `${data.as_of}-${data.horizon_ends}-${timeScale}-${htmlTheme}` : "empty";
 
   const { t0, t1, ganttConfig, timelineTopPx } = useMemo(() => {
     if (data == null) {
@@ -486,11 +489,7 @@ export function CronScheduleGantt({ data, loading, error, className }: CronSched
                   type="button"
                   size="xs"
                   variant={timeScale === id ? "default" : "secondary"}
-                  className={cn(
-                    "font-medium",
-                    timeScale !== id &&
-                      "border border-border/60 bg-accent/50 text-foreground shadow-sm hover:bg-accent/80"
-                  )}
+                  className="font-medium"
                   onClick={() => setTimeScale(id)}
                 >
                   {label}
@@ -511,7 +510,7 @@ export function CronScheduleGantt({ data, loading, error, className }: CronSched
               minHeight: 320,
             }}
           >
-            <Willow fonts>
+            <GanttShell fonts>
               <div className="h-full min-h-0 w-full overflow-hidden">
                 <Gantt
                   key={ganttKey}
@@ -524,7 +523,7 @@ export function CronScheduleGantt({ data, loading, error, className }: CronSched
                   cellBorders="column"
                 />
               </div>
-            </Willow>
+            </GanttShell>
             <GanttCurrentTimeLine
               t0Ms={t0}
               t1Ms={t1}

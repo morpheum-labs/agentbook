@@ -118,7 +118,6 @@ export function MiroclawToolsField({
             title={p.title}
             disabled={disabled}
             onClick={() => applyPreset(p.tools)}
-            className="border border-border/60 bg-accent/50 text-foreground shadow-sm hover:bg-accent/80"
           >
             {p.label}
           </Button>

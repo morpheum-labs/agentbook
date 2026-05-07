@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Plus, RefreshCw, Sparkles } from "lucide-react";
+import { TerminalFxHeroDecor } from "@/components/terminal-fx-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -16,13 +17,14 @@ export function CronJobsHero({ onRefresh, refreshDisabled, className }: CronJobs
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-none border border-surface-hero-border bg-surface-hero-gradient",
+        "terminal-fx-hero relative isolate overflow-hidden rounded-none border border-surface-hero-border bg-surface-hero-gradient",
         "px-6 py-8 sm:px-8 sm:py-10 text-surface-hero-foreground",
         "shadow-elevation-2",
         className
       )}
     >
-      <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <TerminalFxHeroDecor />
+      <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-2">
           <p className="text-caption text-surface-hero-muted inline-flex items-center gap-2">
             <Sparkles className="size-3.5 shrink-0 opacity-90" aria-hidden />
@@ -41,20 +43,11 @@ export function CronJobsHero({ onRefresh, refreshDisabled, className }: CronJobs
             size="sm"
             onClick={onRefresh}
             disabled={refreshDisabled}
-            className={cn(
-              "h-9 rounded-none border border-primary/50 bg-card/40",
-              "text-surface-hero-foreground hover:bg-card/70",
-              "disabled:opacity-50"
-            )}
           >
             <RefreshCw className="size-4" />
             Refresh
           </Button>
-          <Button
-            size="sm"
-            asChild
-            className="h-9 rounded-none bg-primary text-primary-foreground hover:opacity-95 shadow-elevation-1"
-          >
+          <Button size="sm" asChild>
             <Link to="/cron-jobs/new" className="inline-flex items-center gap-1.5">
               <Plus className="size-4" />
               New job

@@ -54,10 +54,9 @@ function TerminalFxSnow({ enabled }: { enabled: boolean }) {
       const size = Math.random() * snowflakeSize + 0.25;
       snowflake.style.width = `${size}px`;
       snowflake.style.height = `${size}px`;
-      snowflake.style.left = `${Math.random() * 100}vw`;
+      snowflake.style.left = `${Math.random() * 100}%`;
       snowflake.style.top = `${Math.random() * -20}vh`;
       snowflake.style.opacity = `${Math.random() * 0.6 + 0.1}`;
-      snowflake.style.zIndex = "-1";
 
       let anim =
         `terminal-snowflake-fall ${snowflakeDuration + Math.random() * 10}s linear infinite`;
@@ -80,13 +79,21 @@ function TerminalFxSnow({ enabled }: { enabled: boolean }) {
   return (
     <div
       ref={ref}
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      className="pointer-events-none absolute inset-0 z-[1] overflow-hidden"
       aria-hidden
     />
   );
 }
 
-function TerminalFxLayers({ mode, isDark }: { mode: TerminalFxMode; isDark: boolean }) {
+/** Full-viewport CRT / scanlines when terminal FX are active (same stacking as original app-wide layers). */
+function TerminalFxGlobalCrt({ mode, isDark }: { mode: TerminalFxMode; isDark: boolean }) {
+  const active = isDark && mode !== "off";
+  if (!active) return null;
+  return <div className="terminal-fx-crt" aria-hidden />;
+}
+
+/** Rain / snow / noise / grunge scoped to a `.terminal-fx-hero` ancestor — does not alter the main page background. */
+export function TerminalFxHeroLayers({ mode, isDark }: { mode: TerminalFxMode; isDark: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const active = isDark && mode !== "off";
   const winter = mode === "winter";
@@ -121,7 +128,6 @@ function TerminalFxLayers({ mode, isDark }: { mode: TerminalFxMode; isDark: bool
       <TerminalFxSnow enabled={winter} />
       <div className="terminal-fx-noise" aria-hidden />
       <div className="terminal-fx-grunge" aria-hidden />
-      <div className="terminal-fx-crt" aria-hidden />
     </>
   );
 }
@@ -166,10 +172,17 @@ export function TerminalFxProvider({ children }: { children: ReactNode }) {
 
   return (
     <TerminalFxContext.Provider value={value}>
-      <TerminalFxLayers mode={mode} isDark={isDark} />
+      <TerminalFxGlobalCrt mode={mode} isDark={isDark} />
       {children}
     </TerminalFxContext.Provider>
   );
+}
+
+/** Use inside a container with class `terminal-fx-hero` (see CronJobsHero / RuntimeInstancesHero). */
+export function TerminalFxHeroDecor() {
+  const { mode } = useTerminalFx();
+  const isDark = useHtmlHasClass("dark");
+  return <TerminalFxHeroLayers mode={mode} isDark={isDark} />;
 }
 
 export function useTerminalFx(): TerminalFxContextValue {

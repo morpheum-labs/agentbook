@@ -216,7 +216,7 @@ export function CronJobNewPage() {
           )}
 
           <div className="flex flex-wrap gap-2 border-t border-border/60 pt-5">
-            <Button type="submit" disabled={saving || agentNames.length === 0} className="rounded-xl">
+            <Button type="submit" disabled={saving || agentNames.length === 0}>
               {saving ? "Creating…" : "Create job"}
             </Button>
             <Button
@@ -224,7 +224,6 @@ export function CronJobNewPage() {
               variant="outline"
               onClick={() => void navigate(-1)}
               disabled={saving}
-              className="rounded-xl"
             >
               Cancel
             </Button>

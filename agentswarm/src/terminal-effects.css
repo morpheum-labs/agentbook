@@ -16,13 +16,13 @@
   --terminal-fx-info-glow: #ffffff;
 }
 
-/* Rain — behind app chrome */
-.terminal-fx-rain {
-  position: fixed;
+/* Rain / overlays — only inside page heroes (.terminal-fx-hero), not full-page background */
+.terminal-fx-hero .terminal-fx-rain {
+  position: absolute;
   overflow: hidden;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   pointer-events: none;
   z-index: 0;
@@ -30,36 +30,36 @@
   display: none;
 }
 
-html.dark.terminal-effects-on:not(.terminal-fx-winter) .terminal-fx-rain {
+html.dark.terminal-effects-on:not(.terminal-fx-winter) .terminal-fx-hero .terminal-fx-rain {
   display: block;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.dark.terminal-effects-on .terminal-fx-rain {
+  html.dark.terminal-effects-on .terminal-fx-hero .terminal-fx-rain {
     display: none !important;
   }
 }
 
-.terminal-fx-noise,
-.terminal-fx-grunge {
-  position: fixed;
+.terminal-fx-hero .terminal-fx-noise,
+.terminal-fx-hero .terminal-fx-grunge {
+  position: absolute;
   overflow: hidden;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  z-index: 5;
+  z-index: 2;
   display: none;
 }
 
-html.dark.terminal-effects-on .terminal-fx-noise,
-html.dark.terminal-effects-on .terminal-fx-grunge {
+html.dark.terminal-effects-on .terminal-fx-hero .terminal-fx-noise,
+html.dark.terminal-effects-on .terminal-fx-hero .terminal-fx-grunge {
   display: block;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.dark.terminal-effects-on .terminal-fx-noise,
-  html.dark.terminal-effects-on .terminal-fx-grunge {
+  html.dark.terminal-effects-on .terminal-fx-hero .terminal-fx-noise,
+  html.dark.terminal-effects-on .terminal-fx-hero .terminal-fx-grunge {
     display: none !important;
   }
 }
@@ -103,7 +103,7 @@ html.dark.terminal-effects-on .terminal-fx-grunge {
   }
 }
 
-/* CRT scanlines + RGB stripes — full viewport */
+/* CRT scanlines + RGB stripes — full viewport (global overlay, pointer-events none) */
 .terminal-fx-crt {
   position: fixed;
   inset: 0;
@@ -136,27 +136,27 @@ html.dark.terminal-effects-on .terminal-fx-crt::before {
   }
 }
 
-/* Neon glow on copy — effects.css parity */
+/* Neon glow on copy — hero panels only */
 @media (prefers-reduced-motion: no-preference) {
-  html.dark.terminal-effects-on #root pre,
-  html.dark.terminal-effects-on #root p,
-  html.dark.terminal-effects-on #root li,
-  html.dark.terminal-effects-on #root h1,
-  html.dark.terminal-effects-on #root h2,
-  html.dark.terminal-effects-on #root h3,
-  html.dark.terminal-effects-on #root h4,
-  html.dark.terminal-effects-on #root td,
-  html.dark.terminal-effects-on #root summary,
-  html.dark.terminal-effects-on #root span,
-  html.dark.terminal-effects-on #root em {
+  html.dark.terminal-effects-on .terminal-fx-hero pre,
+  html.dark.terminal-effects-on .terminal-fx-hero p,
+  html.dark.terminal-effects-on .terminal-fx-hero li,
+  html.dark.terminal-effects-on .terminal-fx-hero h1,
+  html.dark.terminal-effects-on .terminal-fx-hero h2,
+  html.dark.terminal-effects-on .terminal-fx-hero h3,
+  html.dark.terminal-effects-on .terminal-fx-hero h4,
+  html.dark.terminal-effects-on .terminal-fx-hero td,
+  html.dark.terminal-effects-on .terminal-fx-hero summary,
+  html.dark.terminal-effects-on .terminal-fx-hero span,
+  html.dark.terminal-effects-on .terminal-fx-hero em {
     text-shadow:
       0 0 7px var(--terminal-main-40),
       0 0 25px var(--terminal-main),
       0 0 40px var(--terminal-main);
   }
 
-  html.dark.terminal-effects-on #root .text-destructive,
-  html.dark.terminal-effects-on #root .text-destructive em {
+  html.dark.terminal-effects-on .terminal-fx-hero .text-destructive,
+  html.dark.terminal-effects-on .terminal-fx-hero .text-destructive em {
     text-shadow:
       0 0 7px var(--terminal-fx-warning-glow),
       0 0 20px var(--terminal-fx-warning-glow),
@@ -165,15 +165,15 @@ html.dark.terminal-effects-on .terminal-fx-crt::before {
 }
 
 @media (max-width: 768px) {
-  html.dark.terminal-effects-on #root pre,
-  html.dark.terminal-effects-on #root p,
-  html.dark.terminal-effects-on #root li,
-  html.dark.terminal-effects-on #root h1,
-  html.dark.terminal-effects-on #root h2,
-  html.dark.terminal-effects-on #root h3,
-  html.dark.terminal-effects-on #root h4,
-  html.dark.terminal-effects-on #root td,
-  html.dark.terminal-effects-on #root summary {
+  html.dark.terminal-effects-on .terminal-fx-hero pre,
+  html.dark.terminal-effects-on .terminal-fx-hero p,
+  html.dark.terminal-effects-on .terminal-fx-hero li,
+  html.dark.terminal-effects-on .terminal-fx-hero h1,
+  html.dark.terminal-effects-on .terminal-fx-hero h2,
+  html.dark.terminal-effects-on .terminal-fx-hero h3,
+  html.dark.terminal-effects-on .terminal-fx-hero h4,
+  html.dark.terminal-effects-on .terminal-fx-hero td,
+  html.dark.terminal-effects-on .terminal-fx-hero summary {
     text-shadow:
       0 0 9px var(--terminal-main-40),
       0 0 14px var(--terminal-main);
@@ -181,26 +181,26 @@ html.dark.terminal-effects-on .terminal-fx-crt::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.dark.terminal-effects-on #root pre,
-  html.dark.terminal-effects-on #root p,
-  html.dark.terminal-effects-on #root li,
-  html.dark.terminal-effects-on #root h1,
-  html.dark.terminal-effects-on #root h2,
-  html.dark.terminal-effects-on #root h3,
-  html.dark.terminal-effects-on #root h4,
-  html.dark.terminal-effects-on #root td,
-  html.dark.terminal-effects-on #root summary,
-  html.dark.terminal-effects-on #root span,
-  html.dark.terminal-effects-on #root em {
+  html.dark.terminal-effects-on .terminal-fx-hero pre,
+  html.dark.terminal-effects-on .terminal-fx-hero p,
+  html.dark.terminal-effects-on .terminal-fx-hero li,
+  html.dark.terminal-effects-on .terminal-fx-hero h1,
+  html.dark.terminal-effects-on .terminal-fx-hero h2,
+  html.dark.terminal-effects-on .terminal-fx-hero h3,
+  html.dark.terminal-effects-on .terminal-fx-hero h4,
+  html.dark.terminal-effects-on .terminal-fx-hero td,
+  html.dark.terminal-effects-on .terminal-fx-hero summary,
+  html.dark.terminal-effects-on .terminal-fx-hero span,
+  html.dark.terminal-effects-on .terminal-fx-hero em {
     text-shadow: none !important;
   }
 }
 
-/* Snow — winter preset */
-.terminal-fx-snowflake {
-  position: fixed;
+/* Snow — winter preset (positioned inside .terminal-fx-hero) */
+.terminal-fx-hero .terminal-fx-snowflake {
+  position: absolute;
   animation-timing-function: linear;
-  z-index: 4;
+  z-index: 1;
   background: white;
   border-radius: 50%;
   pointer-events: none;
@@ -235,7 +235,7 @@ html.dark.terminal-effects-on .terminal-fx-crt::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.dark.terminal-effects-on .terminal-fx-snowflake {
+  html.dark.terminal-effects-on .terminal-fx-hero .terminal-fx-snowflake {
     animation: none !important;
     display: none !important;
   }
