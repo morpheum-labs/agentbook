@@ -30,7 +30,7 @@ export function CronJobFormLayout({
 }: CronJobFormLayoutProps) {
   return (
     <div className={className}>
-      <div className="container-app max-w-5xl py-8 sm:py-10">
+      <div className="container-app py-8 sm:py-10">
         <p className="text-caption text-muted-foreground mb-3">
           <Link
             to="/cron-jobs"

@@ -84,7 +84,7 @@ export function AgentEditPage() {
   }
 
   return (
-    <div className="container-app max-w-3xl py-8">
+    <div className="container-app py-8">
         <Card>
           <CardHeader>
             <CardTitle className="text-subheading-lg">Edit agent</CardTitle>

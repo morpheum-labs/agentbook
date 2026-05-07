@@ -4,10 +4,6 @@ import { TerminalFxToggle } from "@/components/terminal-fx-toggle";
 import { cn } from "@/lib/utils";
 import { useHtmlTheme } from "@/lib/theme-utils";
 
-type AppHeaderProps = {
-  maxWidthClassName?: string;
-};
-
 /** Live token rows — matches preview-dark.html swatch hex lines for light / ocean dark. */
 const LIVE_TOKEN_HEX = {
   light: {
@@ -37,7 +33,7 @@ const NAV_PRESETS: NavPreset[] = [
  * `.toolbar` buttons, `h2#themes` + `.section-desc` + `.theme-grid`,
  * `h2#tokens` + `.swatches` / `.swatch` / `.swatch-color` / `.swatch-label` / `.swatch-hex`.
  */
-export function AppHeader({ maxWidthClassName = "max-w-4xl" }: AppHeaderProps) {
+export function AppHeader() {
   const htmlTheme = useHtmlTheme();
   const hex = LIVE_TOKEN_HEX[htmlTheme];
 
@@ -50,12 +46,7 @@ export function AppHeader({ maxWidthClassName = "max-w-4xl" }: AppHeaderProps) {
         "dark:border-primary dark:bg-[rgba(var(--terminal-bg-rgb),0.32)]"
       )}
     >
-      <div
-        className={cn(
-          "container-app flex flex-col gap-0 py-4 sm:py-5",
-          maxWidthClassName
-        )}
-      >
+      <div className="container-app flex flex-col gap-0 py-4 sm:py-5">
         <div className="flex w-full flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col gap-2">
             <h2 id="themes">Clawgotcha</h2>

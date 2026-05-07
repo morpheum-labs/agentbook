@@ -136,7 +136,7 @@ export function CronJobEditPage() {
 
   if (err && !form && !loading) {
     return (
-      <div className="container-app max-w-5xl py-12">
+      <div className="container-app py-12">
         <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-elevation-2">
           <p className="text-destructive text-body" role="alert">
             {err}
@@ -152,7 +152,7 @@ export function CronJobEditPage() {
   return (
     <>
       {loading && (
-        <div className="container-app max-w-5xl py-16 text-muted-foreground text-body">Loading…</div>
+        <div className="container-app py-16 text-muted-foreground text-body">Loading…</div>
       )}
 
       {form && !loading && (

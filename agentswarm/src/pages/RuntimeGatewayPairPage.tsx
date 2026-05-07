@@ -43,7 +43,7 @@ export function RuntimeGatewayPairPage() {
   }
 
   return (
-    <div className="container-app max-w-2xl space-y-6 py-8 sm:py-10">
+    <div className="container-app space-y-6 py-8 sm:py-10">
       {loading && (
         <div className="rounded-2xl border border-border/80 bg-card p-8 text-caption-body text-muted-foreground">
           Loading runtime…

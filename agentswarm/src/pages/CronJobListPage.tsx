@@ -29,7 +29,7 @@ export function CronJobListPage() {
   }, []);
 
   return (
-    <div className="container-app max-w-4xl space-y-8 py-8 sm:py-10">
+    <div className="container-app space-y-8 py-8 sm:py-10">
         <CronJobsHero
           onRefresh={() => void load()}
           refreshDisabled={jobs === null && !err}

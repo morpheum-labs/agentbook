@@ -79,7 +79,7 @@
 
   --page-gutter: 2.5rem;
   --section-y: 5rem;
-  --container-max: 75rem;
+  --container-max: 1200px;
 
   --surface-card: color-mix(in srgb, var(--pure-white) 72%, var(--terminal-page-bg));
   --surface-card-foreground: var(--terminal-ink);
@@ -105,6 +105,11 @@
   /* Dark — ocean CRT preset */
   --terminal-main: #72b6ff;
   --terminal-main-40: #72b6ff66;
+  /* Readable UI text (not accent): cool white + muted secondary */
+  --terminal-fg: #e8f3ff;
+  --terminal-fg-muted: #a8c4de;
+  /* Text on filled accent (primary buttons, header on cyan) — light for dark UI */
+  --terminal-on-accent-fg: var(--pure-white);
   --terminal-bg-rgb: 15, 129, 236;
   --terminal-bg-opacity: 0.15;
   --terminal-tab-blur: 4px;
@@ -120,15 +125,15 @@
   --terminal-selection: #3b6d8b;
   --terminal-selection-text: #ffffff;
   --terminal-warning: rgb(240, 86, 86);
-  --terminal-link-hover-fg: rgb(28, 38, 53);
+  --terminal-link-hover-fg: var(--terminal-on-accent-fg);
 
   --surface-card: rgba(var(--terminal-bg-rgb), 0.08);
-  --surface-card-foreground: var(--terminal-main);
+  --surface-card-foreground: var(--terminal-fg);
   --surface-elevated: rgba(var(--terminal-bg-rgb), 0.14);
-  --surface-elevated-foreground: var(--terminal-main);
+  --surface-elevated-foreground: var(--terminal-fg);
   --surface-hero-border: var(--terminal-main);
-  --surface-hero-foreground: var(--terminal-main);
-  --surface-hero-muted: color-mix(in srgb, var(--terminal-main) 72%, transparent);
+  --surface-hero-foreground: var(--terminal-fg);
+  --surface-hero-muted: var(--terminal-fg-muted);
 
   --elevation-shadow-1: 0 0 12px rgba(var(--terminal-bg-rgb), 0.25);
   --elevation-shadow-2: 0 0 20px rgba(var(--terminal-bg-rgb), 0.22);
@@ -318,15 +323,15 @@
 }
 
 .dark {
-  --color-foreground: var(--terminal-main);
+  --color-foreground: var(--terminal-fg);
   --color-primary: var(--terminal-main);
-  --color-primary-foreground: var(--terminal-link-hover-fg);
+  --color-primary-foreground: var(--pure-white);
   --color-secondary: rgba(var(--terminal-bg-rgb), 0.22);
-  --color-secondary-foreground: var(--terminal-main);
+  --color-secondary-foreground: var(--pure-white);
   --color-muted: rgba(var(--terminal-bg-rgb), 0.12);
-  --color-muted-foreground: color-mix(in srgb, var(--terminal-main) 58%, transparent);
+  --color-muted-foreground: var(--terminal-fg-muted);
   --color-accent: rgba(var(--terminal-bg-rgb), 0.18);
-  --color-accent-foreground: var(--terminal-main);
+  --color-accent-foreground: var(--pure-white);
   --color-destructive: var(--terminal-warning);
   --color-destructive-foreground: var(--pure-white);
   --color-border: var(--terminal-main);
@@ -339,11 +344,11 @@
   --color-chart-4: color-mix(in srgb, var(--terminal-main) 55%, transparent);
   --color-chart-5: #a4cdf8;
   --color-sidebar: rgba(var(--terminal-bg-rgb), 0.06);
-  --color-sidebar-foreground: var(--terminal-main);
+  --color-sidebar-foreground: var(--terminal-fg);
   --color-sidebar-primary: var(--terminal-main);
-  --color-sidebar-primary-foreground: var(--terminal-link-hover-fg);
+  --color-sidebar-primary-foreground: var(--pure-white);
   --color-sidebar-accent: rgba(var(--terminal-bg-rgb), 0.15);
-  --color-sidebar-accent-foreground: var(--terminal-main);
+  --color-sidebar-accent-foreground: var(--pure-white);
   --color-sidebar-border: var(--terminal-main);
   --color-sidebar-ring: var(--terminal-main);
 }
@@ -476,13 +481,22 @@ textarea:focus-visible {
 
 .app-header-preview-dark .toolbar button:hover {
   background: var(--main-color);
-  color: rgb(28, 38, 53);
+  color: var(--terminal-link-hover-fg);
 }
 
 .app-header-preview-dark .toolbar button.active {
   background: var(--main-color);
-  color: rgba(6, 21, 43, 0.85);
+  color: var(--terminal-link-hover-fg);
   font-weight: bolder;
+}
+
+.dark .app-header-preview-dark .toolbar button {
+  color: var(--terminal-fg);
+}
+
+.dark .app-header-preview-dark .toolbar button:hover,
+.dark .app-header-preview-dark .toolbar button.active {
+  color: var(--terminal-link-hover-fg);
 }
 
 .app-header-preview-dark h2 {
@@ -536,6 +550,17 @@ textarea:focus-visible {
     filter 0.2s;
   text-decoration: none;
   text-align: center;
+}
+
+.dark .app-header-preview-dark .theme-grid a,
+.dark .app-header-preview-dark .theme-grid button {
+  color: var(--terminal-fg);
+}
+
+.dark .app-header-preview-dark .theme-grid a[aria-current="page"],
+.dark .app-header-preview-dark .theme-grid a[data-active="true"],
+.dark .app-header-preview-dark .theme-grid button[data-active="true"] {
+  color: var(--terminal-main);
 }
 
 .app-header-preview-dark .theme-grid a:hover,

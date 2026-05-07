@@ -25,7 +25,7 @@ export function AgentListPage() {
   }, []);
 
   return (
-    <div className="container-app max-w-4xl py-10">
+    <div className="container-app py-10">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-body-heading">Agents</h2>
           <div className="flex flex-wrap items-center gap-2">
