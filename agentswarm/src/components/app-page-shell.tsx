@@ -16,6 +16,9 @@ function headerMaxWidthForPath(pathname: string) {
   if (pathname === "/multi-chat") {
     return "max-w-6xl";
   }
+  if (/^\/instances\/[^/]+\/pair$/.test(pathname)) {
+    return "max-w-2xl";
+  }
   return "max-w-4xl";
 }
 
@@ -26,9 +29,11 @@ type AppPageShellProps = {
 export function AppPageShell({ children }: AppPageShellProps) {
   const { pathname } = useLocation();
   return (
-    <div className="h-dvh w-full min-h-0 overflow-y-auto overscroll-y-contain">
+    <div className="flex h-dvh w-full min-h-0 flex-col overflow-hidden">
       <AppHeader maxWidthClassName={headerMaxWidthForPath(pathname)} />
-      <main className="min-h-0">{children}</main>
+      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain">
+        {children}
+      </main>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { CronJobListPage } from "@/pages/CronJobListPage";
 import { CronJobNewPage } from "@/pages/CronJobNewPage";
 import { CronJobEditPage } from "@/pages/CronJobEditPage";
 import { RuntimeInstancesPage } from "@/pages/RuntimeInstancesPage";
+import { RuntimeGatewayPairPage } from "@/pages/RuntimeGatewayPairPage";
 import { MultiAgentChatPage } from "@/pages/MultiAgentChatPage";
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/cron-jobs" element={<CronJobListPage />} />
           <Route path="/cron-jobs/new" element={<CronJobNewPage />} />
           <Route path="/cron-jobs/:id" element={<CronJobEditPage />} />
+          <Route path="/instances/:instanceId/pair" element={<RuntimeGatewayPairPage />} />
           <Route path="/instances" element={<RuntimeInstancesPage />} />
         </Routes>
       </AppPageShell>
