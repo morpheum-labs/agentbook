@@ -34,7 +34,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed top-[50%] left-[50%] z-[var(--z-modal)] w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%]",
-        "rounded-2xl border border-border bg-card p-0 shadow-elevation-3",
+        "rounded-none border border-border bg-card p-0 shadow-elevation-3",
         "outline-none focus:outline-none",
         className
       )}
@@ -43,7 +43,7 @@ const DialogContent = React.forwardRef<
       {children}
       {!hideCloseButton && (
         <DialogClose
-          className="ring-offset-background absolute top-3 right-3 z-10 rounded-md p-1.5 text-muted-foreground opacity-80 transition-opacity hover:opacity-100 hover:bg-muted focus:ring-2 focus:ring-ring focus:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none [&_svg]:size-4"
+          className="ring-offset-background absolute top-3 right-3 z-10 rounded-none border border-transparent p-1.5 text-muted-foreground opacity-80 transition-opacity hover:opacity-100 hover:border-border hover:bg-muted focus:ring-2 focus:ring-ring focus:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none [&_svg]:size-4"
           aria-label="Close"
         >
           <X />

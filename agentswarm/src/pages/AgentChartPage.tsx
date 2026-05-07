@@ -109,19 +109,19 @@ export function AgentChartPage() {
                       <span className="text-foreground">{label}</span>
                       <span className="text-muted-foreground tabular-nums">{n}</span>
                     </div>
-                    <div
-                      className="h-3 w-full overflow-hidden rounded-sm bg-muted/60"
-                      role="img"
-                      aria-label={`${label}: ${n} agent${n === 1 ? "" : "s"}`}
-                    >
                       <div
-                        className={cn(
-                          "h-full min-w-1 rounded-sm transition-[width] duration-300",
-                          "bg-[color-mix(in_srgb,var(--amethyst-link)_88%,var(--pure-white))]",
-                          "dark:bg-[color-mix(in_srgb,var(--amethyst-link)_45%,var(--dark-surface))]"
-                        )}
-                        style={{ width: `${(n / max) * 100}%` }}
-                      />
+                        className="h-3 w-full overflow-hidden rounded-none bg-muted/60"
+                        role="img"
+                        aria-label={`${label}: ${n} agent${n === 1 ? "" : "s"}`}
+                      >
+                        <div
+                          className={cn(
+                            "h-full min-w-1 rounded-none transition-[width] duration-300",
+                            "bg-[color-mix(in_srgb,var(--color-primary)_82%,var(--pure-white))]",
+                            "dark:bg-[color-mix(in_srgb,var(--color-primary)_48%,black)]"
+                          )}
+                          style={{ width: `${(n / max) * 100}%` }}
+                        />
                     </div>
                   </div>
                 ))}

@@ -10,26 +10,18 @@ type CronJobsHeroProps = {
 };
 
 /**
- * Reference-style “hero” band: deep purple → cream gradient, high-contrast actions.
+ * Terminal hero panel: diagonal wash + dotted chrome, RichardApps-style actions.
  */
 export function CronJobsHero({ onRefresh, refreshDisabled, className }: CronJobsHeroProps) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-surface-hero-border bg-surface-hero-gradient",
+        "relative overflow-hidden rounded-none border border-surface-hero-border bg-surface-hero-gradient",
         "px-6 py-8 sm:px-8 sm:py-10 text-surface-hero-foreground",
         "shadow-elevation-2",
         className
       )}
     >
-      <div
-        className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-[var(--lavender-glow)]/20 blur-3xl dark:bg-[var(--lavender-glow)]/10"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -bottom-16 -left-16 size-48 rounded-full bg-white/10 blur-2xl"
-        aria-hidden
-      />
       <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-2">
           <p className="text-caption text-surface-hero-muted inline-flex items-center gap-2">
@@ -50,9 +42,8 @@ export function CronJobsHero({ onRefresh, refreshDisabled, className }: CronJobs
             onClick={onRefresh}
             disabled={refreshDisabled}
             className={cn(
-              "h-9 rounded-lg border-0",
-              "bg-pure-white/10 text-surface-hero-foreground",
-              "hover:bg-pure-white/18",
+              "h-9 rounded-none border border-primary/50 bg-card/40",
+              "text-surface-hero-foreground hover:bg-card/70",
               "disabled:opacity-50"
             )}
           >
@@ -62,7 +53,7 @@ export function CronJobsHero({ onRefresh, refreshDisabled, className }: CronJobs
           <Button
             size="sm"
             asChild
-            className="h-9 rounded-lg border-0 bg-primary text-primary-foreground hover:opacity-95 shadow-sm"
+            className="h-9 rounded-none bg-primary text-primary-foreground hover:opacity-95 shadow-elevation-1"
           >
             <Link to="/cron-jobs/new" className="inline-flex items-center gap-1.5">
               <Plus className="size-4" />

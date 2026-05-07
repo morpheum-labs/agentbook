@@ -168,7 +168,7 @@ export function AgentHandToolsInspector({
                     <ul className="text-caption text-foreground/90 max-h-40 list-none space-y-1.5 overflow-y-auto" role="list">
                       {paramExamples.map((p) => (
                         <li key={p.key} className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2" role="listitem">
-                          <code className="shrink-0 text-[var(--amethyst-link)]">{p.key}</code>
+                          <code className="shrink-0 text-link">{p.key}</code>
                           <span className="text-muted-foreground min-w-0">
                             <span className="text-border mr-1.5" aria-hidden>
                               →

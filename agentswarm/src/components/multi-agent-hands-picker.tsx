@@ -80,7 +80,7 @@ export function MultiAgentHandsPicker({
                   aria-selected={isActive}
                   onClick={() => onSelectAgent(a.ID)}
                   className={cn(
-                    "flex w-full flex-col items-stretch rounded-xl border px-3 py-2.5 text-left transition-colors",
+                    "flex w-full flex-col items-stretch rounded-none border px-3 py-2.5 text-left transition-colors",
                     isActive
                       ? "border-primary/55 bg-primary/8 shadow-sm ring-1 ring-primary/20"
                       : "border-border/60 bg-card hover:bg-accent/35"

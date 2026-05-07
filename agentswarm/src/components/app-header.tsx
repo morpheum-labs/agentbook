@@ -1,97 +1,83 @@
 import { NavLink } from "react-router-dom";
-import { BarChart3, Home, MessagesSquare, Server, Timer } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TerminalFxToggle } from "@/components/terminal-fx-toggle";
 import { cn } from "@/lib/utils";
+import { useHtmlTheme } from "@/lib/theme-utils";
 
 type AppHeaderProps = {
   maxWidthClassName?: string;
 };
 
+/** Live token rows — matches preview-dark.html swatch hex lines for light / ocean dark. */
+const LIVE_TOKEN_HEX = {
+  light: {
+    main: "#2d6a32",
+    bg: "rgb(45, 106, 50)",
+    sel: "#a8c4a4",
+  },
+  dark: {
+    main: "#72b6ff",
+    bg: "rgb(15, 129, 236)",
+    sel: "#3b6d8b",
+  },
+} as const;
+
+type NavPreset = { to: string; label: string; end?: boolean };
+
+const NAV_PRESETS: NavPreset[] = [
+  { to: "/", label: "Home", end: true },
+  { to: "/multi-chat", label: "Multi chat" },
+  { to: "/chart", label: "Agent chart" },
+  { to: "/cron-jobs", label: "Cron jobs" },
+  { to: "/instances", label: "Runtime instances" },
+];
+
 /**
- * Superhuman design system: light = Mysteria “paid chrome” strip (design-md/superhuman/preview.html);
- * dark = dark glass bar (preview-dark.html).
+ * Structure and class names from design-md/terminal/preview-dark.html:
+ * `.toolbar` buttons, `h2#themes` + `.section-desc` + `.theme-grid`,
+ * `h2#tokens` + `.swatches` / `.swatch` / `.swatch-color` / `.swatch-label` / `.swatch-hex`.
  */
-function navLinkClass({ isActive }: { isActive: boolean }) {
-  return cn(
-    "text-nav inline-flex items-center gap-1.5 rounded-sm px-4 py-2 transition-[color,background-color]",
-    "text-[color:var(--translucent-white-80)] hover:text-[color:var(--translucent-white-95)]",
-    "dark:text-[color:var(--dark-text-secondary)] dark:hover:text-[color:var(--dark-text-primary)]",
-    isActive
-      ? "bg-white/10 text-[color:var(--translucent-white-95)] dark:bg-[var(--dark-surface-elevated)] dark:text-[color:var(--dark-text-primary)]"
-      : "hover:bg-white/5 dark:hover:bg-white/5"
-  );
-}
-
-const themeToggleOnStripClass =
-  "hover:opacity-100 text-[color:var(--translucent-white-80)] hover:bg-white/10 hover:text-[color:var(--translucent-white-95)] dark:text-[color:var(--dark-text-secondary)] dark:hover:bg-white/5 dark:hover:text-[color:var(--dark-text-primary)] focus-visible:ring-white/30 dark:focus-visible:ring-[var(--lavender-glow)]/40";
-
 export function AppHeader({ maxWidthClassName = "max-w-4xl" }: AppHeaderProps) {
+  const htmlTheme = useHtmlTheme();
+  const hex = LIVE_TOKEN_HEX[htmlTheme];
+
   return (
     <header
       className={cn(
-        "border-b backdrop-blur-md",
+        "app-header-preview-dark border-b border-dotted backdrop-blur-[var(--terminal-tab-blur)]",
         "sticky top-0 z-[var(--z-app-header)]",
-        "border-[rgba(255,255,255,0.1)] bg-[rgba(27,25,56,0.95)]",
-        "dark:border-border dark:bg-[rgba(18,17,17,0.92)]"
+        "border-primary bg-[color-mix(in_srgb,var(--pure-white)_78%,transparent)]",
+        "dark:border-primary dark:bg-[rgba(var(--terminal-bg-rgb),0.32)]"
       )}
     >
       <div
         className={cn(
-          "container-app flex flex-col gap-3 py-4 sm:py-5",
+          "container-app flex flex-col gap-0 py-4 sm:py-5",
           maxWidthClassName
         )}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1
-              className={cn(
-                "text-section-heading",
-                "text-[color:var(--translucent-white-95)]",
-                "dark:text-[color:var(--dark-text-primary)]"
-              )}
-            >
-              Clawgotcha
-            </h1>
-            <p
-              className={cn(
-                "text-caption-body mt-1",
-                "text-[color:var(--translucent-white-80)]",
-                "dark:text-[color:var(--dark-text-secondary)]"
-              )}
-            >
-              Swarm Hands and cron job metadata
-            </p>
+        <div className="flex w-full flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-2">
+            <h2 id="themes">Clawgotcha</h2>
+            <p className="section-desc mb-0">Swarm Hands and cron job metadata</p>
           </div>
-          <ThemeToggle className={themeToggleOnStripClass} />
+          <div
+            className="toolbar ml-auto flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center"
+            role="group"
+            aria-label="Toolbar"
+          >
+            <TerminalFxToggle />
+            <ThemeToggle />
+          </div>
         </div>
-        <nav
-          className={cn(
-            "flex flex-wrap items-center gap-2",
-            "border-t border-white/10 pt-3",
-            "dark:border-border/80"
-          )}
-          aria-label="Main"
-        >
-          <NavLink to="/" className={navLinkClass} end>
-            <Home className="size-4 shrink-0 opacity-90" />
-            Home
-          </NavLink>
-          <NavLink to="/multi-chat" className={navLinkClass}>
-            <MessagesSquare className="size-4 shrink-0 opacity-90" />
-            Multi chat
-          </NavLink>
-          <NavLink to="/chart" className={navLinkClass}>
-            <BarChart3 className="size-4 shrink-0 opacity-90" />
-            Agent chart
-          </NavLink>
-          <NavLink to="/cron-jobs" className={navLinkClass}>
-            <Timer className="size-4 shrink-0 opacity-90" />
-            Cron jobs
-          </NavLink>
-          <NavLink to="/instances" className={navLinkClass}>
-            <Server className="size-4 shrink-0 opacity-90" />
-            Runtime instances
-          </NavLink>
+
+
+        <nav className="theme-grid" aria-label="Main">
+          {NAV_PRESETS.map(({ to, label, end }) => (
+            <NavLink key={to} to={to} end={end}>
+              {label}
+            </NavLink>
+          ))}
         </nav>
       </div>
     </header>

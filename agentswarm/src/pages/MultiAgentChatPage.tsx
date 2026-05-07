@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchAgents, fetchInstances, type SwarmAgent, type SwarmRuntimeInstance } from "@/lib/api";
-import { buildGatewayChatWsUrl, gatewayChatSingleTurn, publicHttpUrlToGatewayWsBase } from "@/lib/gateway-ws-chat";
+import {
+  GATEWAY_CHAT_SLASH_COMMANDS_FALLBACK,
+  buildGatewayChatWsUrl,
+  fetchGatewayChatSlashCommandCatalog,
+  gatewayChatSingleTurn,
+  gatewayHttpBaseFromWsBase,
+  publicHttpUrlToGatewayWsBase,
+  type GatewaySlashCommandItem,
+} from "@/lib/gateway-ws-chat";
 import { MULTI_CHAT_SESSION } from "@/lib/multi-chat-gateway-session";
 import { buildMultiChatSessionId } from "@/lib/multi-chat-session-id";
 import {
@@ -66,6 +74,9 @@ export function MultiAgentChatPage() {
   const [pastTurnBoundaryByAgent, setPastTurnBoundaryByAgent] = useState<Record<string, number>>({});
   const [draft, setDraft] = useState("");
   const [inFlight, setInFlight] = useState(false);
+  const [slashCommands, setSlashCommands] = useState<GatewaySlashCommandItem[]>(
+    GATEWAY_CHAT_SLASH_COMMANDS_FALLBACK
+  );
   /** Gateway wiring comes from session (Runtime instances → Pair & chat). Re-read on mount / focus return. */
   const [gwSession, setGwSession] = useState(readGatewaySession);
 
@@ -218,6 +229,33 @@ export function MultiAgentChatPage() {
     gwSession.source === "manual"
       ? !gwSession.legacyManualBase.trim()
       : !!gatewayBlockReason;
+
+  useEffect(() => {
+    const gw = resolvedGatewayBase.trim();
+    if (!gw) {
+      setSlashCommands(GATEWAY_CHAT_SLASH_COMMANDS_FALLBACK);
+      return;
+    }
+    let cancelled = false;
+    let httpBase: string;
+    try {
+      httpBase = gatewayHttpBaseFromWsBase(gw);
+    } catch {
+      setSlashCommands(GATEWAY_CHAT_SLASH_COMMANDS_FALLBACK);
+      return;
+    }
+    void fetchGatewayChatSlashCommandCatalog(httpBase)
+      .then((cmds) => {
+        if (cancelled || cmds.length === 0) return;
+        setSlashCommands(cmds);
+      })
+      .catch(() => {
+        if (!cancelled) setSlashCommands(GATEWAY_CHAT_SLASH_COMMANDS_FALLBACK);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [resolvedGatewayBase]);
 
   const gatewayStatusIsLoading =
     gwSession.source === "runtime" && instances === null && !instancesErr && !!gatewayBlockReason;
@@ -427,6 +465,7 @@ export function MultiAgentChatPage() {
           pastTurnBoundaryIndex={
             activeAgentId ? pastTurnBoundaryByAgent[activeAgentId] ?? 0 : 0
           }
+          slashCommands={slashCommands}
           draft={draft}
           onDraftChange={setDraft}
           onSend={send}

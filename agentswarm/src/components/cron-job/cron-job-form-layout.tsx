@@ -19,7 +19,7 @@ type CronJobFormLayoutProps = {
 };
 
 /**
- * Form shell: left = Dribbble-style “insight” panel, right = card + fields.
+ * Form shell: left = terminal-style note panel, right = bordered card + fields.
  */
 export function CronJobFormLayout({
   title,
@@ -47,16 +47,10 @@ export function CronJobFormLayout({
           <aside className="lg:col-span-4">
             <div
               className={cn(
-                "relative overflow-hidden rounded-2xl border border-border/70",
-                "bg-gradient-to-b from-[var(--mysteria-purple)]/8 via-card to-card",
-                "p-5 sm:p-6 shadow-elevation-1",
-                "dark:from-[var(--mysteria-purple)]/25 dark:via-card dark:to-card"
+                "relative overflow-hidden rounded-none border border-border",
+                "bg-surface-hero-gradient p-5 sm:p-6 shadow-elevation-1"
               )}
             >
-              <div
-                className="absolute -right-8 top-0 size-32 rounded-full bg-[var(--amethyst-link)]/15 blur-2xl"
-                aria-hidden
-              />
               <p className="text-micro text-muted-foreground relative uppercase">Design note</p>
               <h2 className="text-subheading-lg text-foreground relative mt-1 font-medium">Rhythm & intent</h2>
               <p className="text-caption-body text-muted-foreground relative mt-2 leading-relaxed">
@@ -68,13 +62,12 @@ export function CronJobFormLayout({
                 {tips.map(({ icon: Icon, text }) => (
                   <li
                     key={text}
-                    className="flex gap-3 rounded-xl border border-border/50 bg-background/60 p-3 text-caption text-muted-foreground backdrop-blur-sm"
+                    className="flex gap-3 rounded-none border border-border/80 bg-card/70 p-3 text-caption text-muted-foreground backdrop-blur-sm"
                   >
                     <span
                       className={cn(
-                        "flex size-8 shrink-0 items-center justify-center rounded-lg",
-                        "bg-gradient-to-br from-[var(--mysteria-purple)] to-[var(--amethyst-link)]",
-                        "text-white shadow-sm"
+                        "flex size-8 shrink-0 items-center justify-center rounded-none border border-primary",
+                        "bg-primary text-primary-foreground shadow-elevation-1"
                       )}
                     >
                       <Icon className="size-4" aria-hidden />
@@ -87,10 +80,7 @@ export function CronJobFormLayout({
           </aside>
           <div className="lg:col-span-8">
             <Card className="overflow-hidden border-border/80 shadow-elevation-2">
-              <div
-                className="h-1 w-full bg-gradient-to-r from-[var(--mysteria-purple)] via-[var(--amethyst-link)] to-[var(--lavender-glow)]"
-                aria-hidden
-              />
+              <div className="h-1 w-full bg-primary" aria-hidden />
               <CardHeader className="space-y-1">
                 <CardTitle className="text-subheading-lg text-foreground">{title}</CardTitle>
                 <CardDescription className="text-caption-body text-pretty">{description}</CardDescription>

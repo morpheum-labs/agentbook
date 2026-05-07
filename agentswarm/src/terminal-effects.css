@@ -1,0 +1,242 @@
+/* RichardApps / preview-dark parity — GPLv3 media in /public/terminal-effects/ */
+
+@font-face {
+  font-family: Terminus;
+  src: url("/terminal-effects/fonts/terminus-webfont.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --terminal-fx-noise-opacity: 0.65;
+  --terminal-fx-background-video-opacity: 0.275;
+  --terminal-fx-grunge-overlay-opacity: 0.9;
+  --terminal-fx-warning-glow: rgb(240, 86, 86);
+  --terminal-fx-info-glow: #ffffff;
+}
+
+/* Rain — behind app chrome */
+.terminal-fx-rain {
+  position: fixed;
+  overflow: hidden;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 0;
+  opacity: var(--terminal-fx-background-video-opacity);
+  display: none;
+}
+
+html.dark.terminal-effects-on:not(.terminal-fx-winter) .terminal-fx-rain {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.dark.terminal-effects-on .terminal-fx-rain {
+    display: none !important;
+  }
+}
+
+.terminal-fx-noise,
+.terminal-fx-grunge {
+  position: fixed;
+  overflow: hidden;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 5;
+  display: none;
+}
+
+html.dark.terminal-effects-on .terminal-fx-noise,
+html.dark.terminal-effects-on .terminal-fx-grunge {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.dark.terminal-effects-on .terminal-fx-noise,
+  html.dark.terminal-effects-on .terminal-fx-grunge {
+    display: none !important;
+  }
+}
+
+.terminal-fx-grunge {
+  background: url("/terminal-effects/images/grunge.jpg") center / cover;
+  mix-blend-mode: color-dodge;
+  opacity: var(--terminal-fx-grunge-overlay-opacity);
+}
+
+@keyframes terminal-noise {
+  0% {
+    background-image: url("/terminal-effects/images/noise-textures/noisy-texture-200x200-1.png");
+  }
+  25% {
+    background-image: url("/terminal-effects/images/noise-textures/noisy-texture-200x200-2.png");
+  }
+  50% {
+    background-image: url("/terminal-effects/images/noise-textures/noisy-texture-200x200-3.png");
+  }
+  75% {
+    background-image: url("/terminal-effects/images/noise-textures/noisy-texture-200x200-4.png");
+  }
+}
+
+.terminal-fx-noise {
+  background-blend-mode: multiply;
+  background-image: url("/terminal-effects/images/noise-textures/noisy-texture-200x200-1.png");
+  background-position: center;
+  filter: contrast(1.5) brightness(0.4) hue-rotate(90deg);
+  opacity: var(--terminal-fx-noise-opacity);
+  mask-image: radial-gradient(circle, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 150%);
+  mask-size: cover;
+  mask-position: center;
+  animation: terminal-noise 0.3s steps(4) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-fx-noise {
+    animation: none !important;
+  }
+}
+
+/* CRT scanlines + RGB stripes — full viewport */
+.terminal-fx-crt {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 6;
+  display: none;
+}
+
+html.dark.terminal-effects-on .terminal-fx-crt {
+  display: block;
+}
+
+html.dark.terminal-effects-on .terminal-fx-crt::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 1;
+  background-size: 100% 2px, 3px 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.dark.terminal-effects-on .terminal-fx-crt {
+    display: none !important;
+  }
+}
+
+/* Neon glow on copy — effects.css parity */
+@media (prefers-reduced-motion: no-preference) {
+  html.dark.terminal-effects-on #root pre,
+  html.dark.terminal-effects-on #root p,
+  html.dark.terminal-effects-on #root li,
+  html.dark.terminal-effects-on #root h1,
+  html.dark.terminal-effects-on #root h2,
+  html.dark.terminal-effects-on #root h3,
+  html.dark.terminal-effects-on #root h4,
+  html.dark.terminal-effects-on #root td,
+  html.dark.terminal-effects-on #root summary,
+  html.dark.terminal-effects-on #root span,
+  html.dark.terminal-effects-on #root em {
+    text-shadow:
+      0 0 7px var(--terminal-main-40),
+      0 0 25px var(--terminal-main),
+      0 0 40px var(--terminal-main);
+  }
+
+  html.dark.terminal-effects-on #root .text-destructive,
+  html.dark.terminal-effects-on #root .text-destructive em {
+    text-shadow:
+      0 0 7px var(--terminal-fx-warning-glow),
+      0 0 20px var(--terminal-fx-warning-glow),
+      0 0 40px var(--terminal-fx-warning-glow);
+  }
+}
+
+@media (max-width: 768px) {
+  html.dark.terminal-effects-on #root pre,
+  html.dark.terminal-effects-on #root p,
+  html.dark.terminal-effects-on #root li,
+  html.dark.terminal-effects-on #root h1,
+  html.dark.terminal-effects-on #root h2,
+  html.dark.terminal-effects-on #root h3,
+  html.dark.terminal-effects-on #root h4,
+  html.dark.terminal-effects-on #root td,
+  html.dark.terminal-effects-on #root summary {
+    text-shadow:
+      0 0 9px var(--terminal-main-40),
+      0 0 14px var(--terminal-main);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.dark.terminal-effects-on #root pre,
+  html.dark.terminal-effects-on #root p,
+  html.dark.terminal-effects-on #root li,
+  html.dark.terminal-effects-on #root h1,
+  html.dark.terminal-effects-on #root h2,
+  html.dark.terminal-effects-on #root h3,
+  html.dark.terminal-effects-on #root h4,
+  html.dark.terminal-effects-on #root td,
+  html.dark.terminal-effects-on #root summary,
+  html.dark.terminal-effects-on #root span,
+  html.dark.terminal-effects-on #root em {
+    text-shadow: none !important;
+  }
+}
+
+/* Snow — winter preset */
+.terminal-fx-snowflake {
+  position: fixed;
+  animation-timing-function: linear;
+  z-index: 4;
+  background: white;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(1px);
+}
+
+@keyframes terminal-snowflake-fall {
+  0% {
+    transform: translateY(-15vh);
+  }
+  100% {
+    transform: translateY(125vh);
+  }
+}
+
+@keyframes terminal-snowflake-fall-horizontal-1 {
+  0% {
+    transform: translateX(0) translateY(-15vh);
+  }
+  100% {
+    transform: translateX(20vw) translateY(125vh);
+  }
+}
+
+@keyframes terminal-snowflake-fall-horizontal-2 {
+  0% {
+    transform: translateX(0) translateY(-15vh);
+  }
+  100% {
+    transform: translateX(-20vw) translateY(125vh);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.dark.terminal-effects-on .terminal-fx-snowflake {
+    animation: none !important;
+    display: none !important;
+  }
+}

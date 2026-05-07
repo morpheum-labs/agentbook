@@ -3,82 +3,61 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Single source of truth: design-md/superhuman/DESIGN.md
+ * Design source: web/design-md/terminal — RichardApps-inspired terminal / cyberpunk.
+ * Light: preview.html (paper terminal, forest phosphor ink).
+ * Dark: preview-dark.html — ocean preset + optional RichardApps GPL media in /public/terminal-effects/.
  *
- * Typography → utilities (this file):
- *   Display Hero          → text-display
- *   Section Display       → text-section (tracking -1.32px)
- *   Section Heading       → text-section-heading (same size, tracking 0)
- *   Feature Title         → text-feature
- *   Sub-heading Large     → text-subheading-lg
- *   Card Heading          → text-card-title
- *   Body Heading          → text-body-heading
- *   Body Heading Alt      → text-body-heading-alt
- *   Body Heading Relaxed  → text-lead
- *   Emphasis Body         → text-body-emphasis
- *   Body                  → text-body
- *   Nav Link              → text-nav
- *   Button / UI Bold      → text-ui-bold
- *   Button / UI Semi      → text-ui-semi
- *   Caption               → text-caption
- *   Caption Semi          → text-caption-semi
- *   Caption Body          → text-caption-body
- *   Micro Label           → text-micro
- *
- * Surfaces:
- *   Surface Card (content)   → bg-surface-card / text-surface-card-foreground / border-border
- *   Surface Elevated       → bg-surface-elevated + shadow-elevation-3
- *   Hero surface + border  → bg-surface-hero-gradient, border-surface-hero-border, text-surface-hero-foreground
- *
- * Elevation (DESIGN.md §6): shadow-elevation-0 … shadow-elevation-3; strong separators → border-foreground/20
- *
- * Layout: container-app, section-y (--container-max ~1200px, --section-y 48–80px).
- * Typography scale & spacing are shared in :root.
- * Dark canvas tokens: DESIGN.md §2; `.dark` rebinds semantic roles (§3).
+ * Semantic Tailwind colors map to terminal tokens; typography utilities unchanged.
  */
 :root {
-  /* DESIGN.md §2 — brand palette (shared light/dark authoring) */
-  --mysteria-purple: #1b1938;
-  --lavender-glow: #cbb7fb;
-  --charcoal-ink: #292827;
-  --amethyst-link: #714cb6;
-  --translucent-white-95: rgba(255, 255, 255, 0.95);
-  --translucent-white-80: rgba(255, 255, 255, 0.8);
+  /* Light — paper terminal */
+  --terminal-page-bg: #ebe6dc;
+  --terminal-paper-edge: #e0d9cc;
+  --terminal-ink: #1a2f16;
+  --terminal-accent: #2d6a32;
+  --terminal-accent-soft: rgba(45, 106, 50, 0.18);
+  --terminal-wash-rgb: 45, 106, 50;
+  --terminal-bg-opacity-light: 1;
+  --terminal-tab-blur: 3px;
+  --terminal-html-bg: var(--terminal-paper-edge);
+  --terminal-body-gradient:
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.65) 0%, transparent 55%),
+    linear-gradient(180deg, var(--terminal-page-bg) 0%, var(--terminal-paper-edge) 100%);
+  --terminal-panel-gradient: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55) 70%,
+    rgba(var(--terminal-wash-rgb), 0.12) 110%
+  );
+  --terminal-selection: #a8c4a4;
+  --terminal-selection-text: var(--terminal-ink);
+  --terminal-warning: #a82c2c;
+  --terminal-link-hover-fg: var(--terminal-page-bg);
+
+  /* Aliases for legacy component refs */
   --pure-white: #ffffff;
-  --warm-cream: #e9e5dd;
-  --parchment-border: #dcd7d3;
+  --charcoal-ink: var(--terminal-ink);
 
-  /* DESIGN.md §2 — dark canvas (surfaces + text on dark) */
-  --dark-bg: #121111;
-  --dark-surface: #1c1b1a;
-  --dark-surface-elevated: #252423;
-  --dark-border: #3a3938;
-  --dark-text-primary: rgba(255, 255, 255, 0.92);
-  --dark-text-secondary: rgba(255, 255, 255, 0.6);
-  --dark-text-tertiary: rgba(255, 255, 255, 0.4);
+  --radius: 0;
+  --radius-card: 0;
 
-  --radius: 0.5rem; /* 8px — buttons, inputs, small controls */
-  --radius-card: 1rem; /* 16px — cards, dialogs, large containers */
-
-  /* Typography (px-based tracking from DESIGN.md; sizes in rem) */
-  --fw-body: 460;
-  --fw-display: 540;
+  --fw-body: 400;
+  --fw-display: 400;
   --fw-ui-semi: 600;
   --fw-ui-bold: 700;
   --fw-caption-em: 500;
 
-  --fs-micro: 0.75rem; /* 12px */
-  --fs-caption: 0.875rem; /* 14px */
-  --fs-body: 1rem; /* 16px */
-  --fs-body-emphasis: 1.125rem; /* 18px */
-  --fs-body-heading: 1.25rem; /* 20px */
-  --fs-subheading-lg: 1.625rem; /* 26px */
-  --fs-card-heading: 1.375rem; /* 22px */
-  --fs-feature: 1.75rem; /* 28px */
-  --fs-section: 3rem; /* 48px */
-  --fs-hero: 4rem; /* 64px */
+  --fs-micro: 0.75rem;
+  --fs-caption: 0.875rem;
+  --fs-body: 1rem;
+  --fs-body-emphasis: 1.125rem;
+  --fs-body-heading: 1.25rem;
+  --fs-subheading-lg: 1.625rem;
+  --fs-card-heading: 1.375rem;
+  --fs-feature: 1.75rem;
+  --fs-section: 3rem;
+  --fs-hero: 4rem;
 
-  --lh-body: 1.5;
+  --lh-body: 1.45;
   --lh-button: 1;
   --lh-caption: 1.2;
   --lh-caption-semi: 1.29;
@@ -91,40 +70,30 @@
   --lh-subheading-lg: 1.3;
   --lh-nav: 1.2;
 
-  --ls-section: -0.0825rem; /* -1.32px @ 48px equivalent */
-  --ls-feature: -0.039375rem; /* -0.63px @ 28px */
-  --ls-card-heading: -0.0196875rem; /* -0.315px @ 22px */
+  --ls-section: -0.0825rem;
+  --ls-feature: -0.039375rem;
+  --ls-card-heading: -0.0196875rem;
   --ls-caption: -0.0196875rem;
-  --ls-body-heading-alt: -0.034375rem; /* ~-0.55px @ 20px */
-  --ls-body-emphasis: -0.0084375rem; /* ~-0.135px @ 18px */
+  --ls-body-heading-alt: -0.034375rem;
+  --ls-body-emphasis: -0.0084375rem;
 
-  /* Layout (8px base; section rhythm from DESIGN.md §5) */
-  --page-gutter: 2.5rem; /* 40px */
-  --section-y: 5rem; /* 80px */
-  --container-max: 75rem; /* ~1200px */
+  --page-gutter: 2.5rem;
+  --section-y: 5rem;
+  --container-max: 75rem;
 
-  /* Light surfaces (DESIGN.md: Pure White canvas, hero → white transition) */
-  --surface-card: var(--pure-white);
-  --surface-card-foreground: var(--charcoal-ink);
-  --surface-elevated: color-mix(in srgb, var(--warm-cream) 18%, var(--pure-white));
-  --surface-elevated-foreground: var(--charcoal-ink);
-  --surface-hero-from: var(--mysteria-purple);
-  --surface-hero-mid: #221f42;
-  --surface-hero-to: color-mix(in srgb, var(--pure-white) 94%, var(--warm-cream));
-  --surface-hero-foreground: var(--translucent-white-95);
-  --surface-hero-muted: var(--translucent-white-80);
-  --surface-hero-border: rgba(255, 255, 255, 0.2);
+  --surface-card: color-mix(in srgb, var(--pure-white) 72%, var(--terminal-page-bg));
+  --surface-card-foreground: var(--terminal-ink);
+  --surface-elevated: color-mix(in srgb, var(--pure-white) 88%, var(--terminal-accent-soft));
+  --surface-elevated-foreground: var(--terminal-ink);
+  --surface-hero-border: var(--terminal-accent);
+  --surface-hero-foreground: var(--terminal-ink);
+  --surface-hero-muted: #4a5c46;
 
-  /* Elevation (DESIGN.md §7): same tier geometry + foreground mix in both modes */
   --elevation-shadow-0: none;
-  --elevation-shadow-1: 0 1px 2px color-mix(in srgb, var(--color-foreground) 5%, transparent);
-  --elevation-shadow-2: 0 4px 16px color-mix(in srgb, var(--color-foreground) 6%, transparent);
-  --elevation-shadow-3: 0 4px 24px color-mix(in srgb, var(--color-foreground) 7%, transparent);
+  --elevation-shadow-1: 2px 3px 0 rgba(0, 0, 0, 0.06);
+  --elevation-shadow-2: 2px 4px 0 rgba(0, 0, 0, 0.07);
+  --elevation-shadow-3: 3px 5px 0 rgba(0, 0, 0, 0.08);
 
-  /*
-   * Z-index stack — use with utilities: z-[var(--z-app-header)] etc.
-   * (Tailwind v4 does not create named z-* classes from @theme; numeric z-100 works, or var() as here.)
-   */
   --z-page-raised: 20;
   --z-sticky: 30;
   --z-overlay: 40;
@@ -132,33 +101,62 @@
   --z-modal: 200;
 }
 
+.dark {
+  /* Dark — ocean CRT preset */
+  --terminal-main: #72b6ff;
+  --terminal-main-40: #72b6ff66;
+  --terminal-bg-rgb: 15, 129, 236;
+  --terminal-bg-opacity: 0.15;
+  --terminal-tab-blur: 4px;
+  --terminal-html-bg: #000000;
+  --terminal-body-gradient:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 50%, rgba(var(--terminal-bg-rgb), 0.2) 250%),
+    rgba(var(--terminal-bg-rgb), var(--terminal-bg-opacity));
+  --terminal-panel-gradient: linear-gradient(
+    45deg,
+    rgba(var(--terminal-bg-rgb), 0.06) 70%,
+    rgba(var(--terminal-bg-rgb), 0.2) 110%
+  );
+  --terminal-selection: #3b6d8b;
+  --terminal-selection-text: #ffffff;
+  --terminal-warning: rgb(240, 86, 86);
+  --terminal-link-hover-fg: rgb(28, 38, 53);
+
+  --surface-card: rgba(var(--terminal-bg-rgb), 0.08);
+  --surface-card-foreground: var(--terminal-main);
+  --surface-elevated: rgba(var(--terminal-bg-rgb), 0.14);
+  --surface-elevated-foreground: var(--terminal-main);
+  --surface-hero-border: var(--terminal-main);
+  --surface-hero-foreground: var(--terminal-main);
+  --surface-hero-muted: color-mix(in srgb, var(--terminal-main) 72%, transparent);
+
+  --elevation-shadow-1: 0 0 12px rgba(var(--terminal-bg-rgb), 0.25);
+  --elevation-shadow-2: 0 0 20px rgba(var(--terminal-bg-rgb), 0.22);
+  --elevation-shadow-3: 0 0 28px rgba(var(--terminal-bg-rgb), 0.2);
+}
+
 @media (max-width: 767px) {
   :root {
     --page-gutter: 1.5rem;
     --section-y: 3rem;
-    --fs-hero: 2.25rem; /* ~36px mobile */
-    --fs-section: 2rem; /* tighter sections on small screens */
+    --fs-hero: 2.25rem;
+    --fs-section: 2rem;
   }
 }
 
-/* Tailwind v4 theme — color utilities + design structure */
 @theme inline {
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
-    "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  --font-sans: Terminus, "JetBrains Mono", "Courier New", Courier, monospace;
 
-  /* Superhuman weight axis: 460 default body */
-  --font-weight-normal: 460;
-  --font-weight-medium: 540;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
-  /* Radii: only 8px + 16px */
-  --radius-sm: 0.5rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1rem;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
 
-  /* Spacing scale (DESIGN.md): 2–56px */
   --spacing-0\.5: 0.125rem;
   --spacing-1: 0.25rem;
   --spacing-1\.5: 0.375rem;
@@ -183,39 +181,39 @@
   --shadow-elevation-2: var(--elevation-shadow-2);
   --shadow-elevation-3: var(--elevation-shadow-3);
 
-  --color-background: var(--pure-white);
-  --color-foreground: var(--charcoal-ink);
+  --color-background: transparent;
+  --color-foreground: var(--terminal-ink);
   --color-card: var(--surface-card);
   --color-card-foreground: var(--surface-card-foreground);
   --color-popover: var(--surface-elevated);
   --color-popover-foreground: var(--surface-elevated-foreground);
-  --color-primary: var(--warm-cream);
-  --color-primary-foreground: var(--charcoal-ink);
-  --color-secondary: color-mix(in srgb, var(--warm-cream) 28%, var(--pure-white));
-  --color-secondary-foreground: var(--charcoal-ink);
-  --color-muted: color-mix(in srgb, var(--warm-cream) 22%, var(--pure-white));
-  --color-muted-foreground: color-mix(in srgb, var(--charcoal-ink) 58%, var(--parchment-border));
-  --color-accent: color-mix(in srgb, var(--lavender-glow) 16%, var(--pure-white));
-  --color-accent-foreground: var(--charcoal-ink);
-  --color-destructive: #b42318;
+  --color-primary: var(--terminal-accent);
+  --color-primary-foreground: var(--terminal-page-bg);
+  --color-secondary: color-mix(in srgb, var(--terminal-accent-soft) 55%, var(--pure-white));
+  --color-secondary-foreground: var(--terminal-ink);
+  --color-muted: rgba(var(--terminal-wash-rgb), 0.08);
+  --color-muted-foreground: #4a5c46;
+  --color-accent: rgba(var(--terminal-wash-rgb), 0.12);
+  --color-accent-foreground: var(--terminal-ink);
+  --color-destructive: var(--terminal-warning);
   --color-destructive-foreground: var(--pure-white);
-  --color-border: var(--parchment-border);
-  --color-input: var(--parchment-border);
-  --color-ring: var(--amethyst-link);
-  --color-link: var(--amethyst-link);
-  --color-chart-1: var(--amethyst-link);
-  --color-chart-2: color-mix(in srgb, var(--charcoal-ink) 22%, var(--parchment-border));
-  --color-chart-3: color-mix(in srgb, var(--amethyst-link) 35%, var(--pure-white));
-  --color-chart-4: color-mix(in srgb, var(--lavender-glow) 22%, var(--pure-white));
-  --color-chart-5: var(--lavender-glow);
-  --color-sidebar: color-mix(in srgb, var(--warm-cream) 12%, var(--pure-white));
-  --color-sidebar-foreground: var(--charcoal-ink);
-  --color-sidebar-primary: var(--warm-cream);
-  --color-sidebar-primary-foreground: var(--charcoal-ink);
-  --color-sidebar-accent: color-mix(in srgb, var(--lavender-glow) 14%, var(--pure-white));
-  --color-sidebar-accent-foreground: var(--charcoal-ink);
-  --color-sidebar-border: var(--parchment-border);
-  --color-sidebar-ring: var(--amethyst-link);
+  --color-border: var(--terminal-accent);
+  --color-input: var(--terminal-accent);
+  --color-ring: var(--terminal-accent);
+  --color-link: var(--terminal-accent);
+  --color-chart-1: var(--terminal-accent);
+  --color-chart-2: color-mix(in srgb, var(--terminal-ink) 35%, var(--terminal-page-bg));
+  --color-chart-3: rgba(var(--terminal-wash-rgb), 0.35);
+  --color-chart-4: color-mix(in srgb, var(--terminal-accent) 40%, var(--pure-white));
+  --color-chart-5: #145018;
+  --color-sidebar: color-mix(in srgb, var(--terminal-page-bg) 70%, var(--pure-white));
+  --color-sidebar-foreground: var(--terminal-ink);
+  --color-sidebar-primary: var(--terminal-accent);
+  --color-sidebar-primary-foreground: var(--terminal-page-bg);
+  --color-sidebar-accent: rgba(var(--terminal-wash-rgb), 0.1);
+  --color-sidebar-accent-foreground: var(--terminal-ink);
+  --color-sidebar-border: var(--terminal-accent);
+  --color-sidebar-ring: var(--terminal-accent);
 
   --color-surface-card: var(--surface-card);
   --color-surface-card-foreground: var(--surface-card-foreground);
@@ -225,7 +223,6 @@
   --color-surface-hero-muted: var(--surface-hero-muted);
   --color-surface-hero-border: var(--surface-hero-border);
 
-  /* Named type steps */
   --text-display: var(--fs-hero);
   --text-display--line-height: var(--lh-display);
   --text-display--font-weight: var(--fw-display);
@@ -320,51 +317,35 @@
   --animate-accordion-up: accordion-up 0.2s ease-out;
 }
 
-/*
- * Dark: DESIGN.md §2 canvas + §3 semantic roles (Warm Cream primary on dark,
- * Lavender/Amethyst accents, translucent white on hero).
- */
 .dark {
-  --surface-card: var(--dark-surface);
-  --surface-card-foreground: var(--dark-text-primary);
-  --surface-elevated: var(--dark-surface-elevated);
-  --surface-elevated-foreground: var(--dark-text-primary);
-  --surface-hero-from: var(--mysteria-purple);
-  --surface-hero-mid: #2a1f5e;
-  --surface-hero-to: #3a2468;
-  --surface-hero-foreground: var(--translucent-white-95);
-  --surface-hero-muted: var(--translucent-white-80);
-  --surface-hero-border: rgba(255, 255, 255, 0.2);
-
-  --color-background: var(--dark-bg);
-  --color-foreground: var(--dark-text-primary);
-  --color-primary: var(--warm-cream);
-  --color-primary-foreground: var(--charcoal-ink);
-  --color-secondary: var(--dark-surface-elevated);
-  --color-secondary-foreground: var(--dark-text-primary);
-  --color-muted: var(--dark-surface-elevated);
-  --color-muted-foreground: var(--dark-text-secondary);
-  --color-accent: color-mix(in srgb, var(--lavender-glow) 14%, var(--dark-surface));
-  --color-accent-foreground: var(--dark-text-primary);
-  --color-destructive: #b42318;
+  --color-foreground: var(--terminal-main);
+  --color-primary: var(--terminal-main);
+  --color-primary-foreground: var(--terminal-link-hover-fg);
+  --color-secondary: rgba(var(--terminal-bg-rgb), 0.22);
+  --color-secondary-foreground: var(--terminal-main);
+  --color-muted: rgba(var(--terminal-bg-rgb), 0.12);
+  --color-muted-foreground: color-mix(in srgb, var(--terminal-main) 58%, transparent);
+  --color-accent: rgba(var(--terminal-bg-rgb), 0.18);
+  --color-accent-foreground: var(--terminal-main);
+  --color-destructive: var(--terminal-warning);
   --color-destructive-foreground: var(--pure-white);
-  --color-border: var(--dark-border);
-  --color-input: var(--dark-border);
-  --color-ring: var(--lavender-glow);
-  --color-link: var(--lavender-glow);
-  --color-chart-1: var(--amethyst-link);
-  --color-chart-2: color-mix(in srgb, var(--lavender-glow) 22%, var(--dark-surface));
-  --color-chart-3: color-mix(in srgb, var(--lavender-glow) 12%, var(--dark-surface));
-  --color-chart-4: color-mix(in srgb, var(--amethyst-link) 18%, var(--dark-surface));
-  --color-chart-5: var(--lavender-glow);
-  --color-sidebar: var(--dark-bg);
-  --color-sidebar-foreground: var(--dark-text-primary);
-  --color-sidebar-primary: var(--warm-cream);
-  --color-sidebar-primary-foreground: var(--charcoal-ink);
-  --color-sidebar-accent: var(--dark-surface-elevated);
-  --color-sidebar-accent-foreground: var(--dark-text-primary);
-  --color-sidebar-border: var(--dark-border);
-  --color-sidebar-ring: var(--lavender-glow);
+  --color-border: var(--terminal-main);
+  --color-input: var(--terminal-main);
+  --color-ring: var(--terminal-main);
+  --color-link: var(--terminal-main);
+  --color-chart-1: var(--terminal-main);
+  --color-chart-2: rgba(var(--terminal-bg-rgb), 0.45);
+  --color-chart-3: color-mix(in srgb, var(--terminal-main) 35%, transparent);
+  --color-chart-4: color-mix(in srgb, var(--terminal-main) 55%, transparent);
+  --color-chart-5: #a4cdf8;
+  --color-sidebar: rgba(var(--terminal-bg-rgb), 0.06);
+  --color-sidebar-foreground: var(--terminal-main);
+  --color-sidebar-primary: var(--terminal-main);
+  --color-sidebar-primary-foreground: var(--terminal-link-hover-fg);
+  --color-sidebar-accent: rgba(var(--terminal-bg-rgb), 0.15);
+  --color-sidebar-accent-foreground: var(--terminal-main);
+  --color-sidebar-border: var(--terminal-main);
+  --color-sidebar-ring: var(--terminal-main);
 }
 
 @keyframes accordion-down {
@@ -385,8 +366,17 @@
   }
 }
 
+html {
+  background: var(--terminal-html-bg);
+}
+
 * {
   border-color: var(--color-border);
+}
+
+::selection {
+  background-color: var(--terminal-selection);
+  color: var(--terminal-selection-text);
 }
 
 body {
@@ -395,7 +385,9 @@ body {
   font-weight: var(--fw-body);
   line-height: var(--lh-body);
   letter-spacing: 0;
-  background: var(--color-background);
+  background-color: transparent;
+  background-image: var(--terminal-body-gradient);
+  background-attachment: fixed;
   color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -403,6 +395,197 @@ body {
 
 #root {
   min-height: 100dvh;
+  position: relative;
+  z-index: 1;
+}
+
+@media (hover: hover) {
+  a:hover {
+    box-shadow: 0 0 14px color-mix(in srgb, var(--color-link) 35%, transparent);
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+.dark :focus-visible {
+  outline-color: #ffffff;
+}
+
+.dark :is(a, button):focus-visible {
+  background: rgba(var(--terminal-bg-rgb), 0.35);
+}
+
+/* Text fields use border-only focus (see Input / Textarea) — no second outline ring */
+input[type="text"]:focus-visible,
+input[type="search"]:focus-visible,
+input[type="email"]:focus-visible,
+input[type="url"]:focus-visible,
+input[type="password"]:focus-visible,
+input[type="tel"]:focus-visible,
+input[type="number"]:focus-visible,
+input:not([type]):focus-visible,
+textarea:focus-visible {
+  outline: none;
+  outline-offset: 0;
+}
+
+/*
+ * preview-dark.html — Theme presets + Live tokens chrome on app header.
+ * Maps --main-color / --bg-color (comma RGB) for RichardApps selectors.
+ */
+.app-header-preview-dark {
+  --main-color: var(--terminal-accent);
+  --bg-color: var(--terminal-wash-rgb);
+}
+
+.dark .app-header-preview-dark {
+  --main-color: var(--terminal-main);
+  --bg-color: var(--terminal-bg-rgb);
+}
+
+@media (hover: hover) {
+  .app-header-preview-dark a:hover {
+    box-shadow: none;
+  }
+}
+
+.app-header-preview-dark .toolbar {
+  position: static;
+  z-index: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  max-width: none;
+}
+
+.app-header-preview-dark .toolbar button {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border: 1px solid var(--main-color);
+  background: rgba(var(--bg-color), 0.35);
+  color: var(--main-color);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.app-header-preview-dark .toolbar button:hover {
+  background: var(--main-color);
+  color: rgb(28, 38, 53);
+}
+
+.app-header-preview-dark .toolbar button.active {
+  background: var(--main-color);
+  color: rgba(6, 21, 43, 0.85);
+  font-weight: bolder;
+}
+
+.app-header-preview-dark h2 {
+  margin: 2rem 0 1rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px dotted var(--main-color);
+  font-size: 1.35em;
+  font-weight: normal;
+  color: var(--color-foreground);
+}
+
+.app-header-preview-dark .section-desc {
+  opacity: 0.85;
+  margin-bottom: 1.5rem;
+  font-size: 0.95em;
+  color: var(--color-foreground);
+}
+
+.app-header-preview-dark .section-desc code {
+  font-family: inherit;
+  font-size: 0.92em;
+  background: rgba(var(--bg-color), 0.25);
+  padding: 0.05em 0.35em;
+}
+
+.app-header-preview-dark .theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.app-header-preview-dark .theme-grid a,
+.app-header-preview-dark .theme-grid button {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 10px 8px;
+  cursor: pointer;
+  border: 1px solid rgba(var(--bg-color), 0.6);
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    rgba(var(--bg-color), 0.12) 35%,
+    rgba(var(--bg-color), 0.75) 120%
+  );
+  background-size: 350% 350%;
+  color: var(--main-color);
+  text-transform: uppercase;
+  transition:
+    background-size 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    filter 0.2s;
+  text-decoration: none;
+  text-align: center;
+}
+
+.app-header-preview-dark .theme-grid a:hover,
+.app-header-preview-dark .theme-grid a:focus-visible,
+.app-header-preview-dark .theme-grid button:hover,
+.app-header-preview-dark .theme-grid button:focus-visible {
+  outline: 1px inset var(--main-color);
+  background-size: 100% 100%;
+  filter: brightness(1.2) saturate(1.15);
+}
+
+.app-header-preview-dark .theme-grid a[data-active="true"],
+.app-header-preview-dark .theme-grid button[data-active="true"],
+.app-header-preview-dark .theme-grid a[aria-current="page"] {
+  outline: 1px inset var(--main-color);
+  background-size: 100% 100%;
+  font-weight: bolder;
+}
+
+.app-header-preview-dark .swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 1rem;
+}
+
+.app-header-preview-dark .swatch {
+  border: 1px solid var(--main-color);
+  padding: 10px;
+  background: linear-gradient(45deg, rgba(var(--bg-color), 0.06) 70%, rgba(var(--bg-color), 0.18) 110%);
+}
+
+.app-header-preview-dark .swatch-color {
+  height: 48px;
+  margin-bottom: 8px;
+  border: 1px dotted var(--main-color);
+}
+
+.app-header-preview-dark .swatch-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--main-color);
+}
+
+.app-header-preview-dark .swatch-hex {
+  font-size: 11px;
+  opacity: 0.85;
+  margin-top: 4px;
+  color: var(--color-foreground);
 }
 
 @utility container-app {
@@ -416,21 +599,17 @@ body {
   padding-block: var(--section-y);
 }
 
-/* Hero band: Mysteria gradient → page background (DESIGN.md §2, §6 Level 4) */
+/* Terminal panel / hero wash */
 @utility bg-surface-hero-gradient {
-  background: linear-gradient(
-    165deg,
-    var(--surface-hero-from) 0%,
-    var(--surface-hero-mid) 42%,
-    var(--surface-hero-to) 100%
-  );
+  background: var(--terminal-panel-gradient);
+  backdrop-filter: blur(var(--terminal-tab-blur));
 }
 
 @utility border-surface-hero {
   border-color: var(--surface-hero-border);
 }
 
-/* SVAR Gantt — time-scale (x-axis) header: extra space between tick labels (cron schedule) */
+/* SVAR Gantt — time-scale (x-axis) header */
 .cron-gantt-timeline .wx-scale .wx-row .wx-cell {
   box-sizing: border-box;
   padding-inline: 0.5rem;

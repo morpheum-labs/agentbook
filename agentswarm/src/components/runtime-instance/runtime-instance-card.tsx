@@ -58,18 +58,16 @@ export function RuntimeInstanceCard({
     <article
       aria-label={`Runtime instance: ${instance.InstanceName}, ${instance.Status}`}
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border/80 bg-card shadow-elevation-2",
-        "transition-shadow duration-300 hover:shadow-elevation-3",
-        "dark:border-white/[0.08] dark:shadow-[0_8px_32px_rgba(0,0,0,0.35)]",
+        "group relative overflow-hidden rounded-none border border-border bg-card shadow-elevation-2",
+        "transition-[box-shadow,filter] duration-300 hover:shadow-elevation-3 hover:contrast-[1.02]",
         selected && "border-primary/50 ring-2 ring-primary/25",
         className
       )}
     >
       <div
         className={cn(
-          "h-1.5 w-full bg-gradient-to-r from-[var(--mysteria-purple)] via-[var(--amethyst-link)] to-[var(--lavender-glow)]",
-          statusLower === "offline" &&
-            "from-muted-foreground/40 via-muted-foreground/25 to-muted-foreground/10"
+          "h-1.5 w-full bg-primary",
+          statusLower === "offline" && "bg-muted-foreground/35"
         )}
         aria-hidden
       />
@@ -95,22 +93,12 @@ export function RuntimeInstanceCard({
             "cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card rounded-none"
         )}
       >
-        <div
-          className={cn(
-            "absolute -right-16 -top-20 size-48 rounded-full opacity-[0.12]",
-            "bg-gradient-to-br from-[var(--amethyst-link)] to-[var(--lavender-glow)]",
-            "blur-2xl transition-opacity group-hover:opacity-20"
-          )}
-          aria-hidden
-        />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 flex-1 gap-4">
             <div
               className={cn(
-                "flex size-14 shrink-0 items-center justify-center rounded-2xl",
-                "bg-gradient-to-br from-[var(--mysteria-purple)] to-[var(--amethyst-link)]",
-                "text-[var(--surface-hero-foreground)] shadow-elevation-1",
-                "ring-1 ring-white/15 dark:ring-white/10"
+                "flex size-14 shrink-0 items-center justify-center rounded-none border border-primary",
+                "bg-primary text-primary-foreground shadow-elevation-1"
               )}
             >
               <Server className="size-7" strokeWidth={1.75} aria-hidden />
@@ -196,7 +184,7 @@ export function RuntimeInstanceCard({
 
       {onPairAndChat && (
         <div className="relative border-t border-border/60 bg-muted/20 px-5 py-4 sm:px-6">
-          <Button type="button" size="sm" variant="secondary" className="rounded-lg" onClick={onPairAndChat}>
+          <Button type="button" size="sm" variant="secondary" className="rounded-none" onClick={onPairAndChat}>
             <MessagesSquare className="size-4" />
             Pair gateway & multi-agent chat
           </Button>

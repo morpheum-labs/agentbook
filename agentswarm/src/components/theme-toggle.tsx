@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   getStoredTheme,
   setStoredTheme,
@@ -30,22 +29,20 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className={cn("size-9 p-0", className)}>
-        <Sun className="size-4" />
-      </Button>
+      <button type="button" className={cn(className)} aria-label="Theme">
+        <Sun className="mx-auto size-4" />
+      </button>
     );
   }
 
   return (
-    <Button
+    <button
       type="button"
-      variant="ghost"
-      size="icon"
       onClick={toggle}
       title={theme === "dark" ? "Light mode" : "Dark mode"}
-      className={className}
+      className={cn(className)}
     >
-      {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-    </Button>
+      {theme === "dark" ? <Sun className="mx-auto size-4" /> : <Moon className="mx-auto size-4" />}
+    </button>
   );
 }

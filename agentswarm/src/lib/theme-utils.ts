@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 const STORAGE_KEY = "agentswarm_theme";
 
 export type Theme = "light" | "dark" | "system";
@@ -28,4 +30,24 @@ export function applyTheme(theme: Theme): void {
   const effective = getEffectiveTheme(theme);
   document.documentElement.classList.remove("light", "dark");
   document.documentElement.classList.add(effective);
+}
+
+/** Effective light/dark from `<html class>` — updates when theme toggles. */
+export function useHtmlTheme(): "light" | "dark" {
+  const [mode, setMode] = useState<"light" | "dark">(() =>
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark")
+      ? "dark"
+      : "light"
+  );
+
+  useEffect(() => {
+    const el = document.documentElement;
+    const sync = () => setMode(el.classList.contains("dark") ? "dark" : "light");
+    sync();
+    const obs = new MutationObserver(sync);
+    obs.observe(el, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
+  return mode;
 }

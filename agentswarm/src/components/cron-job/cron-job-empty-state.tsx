@@ -12,16 +12,15 @@ export function CronJobEmptyState({ hasAgents, className }: CronJobEmptyStatePro
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80",
-        "bg-gradient-to-b from-muted/30 to-card px-6 py-16 text-center shadow-elevation-0",
+        "flex flex-col items-center justify-center rounded-none border border-dashed border-border",
+        "bg-surface-hero-gradient px-6 py-16 text-center shadow-elevation-0 backdrop-blur-[var(--terminal-tab-blur)]",
         className
       )}
     >
       <div
         className={cn(
-          "mb-5 flex size-16 items-center justify-center rounded-2xl",
-          "bg-gradient-to-br from-[var(--mysteria-purple)]/15 to-[var(--lavender-glow)]/20",
-          "text-[var(--amethyst-link)]"
+          "mb-5 flex size-16 items-center justify-center rounded-none border border-primary",
+          "bg-primary/15 text-primary"
         )}
       >
         <Inbox className="size-8" strokeWidth={1.5} aria-hidden />
@@ -34,21 +33,21 @@ export function CronJobEmptyState({ hasAgents, className }: CronJobEmptyStatePro
       </p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
         {hasAgents ? (
-          <Button asChild className="rounded-xl">
+          <Button asChild>
             <Link to="/cron-jobs/new" className="inline-flex items-center gap-2">
               <Plus className="size-4" />
               Create your first job
             </Link>
           </Button>
         ) : (
-          <Button asChild variant="default" className="rounded-xl">
+          <Button asChild variant="default">
             <Link to="/agents/new" className="inline-flex items-center gap-2">
               <Plus className="size-4" />
               New agent
             </Link>
           </Button>
         )}
-        <Button asChild variant="ghost" className="rounded-xl text-muted-foreground">
+        <Button asChild variant="ghost" className="text-muted-foreground">
           <Link to="/">Back home</Link>
         </Button>
       </div>

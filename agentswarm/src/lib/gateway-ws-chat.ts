@@ -1,6 +1,79 @@
 /** Browser client for ZeroClaw gateway `GET /ws/chat` (see miroclaw `gateway/ws.rs`). */
 
+import { joinGatewayHttpPath } from "@/lib/gateway-pairing";
+
 const WS_PROTOCOL = "zeroclaw.v1";
+
+/** Same catalog as miroclaw `slash_command_catalog()` when GET /api/chat-slash-commands is unavailable (CORS/offline). */
+export const GATEWAY_CHAT_SLASH_COMMANDS_FALLBACK: GatewaySlashCommandItem[] = [
+  { name: "/new", description: "Clear this chat session and start fresh" },
+  { name: "/reset", description: "Same as /new" },
+  { name: "/fresh-session", description: "Same as /new (explicit fresh session)" },
+  { name: "/models", description: "List providers or /models <provider> to switch" },
+  { name: "/model", description: "Show models or /model <id> to switch" },
+  { name: "/config", description: "Show current provider, model, and routes" },
+  { name: "/read", description: "Read a workspace file from disk now (e.g. /read ok.md)" },
+  { name: "/refresh", description: "Clear dynamic-context memo; optional path re-reads one file" },
+  {
+    name: "/webui",
+    description: "Show dashboard source (/webui status) or reload from config (/webui reload)",
+  },
+];
+
+export type GatewaySlashCommandItem = {
+  name: string;
+  description: string;
+};
+
+/** Map the WebSocket origin/base used for `/ws/chat` to an HTTP(S) origin for REST routes like `/api/chat-slash-commands`. */
+export function gatewayHttpBaseFromWsBase(wsBase: string): string {
+  let s = wsBase.trim();
+  if (!s) {
+    throw new Error("Gateway URL is empty");
+  }
+  if (!/^wss?:\/\//i.test(s)) {
+    if (/^https?:\/\//i.test(s)) {
+      return s.replace(/\/+$/, "");
+    }
+    s = `ws://${s}`;
+  }
+  const u = new URL(s);
+  if (u.protocol === "ws:") {
+    u.protocol = "http:";
+  } else if (u.protocol === "wss:") {
+    u.protocol = "https:";
+  }
+  u.hash = "";
+  u.search = "";
+  return u.toString().replace(/\/+$/, "");
+}
+
+export async function fetchGatewayChatSlashCommandCatalog(
+  httpBase: string
+): Promise<GatewaySlashCommandItem[]> {
+  const url = joinGatewayHttpPath(httpBase, "/api/chat-slash-commands");
+  const res = await fetch(url, { method: "GET", mode: "cors" });
+  const data = (await res.json().catch(() => ({}))) as {
+    commands?: unknown;
+  };
+  if (!res.ok) {
+    throw new Error(`GET /api/chat-slash-commands failed (${res.status})`);
+  }
+  const raw = data.commands;
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const out: GatewaySlashCommandItem[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const name = (row as { name?: unknown }).name;
+    const description = (row as { description?: unknown }).description;
+    if (typeof name !== "string" || typeof description !== "string") continue;
+    if (!name.startsWith("/")) continue;
+    out.push({ name, description });
+  }
+  return out;
+}
 
 export type GatewayWsTurnResult = {
   fullResponse: string;

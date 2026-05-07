@@ -1,0 +1,5 @@
+Bundled assets are copied from Richard-Apps/richardapps-web (GPLv3).
+Source: https://github.com/Richard-Apps/richardapps-web
+
+Includes: Terminus font (GPL-2.0 per upstream README), four PNG noise frames,
+grunge.jpg, rain-bg.mp4, rain-bg-static.png poster.

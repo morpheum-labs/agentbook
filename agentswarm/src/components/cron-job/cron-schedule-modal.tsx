@@ -70,7 +70,7 @@ export function CronScheduleModal({ open, onOpenChange, value, onApply }: CronSc
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl gap-0 border-border/80 p-0">
-        <div className="h-1 w-full bg-gradient-to-r from-[var(--mysteria-purple)] via-[var(--amethyst-link)] to-[var(--lavender-glow)]" />
+        <div className="h-1 w-full bg-primary" />
         <DialogHeader className="border-0">
           <DialogTitle>Schedule</DialogTitle>
           <DialogDescription>
@@ -123,7 +123,7 @@ export function CronScheduleModal({ open, onOpenChange, value, onApply }: CronSc
                       className={cn(
                         "rounded-lg border border-border/60 bg-background/80 px-2.5 py-1.5",
                         "text-caption text-foreground",
-                        "hover:border-[var(--amethyst-link)]/50 hover:bg-accent/40",
+                        "hover:border-primary/50 hover:bg-accent/40",
                         "text-left"
                       )}
                     >
