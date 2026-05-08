@@ -34,6 +34,8 @@ export type AssistantRow = {
   agentId: string;
   agentName: string;
   content: string;
+  /** Gateway reasoning / thinking stream when separated from visible answer */
+  reasoning?: string;
   pending: boolean;
   error?: string;
 };
@@ -50,6 +52,11 @@ export type TurnBlock = {
   assistants: AssistantRow[];
 };
 
+/** True if any assistant row in this hand’s transcript is still streaming / waiting on the gateway. */
+export function turnBlocksHavePendingAssistant(blocks: TurnBlock[]): boolean {
+  return blocks.some((b) => b.assistants.some((r) => r.pending));
+}
+
 export type MultiAgentChatPanelProps = {
   activeAgentName?: string;
   showPickHandHint: boolean;
@@ -60,6 +67,7 @@ export type MultiAgentChatPanelProps = {
   draft: string;
   onDraftChange: (next: string) => void;
   onSend: () => void;
+  /** True when the viewed hand has a pending assistant turn (disables composer for that hand only). */
   inFlight: boolean;
   sendDisabled: boolean;
   gatewayBlockReason: string | null;
@@ -219,7 +227,21 @@ export function MultiAgentChatPanel({
                   ) : r.error ? (
                     <p className="text-caption-body text-destructive">{r.error}</p>
                   ) : (
-                    <p className="text-caption-body whitespace-pre-wrap">{r.content}</p>
+                    <>
+                      {r.reasoning?.trim() ? (
+                        <details className="mb-3 rounded-none border border-border/60 bg-muted/25">
+                          <summary className="cursor-pointer select-none px-3 py-2 text-micro font-medium text-muted-foreground marker:text-muted-foreground">
+                            Thinking — tap to expand
+                          </summary>
+                          <div className="border-t border-border/50 px-3 py-2">
+                            <p className="text-caption-body whitespace-pre-wrap text-muted-foreground leading-relaxed">
+                              {r.reasoning}
+                            </p>
+                          </div>
+                        </details>
+                      ) : null}
+                      <p className="text-caption-body whitespace-pre-wrap">{r.content}</p>
+                    </>
                   )}
                 </div>
               ))}

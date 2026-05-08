@@ -77,6 +77,10 @@ export async function fetchGatewayChatSlashCommandCatalog(
 
 export type GatewayWsTurnResult = {
   fullResponse: string;
+  /** Thinking/reasoning text when the gateway separates it from the visible answer */
+  fullReasoning?: string;
+  /** Highest `seq` seen on any frame this connection; pass as the next turn's `lastEventSeq` with `connect`. */
+  maxEventSeq: number;
 };
 
 /**
@@ -168,9 +172,23 @@ export function buildGatewayChatWsUrl(
   return u.toString();
 }
 
-function parseWsMessage(raw: string): { type?: string; content?: string; full_response?: string; message?: string } {
+function parseWsMessage(raw: string): {
+  type?: string;
+  content?: string;
+  full_response?: string;
+  full_reasoning?: string;
+  message?: string;
+  seq?: number;
+} {
   try {
-    return JSON.parse(raw) as { type?: string; content?: string; full_response?: string; message?: string };
+    return JSON.parse(raw) as {
+      type?: string;
+      content?: string;
+      full_response?: string;
+      full_reasoning?: string;
+      message?: string;
+      seq?: number;
+    };
   } catch {
     return {};
   }
@@ -191,15 +209,18 @@ export function redactGatewayWsUrlForDisplay(wsUrl: string): string {
 
 /**
  * One user turn over an ephemeral WebSocket (gateway persists history by `session_id`).
+ * When `lastEventSeq` > 0, sends `connect` first so replay snapshots exclude prior completed turns.
  */
 export function gatewayChatSingleTurn(
   wsUrl: string,
   userContent: string,
-  options?: { signal?: AbortSignal }
+  options?: { signal?: AbortSignal; lastEventSeq?: number }
 ): Promise<GatewayWsTurnResult> {
   return new Promise((resolve, reject) => {
     let settled = false;
     let accum = "";
+    let accumReasoning = "";
+    let maxEventSeqSeen = 0;
     let transportErrored = false;
 
     const fail = (e: Error) => {
@@ -208,10 +229,17 @@ export function gatewayChatSingleTurn(
       reject(e);
     };
 
-    const succeed = (full: string) => {
+    const succeed = (result: GatewayWsTurnResult) => {
       if (settled) return;
       settled = true;
-      resolve({ fullResponse: full });
+      resolve(result);
+    };
+
+    const noteSeq = (msg: ReturnType<typeof parseWsMessage>) => {
+      const s = msg.seq;
+      if (typeof s === "number" && Number.isFinite(s) && s > maxEventSeqSeen) {
+        maxEventSeqSeen = s;
+      }
     };
 
     let ws: WebSocket;
@@ -269,6 +297,7 @@ export function gatewayChatSingleTurn(
     ws.onmessage = (ev) => {
       const text = typeof ev.data === "string" ? ev.data : "";
       const msg = parseWsMessage(text);
+      noteSeq(msg);
       const t = msg.type;
 
       if (t === "session_start" || t === "connected") {
@@ -280,7 +309,14 @@ export function gatewayChatSingleTurn(
         return;
       }
 
+      if (t === "reasoning_chunk" && typeof msg.content === "string") {
+        accumReasoning += msg.content;
+        return;
+      }
+
       if (t === "chunk_reset") {
+        accum = "";
+        accumReasoning = "";
         return;
       }
 
@@ -291,12 +327,26 @@ export function gatewayChatSingleTurn(
       if (t === "done") {
         const full =
           typeof msg.full_response === "string" && msg.full_response.length > 0 ? msg.full_response : accum;
+        const reasoningFromDone =
+          typeof msg.full_reasoning === "string" && msg.full_reasoning.length > 0
+            ? msg.full_reasoning
+            : undefined;
+        const fullReasoning =
+          reasoningFromDone !== undefined
+            ? reasoningFromDone
+            : accumReasoning.trim().length > 0
+              ? accumReasoning
+              : undefined;
         try {
           ws.close();
         } catch {
           // ignore
         }
-        succeed(full);
+        succeed({
+          fullResponse: full,
+          ...(fullReasoning !== undefined ? { fullReasoning } : {}),
+          maxEventSeq: maxEventSeqSeen,
+        });
         return;
       }
 
@@ -312,6 +362,10 @@ export function gatewayChatSingleTurn(
 
     ws.onopen = () => {
       try {
+        const lastSeq = options?.lastEventSeq ?? 0;
+        if (lastSeq > 0) {
+          ws.send(JSON.stringify({ type: "connect", last_event_seq: lastSeq }));
+        }
         ws.send(JSON.stringify({ type: "message", content: userContent }));
       } catch (e) {
         fail(e instanceof Error ? e : new Error("send failed"));

@@ -19,12 +19,14 @@ import {
 } from "@/lib/multi-chat-storage";
 import {
   MultiAgentChatPanel,
+  turnBlocksHavePendingAssistant,
   type AssistantRow,
   type TurnBlock,
   type UserRow,
 } from "@/components/multi-agent-chat-panel";
 import { MultiAgentHandsPicker } from "@/components/multi-agent-hands-picker";
 import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 type GatewaySessionSource = "runtime" | "manual";
 
@@ -70,15 +72,19 @@ export function MultiAgentChatPage() {
   const [turnsByAgent, setTurnsByAgent] = useState<Record<string, TurnBlock[]>>({});
   /** Last persisted WebSocket `session_id` per agent (localStorage). */
   const [sessionIdsByAgent, setSessionIdsByAgent] = useState<Record<string, string>>({});
+  /** Last gateway WS replay `seq` per agent — avoids stale replay `done` on reconnect (see `connect.last_event_seq`). */
+  const [wsMaxSeqByAgent, setWsMaxSeqByAgent] = useState<Record<string, number>>({});
   /** Index of first turn appended after hydrate; drives “past vs this visit” separator in the panel. */
   const [pastTurnBoundaryByAgent, setPastTurnBoundaryByAgent] = useState<Record<string, number>>({});
   const [draft, setDraft] = useState("");
-  const [inFlight, setInFlight] = useState(false);
+  /** Prevents same-tick double send before React applies pending rows (per agent id). */
+  const sendingGuardRef = useRef(new Set<string>());
   const [slashCommands, setSlashCommands] = useState<GatewaySlashCommandItem[]>(
     GATEWAY_CHAT_SLASH_COMMANDS_FALLBACK
   );
   /** Gateway wiring comes from session (Runtime instances → Pair & chat). Re-read on mount / focus return. */
   const [gwSession, setGwSession] = useState(readGatewaySession);
+  const [gatewayPanelOpen, setGatewayPanelOpen] = useState(false);
 
   useEffect(() => {
     setGwSession(readGatewaySession());
@@ -159,6 +165,7 @@ export function MultiAgentChatPage() {
     const raw = loadMultiChatSnapshot(persistenceNamespace);
     if (!raw) {
       setPastTurnBoundaryByAgent({});
+      setWsMaxSeqByAgent({});
       saveEnabledRef.current = true;
       return;
     }
@@ -178,6 +185,7 @@ export function MultiAgentChatPage() {
       return next;
     });
     setSessionIdsByAgent((prev) => ({ ...prev, ...raw.sessionIdsByAgent }));
+    setWsMaxSeqByAgent(raw.wsMaxSeqByAgent ? { ...raw.wsMaxSeqByAgent } : {});
     setPastTurnBoundaryByAgent(boundaries);
     saveEnabledRef.current = true;
   }, [persistenceNamespace, agents]);
@@ -185,10 +193,14 @@ export function MultiAgentChatPage() {
   useEffect(() => {
     if (!saveEnabledRef.current) return;
     const t = window.setTimeout(() => {
-      saveMultiChatSnapshot(persistenceNamespace, { turnsByAgent, sessionIdsByAgent });
+      saveMultiChatSnapshot(persistenceNamespace, {
+        turnsByAgent,
+        sessionIdsByAgent,
+        ...(Object.keys(wsMaxSeqByAgent).length > 0 ? { wsMaxSeqByAgent } : {}),
+      });
     }, 400);
     return () => window.clearTimeout(t);
-  }, [persistenceNamespace, turnsByAgent, sessionIdsByAgent]);
+  }, [persistenceNamespace, turnsByAgent, sessionIdsByAgent, wsMaxSeqByAgent]);
 
   /** Blocks Send until gateway session + clawgotcha data are coherent. */
   const gatewayBlockReason = useMemo((): string | null => {
@@ -308,6 +320,8 @@ export function MultiAgentChatPage() {
 
   const turns = activeAgentId ? (turnsByAgent[activeAgentId] ?? []) : [];
 
+  const activeHandPending = useMemo(() => turnBlocksHavePendingAssistant(turns), [turns]);
+
   const activeChatSessionId = useMemo(() => {
     if (!activeAgent) return null;
     return (
@@ -319,83 +333,98 @@ export function MultiAgentChatPage() {
   async function send() {
     const text = draft.trim();
     const agent = activeAgent;
-    if (!text || !agent || inFlight) return;
+    if (!text || !agent) return;
+    if (sendingGuardRef.current.has(agent.ID)) return;
+    const priorTurns = turnsByAgent[agent.ID] ?? [];
+    if (turnBlocksHavePendingAssistant(priorTurns)) return;
 
-    const userRow: UserRow = {
-      id: newId(),
-      content: text,
-      recipientsLabel: agent.Name,
-    };
-    const row: AssistantRow = {
-      id: newId(),
-      agentId: agent.ID,
-      agentName: agent.Name,
-      content: "",
-      pending: true,
-    };
-
-    const block: TurnBlock = { user: userRow, assistants: [row] };
-    const sessionId = buildMultiChatSessionId(sessionInstanceKey, agent);
-    setSessionIdsByAgent((prev) => ({ ...prev, [agent.ID]: sessionId }));
-    setTurnsByAgent((prev) => ({
-      ...prev,
-      [agent.ID]: [...(prev[agent.ID] ?? []), block],
-    }));
-    setDraft("");
-    setInFlight(true);
-
-    const gw = resolvedGatewayBase.trim();
-    const token = gwSession.gatewayToken.trim();
-
-    const patchAssistant = (patch: Partial<AssistantRow>) => {
-      setTurnsByAgent((prev) => {
-        const list = prev[agent.ID] ?? [];
-        return {
-          ...prev,
-          [agent.ID]: list.map((b) => {
-            if (!b.assistants.some((r) => r.id === row.id)) return b;
-            return {
-              ...b,
-              assistants: b.assistants.map((r) =>
-                r.id === row.id ? { ...r, ...patch } : r
-              ),
-            };
-          }),
-        };
-      });
-    };
-
-    if (!gw) {
-      const hint = [
-        gatewayBlockReason ?? "Could not resolve a WebSocket base for this gateway session.",
-        "Each hand uses its own session_id on GET /ws/chat (zeroclaw.v1); transcripts are gw_<session_id> on the gateway.",
-      ].join(" ");
-      patchAssistant({
-        pending: false,
-        content: hint,
-      });
-      setInFlight(false);
-      return;
-    }
-
+    sendingGuardRef.current.add(agent.ID);
     try {
-      const wsUrl = buildGatewayChatWsUrl(gw, {
-        sessionId,
-        name: agent.Name,
-        token: token || undefined,
-        fresh: false,
-      });
-      const { fullResponse } = await gatewayChatSingleTurn(wsUrl, text);
-      patchAssistant({ pending: false, content: fullResponse });
-    } catch (e) {
-      patchAssistant({
-        pending: false,
+      const userRow: UserRow = {
+        id: newId(),
+        content: text,
+        recipientsLabel: agent.Name,
+      };
+      const row: AssistantRow = {
+        id: newId(),
+        agentId: agent.ID,
+        agentName: agent.Name,
         content: "",
-        error: e instanceof Error ? e.message : "Request failed",
-      });
-    }
+        pending: true,
+      };
 
-    setInFlight(false);
+      const block: TurnBlock = { user: userRow, assistants: [row] };
+      const sessionId = buildMultiChatSessionId(sessionInstanceKey, agent);
+      setSessionIdsByAgent((prev) => ({ ...prev, [agent.ID]: sessionId }));
+      setTurnsByAgent((prev) => ({
+        ...prev,
+        [agent.ID]: [...(prev[agent.ID] ?? []), block],
+      }));
+      setDraft("");
+
+      const gw = resolvedGatewayBase.trim();
+      const token = gwSession.gatewayToken.trim();
+
+      const patchAssistant = (patch: Partial<AssistantRow>) => {
+        setTurnsByAgent((prev) => {
+          const list = prev[agent.ID] ?? [];
+          return {
+            ...prev,
+            [agent.ID]: list.map((b) => {
+              if (!b.assistants.some((r) => r.id === row.id)) return b;
+              return {
+                ...b,
+                assistants: b.assistants.map((r) =>
+                  r.id === row.id ? { ...r, ...patch } : r
+                ),
+              };
+            }),
+          };
+        });
+      };
+
+      if (!gw) {
+        const hint = [
+          gatewayBlockReason ?? "Could not resolve a WebSocket base for this gateway session.",
+          "Each hand uses its own session_id on GET /ws/chat (zeroclaw.v1); transcripts are gw_<session_id> on the gateway.",
+        ].join(" ");
+        patchAssistant({
+          pending: false,
+          content: hint,
+        });
+        return;
+      }
+
+      try {
+        const wsUrl = buildGatewayChatWsUrl(gw, {
+          sessionId,
+          name: agent.Name,
+          token: token || undefined,
+          fresh: false,
+        });
+        const lastSeq = wsMaxSeqByAgent[agent.ID] ?? 0;
+        const { fullResponse, fullReasoning, maxEventSeq } = await gatewayChatSingleTurn(wsUrl, text, {
+          lastEventSeq: lastSeq > 0 ? lastSeq : undefined,
+        });
+        setWsMaxSeqByAgent((prev) => ({
+          ...prev,
+          [agent.ID]: Math.max(prev[agent.ID] ?? 0, maxEventSeq),
+        }));
+        patchAssistant({
+          pending: false,
+          content: fullResponse,
+          ...(fullReasoning?.trim() ? { reasoning: fullReasoning } : {}),
+        });
+      } catch (e) {
+        patchAssistant({
+          pending: false,
+          content: "",
+          error: e instanceof Error ? e.message : "Request failed",
+        });
+      }
+    } finally {
+      sendingGuardRef.current.delete(agent.ID);
+    }
   }
 
   return (
@@ -412,48 +441,71 @@ export function MultiAgentChatPage() {
             onSelectAgent={setActiveAgentId}
           />
 
-          <div className="mt-5 shrink-0 border-t border-border/60 pt-4 space-y-3">
-            <h3 className="text-subheading-sm font-medium">Gateway</h3>
-            <p className="text-micro text-muted-foreground leading-relaxed">
-              Pair or switch runtimes on{" "}
-              <Link to="/instances" className="text-primary underline-offset-2 hover:underline">
-                Runtime instances
-              </Link>
-              .
-            </p>
-            {gwSession.source === "runtime" && gwSession.runtimeInstanceName.trim() ? (
-              <div>
-                <span className="text-micro text-muted-foreground block">Runtime</span>
-                <p className="text-caption-body font-medium">{gwSession.runtimeInstanceName}</p>
+          <div className="mt-auto shrink-0 border-t border-border/60 pt-3">
+            <button
+              type="button"
+              id="multi-chat-gateway-toggle"
+              aria-expanded={gatewayPanelOpen}
+              aria-controls="multi-chat-gateway-panel"
+              onClick={() => setGatewayPanelOpen((v) => !v)}
+              className="text-micro text-primary underline-offset-2 hover:underline"
+            >
+              Gateway
+            </button>
+            <div
+              id="multi-chat-gateway-panel"
+              role="region"
+              aria-labelledby="multi-chat-gateway-toggle"
+              className={cn(
+                "grid transition-[grid-template-rows] duration-1000 ease-in-out motion-reduce:transition-none",
+                gatewayPanelOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+              )}
+            >
+              <div className="min-h-0 overflow-hidden">
+                <div className="space-y-3 border-border/60 pt-4">
+                  <p className="text-micro text-muted-foreground leading-relaxed">
+                    Pair or switch runtimes on{" "}
+                    <Link to="/instances" className="text-primary underline-offset-2 hover:underline">
+                      Runtime instances
+                    </Link>
+                    .
+                  </p>
+                  {gwSession.source === "runtime" && gwSession.runtimeInstanceName.trim() ? (
+                    <div>
+                      <span className="text-micro text-muted-foreground block">Runtime</span>
+                      <p className="text-caption-body font-medium">{gwSession.runtimeInstanceName}</p>
+                    </div>
+                  ) : gwSession.source === "manual" && gwSession.legacyManualBase.trim() ? (
+                    <div>
+                      <span className="text-micro text-muted-foreground block">Legacy manual base</span>
+                      <p className="text-micro font-mono break-all rounded-md border border-border/60 bg-muted/30 px-2 py-1.5">
+                        {gwSession.legacyManualBase}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-micro text-muted-foreground">No gateway session yet.</p>
+                  )}
+                  <div>
+                    <span className="text-micro text-muted-foreground mb-1 block">
+                      WebSocket base for <span className="font-mono">/ws/chat</span>
+                    </span>
+                    <p className="text-micro font-mono text-muted-foreground break-all rounded-md border border-border/60 bg-muted/30 px-2 py-1.5">
+                      {resolvedGatewayBase || "—"}
+                    </p>
+                  </div>
+                  {activeAgent && activeChatSessionId ? (
+                    <div>
+                      <span className="text-micro text-muted-foreground mb-1 block">
+                        Active hand <span className="font-mono">session_id</span>
+                      </span>
+                      <p className="text-micro font-mono text-muted-foreground break-all rounded-md border border-border/60 bg-muted/30 px-2 py-1.5">
+                        {activeChatSessionId}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
               </div>
-            ) : gwSession.source === "manual" && gwSession.legacyManualBase.trim() ? (
-              <div>
-                <span className="text-micro text-muted-foreground block">Legacy manual base</span>
-                <p className="text-micro font-mono break-all rounded-md border border-border/60 bg-muted/30 px-2 py-1.5">
-                  {gwSession.legacyManualBase}
-                </p>
-              </div>
-            ) : (
-              <p className="text-micro text-muted-foreground">No gateway session yet.</p>
-            )}
-            <div>
-              <span className="text-micro text-muted-foreground block mb-1">
-                WebSocket base for <span className="font-mono">/ws/chat</span>
-              </span>
-              <p className="text-micro font-mono text-muted-foreground break-all rounded-md border border-border/60 bg-muted/30 px-2 py-1.5">
-                {resolvedGatewayBase || "—"}
-              </p>
             </div>
-            {activeAgent && activeChatSessionId ? (
-              <div>
-                <span className="text-micro text-muted-foreground mb-1 block">
-                  Active hand <span className="font-mono">session_id</span>
-                </span>
-                <p className="text-micro font-mono text-muted-foreground break-all rounded-md border border-border/60 bg-muted/30 px-2 py-1.5">
-                  {activeChatSessionId}
-                </p>
-              </div>
-            ) : null}
           </div>
         </Card>
 
@@ -469,7 +521,7 @@ export function MultiAgentChatPage() {
           draft={draft}
           onDraftChange={setDraft}
           onSend={send}
-          inFlight={inFlight}
+          inFlight={activeHandPending}
           sendDisabled={!draft.trim() || !activeAgent || gatewayNotReady}
           gatewayBlockReason={gatewayBlockReason}
           gatewayStatusIsLoading={gatewayStatusIsLoading}

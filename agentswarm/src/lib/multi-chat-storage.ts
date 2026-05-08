@@ -6,6 +6,8 @@ export type MultiChatLocalSnapshot = {
   turnsByAgent: Record<string, TurnBlock[]>;
   /** Last WebSocket `session_id` used per agent (for gateway key `gw_<session_id>`). */
   sessionIdsByAgent: Record<string, string>;
+  /** Last gateway replay `seq` seen per agent (for `connect.last_event_seq`). */
+  wsMaxSeqByAgent?: Record<string, number>;
 };
 
 function djb2Hex(s: string): string {
@@ -66,7 +68,9 @@ export function loadMultiChatSnapshot(namespace: string): MultiChatLocalSnapshot
     }
     const sessionIdsByAgent =
       j.sessionIdsByAgent && typeof j.sessionIdsByAgent === "object" ? j.sessionIdsByAgent : {};
-    return { turnsByAgent: j.turnsByAgent, sessionIdsByAgent };
+    const wsMaxSeqByAgent =
+      j.wsMaxSeqByAgent && typeof j.wsMaxSeqByAgent === "object" ? j.wsMaxSeqByAgent : undefined;
+    return { turnsByAgent: j.turnsByAgent, sessionIdsByAgent, ...(wsMaxSeqByAgent ? { wsMaxSeqByAgent } : {}) };
   } catch {
     return null;
   }
@@ -77,6 +81,9 @@ export function saveMultiChatSnapshot(namespace: string, snapshot: MultiChatLoca
     const payload: MultiChatLocalSnapshot = {
       turnsByAgent: sanitizeTurnsForStorage(snapshot.turnsByAgent),
       sessionIdsByAgent: { ...snapshot.sessionIdsByAgent },
+      ...(snapshot.wsMaxSeqByAgent && Object.keys(snapshot.wsMaxSeqByAgent).length > 0
+        ? { wsMaxSeqByAgent: { ...snapshot.wsMaxSeqByAgent } }
+        : {}),
     };
     localStorage.setItem(storageKey(namespace), JSON.stringify(payload));
   } catch {
