@@ -646,18 +646,34 @@ textarea:focus-visible {
 }
 
 /*
- * Do not pin these to light-theme literals in @layer utilities — it overrides Tailwind’s
- * semantic colors and breaks dark mode:
- *   `.text-foreground { color: var(--terminal-ink); }`
- *   `.text-muted-foreground { color: #4a5c46; }`
- * Theme tokens: @theme sets light values; `.dark` sets `--color-foreground` / `--color-muted-foreground`.
+ * Tailwind v4 resolves some semantic text utilities from @theme at compile time using the
+ * light-theme source token (`--terminal-ink`, `#4a5c46`) instead of `var(--color-foreground)`.
+ * Base `text-foreground` / `text-muted-foreground` follow CSS variables; opacity variants like
+ * `text-foreground/90` and `text-muted-foreground/90` become `color-mix(..., var(--terminal-ink), ...)`
+ * or hex+alpha — still dark on a dark UI. Re-map those under `.dark` to the live theme tokens.
  */
 @layer utilities {
   .dark .text-foreground {
     color: var(--color-foreground);
   }
 
+  .dark .text-foreground\/80 {
+    color: color-mix(in oklab, var(--color-foreground) 80%, transparent);
+  }
+
+  .dark .text-foreground\/90 {
+    color: color-mix(in oklab, var(--color-foreground) 90%, transparent);
+  }
+
+  .dark .text-foreground\/95 {
+    color: color-mix(in oklab, var(--color-foreground) 95%, transparent);
+  }
+
   .dark .text-muted-foreground {
     color: var(--color-muted-foreground);
+  }
+
+  .dark .text-muted-foreground\/90 {
+    color: color-mix(in oklab, var(--color-muted-foreground) 90%, transparent);
   }
 }
